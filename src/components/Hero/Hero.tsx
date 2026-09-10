@@ -33,9 +33,9 @@ function Hero() {
           seus objetivos.
         </p>
 
-        <button className="hero-button">
+        <a className="hero-button" href="/cadastro">
           Cadastre-se
-        </button>
+        </a>
       </div>
 
       <div className="hero-scroll">
