@@ -1,0 +1,40 @@
+/* Reutiliza o layout responsivo de SignUp e mantém os ajustes de login locais. */
+.signin .signup__fields {
+  justify-content: center;
+}
+
+.signin__register {
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.signin__register a {
+  color: #f04438;
+  text-underline-offset: 4px;
+}
+
+.signin__register a:focus-visible {
+  outline: 2px solid #d71920;
+  outline-offset: 4px;
+}
+
+.signin__notice {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid #f04438;
+  border-radius: 10px;
+  color: #ff625b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .signin .signup__fields {
+    gap: 18px;
+  }
+
+  .signin .signup__form {
+    padding-top: 24px;
+  }
+}

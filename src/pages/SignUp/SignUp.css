@@ -336,3 +336,20 @@
     font-size: 15px;
   }
 }
+.signup__login-link {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.signup__login-link a {
+  color: #f04438;
+  text-underline-offset: 4px;
+}
+
+.signup__login-link a:focus-visible {
+  outline: 2px solid #d71920;
+  outline-offset: 4px;
+}

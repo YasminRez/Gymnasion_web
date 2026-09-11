@@ -9,7 +9,7 @@ function Navbar() {
 
       <nav className="navbar-links">
         <a href="/#sobre">Conheça o Gymnasion</a>
-        <a href="/#login">Login</a>
+        <a href="/login">Login</a>
         <a href="/#home">Home</a>
         <a href="/#esportes">Esportes</a>
       </nav>

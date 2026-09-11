@@ -107,6 +107,7 @@ function SignUp() {
             </p>
           )}
           <Button type="submit" className="signup__submit">Cadastrar</Button>
+          <p className="signup__login-link">Já tem uma conta? <a href="/login">Entrar</a></p>
         </form>
       </section>
       </main>
