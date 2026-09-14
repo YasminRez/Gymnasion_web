@@ -1,0 +1,29 @@
+import { Modalidade } from "./modalidade";
+
+export interface UsuarioAluno {
+  id: string;
+  nome: string;
+  email: string;
+  cpf: string;
+  celular: string;
+  role: string;
+}
+
+export interface AlunoResponse {
+  id: string;
+  usuario: UsuarioAluno;
+  personalId: string;
+  nomePersonal: string;
+  status: "PENDENTE" | "ATIVO" | "RECUSADO" | string;
+  modalidades: Modalidade[];
+}
+
+export type AlunoPendente = AlunoResponse;
+
+export interface ConviteAlunoPayload {
+  modalidadeId: number;
+}
+
+export interface ConviteAlunoResponse {
+  url: string;
+}

@@ -1,17 +1,25 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import Navbar from "../../components/Navbar/Navbar";
 import Button from "../../components/Button/Button";
 import FormField from "../../components/FormField/FormField";
+import { authService } from "../../services/authService";
+import { handleApiError } from "../../utils/handleApiError";
 import "../SignUp/SignUp.css";
 import "./SignIn.css";
 
 type Credentials = { email: string; password: string };
 
 function SignIn() {
+  const navigate = useNavigate();
+
   const [values, setValues] = useState<Credentials>({ email: "", password: "" });
   const [touched, setTouched] = useState<Partial<Record<keyof Credentials, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [notice, setNotice] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const errors: Partial<Record<keyof Credentials, string>> = {};
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
@@ -33,18 +41,35 @@ function SignIn() {
     };
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
     setNotice("");
+
     const firstInvalidField = Object.keys(errors)[0];
     if (firstInvalidField) {
       const field = event.currentTarget.elements.namedItem(firstInvalidField);
       if (field instanceof HTMLElement) field.focus();
       return;
     }
-    // Substituir pelo envio das credenciais à API quando a autenticação estiver disponível.
-    setNotice("O login ainda não está disponível. Tente novamente mais tarde.");
+
+    try {
+      setIsSubmitting(true);
+
+      await authService.login({
+        email: values.email.trim(),
+        password: values.password,
+      });
+
+      toast.success("Login realizado com sucesso!");
+
+      // Redirecionamento temporário para a tela de Alunos
+      navigate("/alunos");
+    } catch (err) {
+      handleApiError(err, "E-mail ou senha incorretos.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -62,7 +87,7 @@ function SignIn() {
             <div className="signup__fields">
               <FormField id="signin-email" name="email" {...fieldProps("email")} label="Email" type="email" autoComplete="username" placeholder="exemplo@email.com" required />
               <FormField id="signin-password" name="password" {...fieldProps("password")} label="Senha" type="password" autoComplete="current-password" placeholder="Digite sua senha" required />
-              <p className="signin__register">Ainda não tem uma conta? <a href="/cadastro">Cadastre-se</a></p>
+              <p className="signin__register">Ainda não tem uma conta? <Link to="/cadastro">Cadastre-se</Link></p>
             </div>
 
             <div className="signup__aside">
@@ -79,7 +104,9 @@ function SignIn() {
               <p className="signup__error-summary" role="alert">Confira os campos destacados antes de continuar.</p>
             )}
             {notice && <p className="signin__notice" role="status">{notice}</p>}
-            <Button type="submit" className="signup__submit">Entrar</Button>
+            <Button type="submit" className="signup__submit" disabled={isSubmitting}>
+              {isSubmitting ? "Entrando..." : "Entrar"}
+            </Button>
           </form>
         </section>
       </main>
