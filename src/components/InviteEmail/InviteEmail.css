@@ -1,0 +1,4 @@
+.invite-email__field { position: relative; }
+.invite-email__field > span { position: absolute; left: 13px; top: 11px; color: #bbb; font-size: 13px; }
+.student-invite .invite-email__field input { padding-left: 35px; }
+.invite-email__error { margin-top: 12px; color: #ff7777; font-size: 12px; }

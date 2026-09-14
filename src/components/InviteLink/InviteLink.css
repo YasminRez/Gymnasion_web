@@ -1,0 +1,4 @@
+.invite-link__field { position: relative; }
+.student-invite .invite-link__field input { padding-right: 54px; font-size: 11px; }
+.student-invite .invite-link__field button { position: absolute; right: 8px; top: 7px; padding: 2px 10px; background: #303030; }
+.invite-link__notice:not(:empty) { margin-top: 12px; color: #ccc; font-size: 12px; line-height: 1.5; }

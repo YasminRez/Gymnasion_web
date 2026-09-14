@@ -1,0 +1,11 @@
+.pending-student { display: flex; align-items: center; gap: 7px; padding: 9px 11px; background: #1c1c14; border: 1px solid #393719; border-radius: 9px; min-width: 0; }
+.pending-student__avatar { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: #303019; color: #fff12d; font-size: 11px; font-weight: 700; }
+.pending-student__info { flex: 1; min-width: 0; }
+.pending-student h3 { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.pending-student p { color: #aaa; font-size: 10px; margin-top: 2px; }
+.pending-student__actions { display: flex; gap: 6px; }
+.pending-student button { padding: 5px 7px; border-radius: 5px; font-size: 10px; font-weight: 600; cursor: pointer; }
+.pending-student__accept { color: #65ce6e; border: 1px solid #194b1e; background: #082d0c; }
+.pending-student__reject { color: #ff655f; border: 1px solid #5b1f1c; background: #300b09; }
+.pending-student button:hover { filter: brightness(1.3); }
+@media (max-width: 400px) { .pending-student { flex-wrap: wrap; } .pending-student__actions { margin-left: 37px; } }

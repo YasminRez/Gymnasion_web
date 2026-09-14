@@ -1,0 +1,4 @@
+.student-toast { position: fixed; z-index: 30; bottom: 24px; right: 24px; display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px); padding: 14px 16px; border: 1px solid #3b8845; border-radius: 9px; background: #202b21; color: #eee; box-shadow: 0 8px 30px #0006; }
+.student-toast > span { color: #70d578; }
+.student-toast p { font-size: 13px; line-height: 1.5; }
+.student-toast button { border: 0; background: transparent; color: #ddd; font-size: 22px; cursor: pointer; }

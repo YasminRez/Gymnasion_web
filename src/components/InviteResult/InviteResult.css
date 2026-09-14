@@ -1,0 +1,4 @@
+.invite-result__email { margin-top: 5px; padding: 8px 14px; border: 1px solid #383838; border-radius: 7px; background: #131313; color: #ccc; font-size: 12px; overflow-wrap: anywhere; }
+.invite-result--duplicate .invite-result__email { border-color: #bf2222; background: #2b1111; color: #ff6565; }
+.invite-result .invite-result__ok { flex: 0 1 135px; margin: 0 auto; padding: 7px 12px; background: #245b29; border-color: #4caf50; color: #71d878; font-weight: 700; }
+.invite-result .invite-result__view { background: #4a1313; border-color: #dc2929; color: #ff6565; }

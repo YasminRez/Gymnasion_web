@@ -1,0 +1,17 @@
+.student-card { position: relative; min-height: 194px; padding: 21px 18px; border: 1px solid #252525; border-radius: 11px; background: #1a1a1a; }
+.student-card__dot { position: absolute; top: 8px; right: 6px; width: 11px; height: 11px; border-radius: 50%; background: #49b653; }
+.student-card__avatar { display: grid; place-items: center; width: 55px; height: 55px; margin-bottom: 3px; border-radius: 50%; background: #3b2020; color: #ff423d; font-size: 12px; font-weight: 700; }
+.student-card h2 { font-size: 12px; line-height: 1.5; font-weight: 600; }
+.student-card p { margin-top: 11px; color: #999; font-size: 11px; }
+.student-card__status { display: inline-block; margin-top: 16px; min-width: 58px; padding: 5px 12px; border: 1px solid #194b1e; border-radius: 5px; background: #082d0c; color: #65ce6e; text-align: center; font-size: 10px; font-weight: 600; }
+.student-card--inactive { border-color: #ffab00; }
+.student-card--inactive .student-card__dot { background: #ffa500; }
+.student-card--inactive .student-card__avatar { background: #3e2d12; color: #ffac00; }
+.student-card--inactive .student-card__status { background: #301d05; border-color: #583400; color: #ffad12; }
+.student-card .student-card__dot { right: 40px; top: 17px; width: 8px; height: 8px; }
+.student-card__actions { position: absolute; right: 7px; top: 5px; }
+.student-card__more { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 5px; background: transparent; color: #aaa; font-size: 24px; cursor: pointer; }
+.student-card__more:hover, .student-card__more[aria-expanded="true"] { background: #333; color: #fff; }
+.student-card__options { position: absolute; right: 0; top: 34px; z-index: 5; min-width: 155px; padding: 5px; border: 1px solid #444; border-radius: 7px; background: #262626; box-shadow: 0 6px 18px #0006; }
+.student-card__options button { width: 100%; border: 0; border-radius: 4px; padding: 10px; background: transparent; color: #eee; text-align: left; white-space: nowrap; font-size: 12px; cursor: pointer; }
+.student-card__options button:hover { background: #393939; }
