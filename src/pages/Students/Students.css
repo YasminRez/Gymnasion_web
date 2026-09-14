@@ -1,4 +1,4 @@
-.students { width: calc(100% - 64px); max-width: 1070px; margin: 130px auto 48px; }
+.students { width: calc(100% - 64px); max-width: 1070px; margin: 40px auto 48px; }
 .students__sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .students__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 27px; }
 .students__pending { margin: 22px 12px 0; }
@@ -10,4 +10,4 @@
 .students__demo { margin-top: 24px; color: #999; font-size: 11px; }
 .students button:focus-visible, .students a:focus-visible, .student-invite :focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 @media (max-width: 900px) { .students__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .students__pending-grid { grid-template-columns: 1fr; } }
-@media (max-width: 520px) { .students { width: calc(100% - 32px); margin-top: 120px; } .students__grid { grid-template-columns: 1fr; gap: 16px; } .students__pending { margin-inline: 0; } .students__pending > h2 { margin-inline: 0; gap: 20px; } .students__pending > h2::after { margin-right: 0; } }
+@media (max-width: 520px) { .students { width: calc(100% - 32px); margin-top: 24px; } .students__grid { grid-template-columns: 1fr; gap: 16px; } .students__pending { margin-inline: 0; } .students__pending > h2 { margin-inline: 0; gap: 20px; } .students__pending > h2::after { margin-right: 0; } }

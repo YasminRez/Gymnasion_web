@@ -1,0 +1,10 @@
+.notification-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; min-height: 49px; border: 1px solid #303030; border-radius: 9px; background: #171717; color: white; text-align: left; cursor: pointer; }
+.notification-item--unread { background: #251b1b; border-color: #762323; }
+.notification-item:hover { background: #2a2525; }
+.notification-item__kind, .notification-item__unread { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #808080; }
+.notification-item--request .notification-item__kind { background: #ffa500; }
+.notification-item--completed .notification-item__kind { background: #49b653; }
+.notification-item--missed .notification-item__kind, .notification-item__unread { background: #cc2027; }
+.notification-item__content { flex: 1; min-width: 0; }
+.notification-item__message { display: block; font-size: 12px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.notification-item__time { display: block; margin-top: 3px; color: #999; font-size: 10px; }

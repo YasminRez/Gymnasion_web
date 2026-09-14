@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import Navbar from "../../components/Navbar/Navbar";
+import PlatformHeader from "../../components/PlatformHeader/PlatformHeader";
 import StudentCard from "../../components/StudentCard/StudentCard";
 import StudentToolbar from "../../components/StudentToolbar/StudentToolbar";
 import PendingStudent from "../../components/PendingStudent/PendingStudent";
@@ -54,7 +54,7 @@ function Students() {
 
   return (
     <>
-      <Navbar />
+      <PlatformHeader activePage="students" />
       <main className="students" aria-label="Alunos">
         <h1 className="students__sr-only">Alunos</h1>
         <StudentToolbar search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} counts={counts} onRegister={() => setInviteOpen(true)} />

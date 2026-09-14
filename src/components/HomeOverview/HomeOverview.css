@@ -1,0 +1,5 @@
+.home-overview { padding: 26px 22px 42px 18px; }
+.home-overview > h1 { font-size: 16px; line-height: 1.5; font-weight: 400; margin-bottom: 24px; color: #ddd; }
+.home-overview__welcome { min-height: max(420px, calc(100dvh - 218px)); padding: 12px; border: 1px solid #2c2c2c; border-radius: 12px; background: #1a1a1a; }
+.home-overview__welcome h2 { padding-bottom: 9px; border-bottom: 1px solid #2e2e2e; font-size: 13px; font-weight: 600; }
+@media (max-width: 760px) { .home-overview { padding: 20px 12px; } .home-overview__welcome { min-height: 420px; } }

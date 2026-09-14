@@ -1,0 +1,6 @@
+.dashboard { display: grid; grid-template-columns: 150px minmax(0, 1fr); min-height: 100dvh; background: #050505; }
+.dashboard__body { min-width: 0; }
+.dashboard :focus-visible { outline: 2px solid #ed6868; outline-offset: 3px; }
+.dashboard__skip { position: fixed; top: 8px; left: 160px; z-index: 20; padding: 10px; background: #fff; color: #111; transform: translateY(-160%); }
+.dashboard__skip:focus { transform: translateY(0); }
+@media (max-width: 760px) { .dashboard { grid-template-columns: minmax(0, 1fr); } .dashboard__skip { left: 12px; } }
