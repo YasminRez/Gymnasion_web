@@ -1,0 +1,124 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.form-field label {
+  align-self: flex-start;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #d71920;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+}
+
+.form-field input:focus-visible,
+.form-field select:focus-visible {
+  outline: none;
+  border-color: #f0222a;
+}
+
+.form-field__select {
+  position: relative;
+}
+
+.form-field select {
+  appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.form-field__select::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #d71920;
+  border-bottom: 2px solid #d71920;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.form-field--invalid input,
+.form-field--invalid select {
+  border-color: #f04438;
+  box-shadow: inset 0 0 0 1px #f04438;
+}
+
+.form-field__error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: #f04438;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.form-field__error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+.form-field__password {
+  position: relative;
+}
+
+.form-field__password input {
+  padding-right: 44px;
+}
+
+.form-field__password input::-ms-reveal {
+  display: none;
+}
+
+.form-field__password-toggle {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #bdbdbd;
+  cursor: pointer;
+}
+
+.form-field__password-toggle:hover:not(:disabled) {
+  color: #fff;
+}
+
+.form-field__password-toggle:focus-visible {
+  outline: 2px solid #d71920;
+  outline-offset: -4px;
+}
+
+.form-field__password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

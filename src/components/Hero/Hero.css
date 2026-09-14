@@ -80,6 +80,8 @@
 }
 
 .hero-button {
+  display: inline-block;
+  text-decoration: none;
   margin-top: 32px;
 
   padding: 16px 38px;
