@@ -74,16 +74,23 @@ function Students() {
     if (accept) {
       try {
         await personalTrainerService.aprovarAtleta(String(student.id));
-        setStudents((previous) => previous.map((item) => item.id === student.id ? { ...item, status: "active" } : item));
+        setStudents((previous) =>
+          previous.map((item) => (item.id === student.id ? { ...item, status: "active" } : item))
+        );
         setNotice(`${student.name}: aluno aprovado com sucesso!`);
         setAction({ type: "approved", student });
       } catch (err) {
         handleApiError(err, "Erro ao aprovar o aluno no servidor.");
       }
     } else {
-      setStudents((previous) => previous.filter((item) => item.id !== student.id));
-      setNotice(`${student.name}: solicitação recusada.`);
-      setAction({ type: "rejected", student });
+      try {
+        await personalTrainerService.recusarAtleta(String(student.id));
+        setStudents((previous) => previous.filter((item) => item.id !== student.id));
+        setNotice(`${student.name}: solicitação recusada.`);
+        setAction({ type: "rejected", student });
+      } catch (err) {
+        handleApiError(err, "Erro ao recusar o aluno no servidor.");
+      }
     }
   }
 

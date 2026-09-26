@@ -32,4 +32,8 @@ export const personalTrainerService = {
   async aprovarAtleta(alunoId: string): Promise<void> {
     await api.patch(`/api/personal-trainer/atletas/${alunoId}/aprovar`);
   },
+
+  async recusarAtleta(alunoId: string): Promise<void> {
+    await api.patch(`/api/personal-trainer/atletas/${alunoId}/recusar`);
+  },
 };

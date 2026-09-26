@@ -1,5 +1,5 @@
 import { api, TOKEN_KEY, USER_KEY } from "./api";
-import type { LoginPayload, LoginResponse, SignUpPersonalPayload, SignUpPersonalResponse } from "../types/auth";
+import type { LoginPayload, LoginResponse, SignUpPersonalPayload, SignUpPersonalResponse, SignUpAlunoPayload, SignUpAlunoResponse } from "../types/auth";
 
 export const authService = {
   async login(payload: LoginPayload): Promise<LoginResponse> {
@@ -18,7 +18,16 @@ export const authService = {
   },
 
   async registroPersonal(payload: SignUpPersonalPayload): Promise<SignUpPersonalResponse> {
-    const { data } = await api.post<SignUpPersonalResponse>("/auth/registro-personal", payload);
+    const { data } = await api.post<SignUpPersonalResponse>("/api/auth/registro-personal", payload);
+    return data;
+  },
+
+  async registroAlunoConvite(token: string, payload: SignUpAlunoPayload): Promise<SignUpAlunoResponse> {
+    const { data } = await api.post<SignUpAlunoResponse>(
+      "/api/auth/registro-aluno-convite",
+      payload,
+      { params: { token } }
+    );
     return data;
   },
 };
