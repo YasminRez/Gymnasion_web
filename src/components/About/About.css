@@ -1,0 +1,85 @@
+.about {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 80px;
+  align-items: center;
+
+  max-width: 1200px;
+  margin: 0 auto;
+
+  padding: 60px 8% 120px;
+}
+
+.about-image {
+  position: relative;
+}
+
+.about-image img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+
+  border-radius: 16px;
+  border: 2px solid #d71920;
+}
+
+.about-diamond {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+
+  width: 34px;
+  height: 34px;
+
+  background: #d71920;
+  transform: rotate(45deg);
+  border-radius: 6px;
+}
+
+.about-arc {
+  position: absolute;
+  left: -28px;
+  bottom: -28px;
+
+  width: 90px;
+  height: 90px;
+
+  border: 2px dashed #d71920;
+  border-radius: 50%;
+
+  clip-path: inset(0 45% 45% 0);
+}
+
+.about-content h2 {
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.25;
+  font-weight: 800;
+
+  margin-bottom: 26px;
+}
+
+.about-content h2 strong {
+  color: #d71920;
+}
+
+.about-content p {
+  color: #999999;
+  font-size: 15.5px;
+  line-height: 1.75;
+
+  margin-bottom: 18px;
+  max-width: 520px;
+}
+
+@media (max-width: 900px) {
+  .about {
+    grid-template-columns: 1fr;
+    gap: 44px;
+    padding: 20px 8% 90px;
+  }
+
+  .about-image {
+    max-width: 360px;
+    margin: 0 auto;
+  }
+}
