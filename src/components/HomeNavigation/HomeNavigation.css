@@ -4,3 +4,4 @@
 .home-navigation button:disabled { cursor: not-allowed; }
 .home-navigation small { font-size: 9px; color: #aaa; }
 .home-navigation__badge { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding-inline: 3px; border-radius: 50%; background: #d51920; color: white; font-size: 9px; }
+.home-navigation__badge--warning { background: #503300; color: #ffbd36; }

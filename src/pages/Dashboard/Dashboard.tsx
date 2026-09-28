@@ -3,12 +3,13 @@ import PlatformHeader from "../../components/PlatformHeader/PlatformHeader";
 import HomeNavigation from "../../components/HomeNavigation/HomeNavigation";
 import HomeOverview from "../../components/HomeOverview/HomeOverview";
 import RecentStudents from "../../components/RecentStudents/RecentStudents";
+import MissedWorkouts from "../../components/MissedWorkouts/MissedWorkouts";
 import "./Dashboard.css";
 import { useEffect, useState } from "react";
 import Notifications from "../../components/Notifications/Notifications";
 import { notificationData } from "../../components/Notifications/notificationData";
 // Prévia da área autenticada. Conectar a sessão e o nome do personal à API.
-function Dashboard({ section = "overview" }: { section?: "overview" | "notifications" | "recent" }) {
+function Dashboard({ section = "overview" }: { section?: "overview" | "notifications" | "recent" | "missed" }) {
   const [readIds, setReadIds] = useState<number[]>(() => {
     try { const saved: unknown = JSON.parse(sessionStorage.getItem("gymnasion.notifications.read.v1") || "[]"); return Array.isArray(saved) ? saved.filter((id): id is number => typeof id === "number") : []; } catch { return []; }
   });
@@ -20,7 +21,7 @@ function Dashboard({ section = "overview" }: { section?: "overview" | "notificat
     <div className="dashboard__body">
       <PlatformHeader />
       <HomeNavigation activeSection={section} unreadCount={notifications.filter((item) => item.unread).length} />
-      <main id="dashboard-content">{section === "notifications" ? <Notifications notifications={notifications} onRead={(id) => setReadIds((previous) => previous.includes(id) ? previous : [...previous, id])} /> : section === "recent" ? <RecentStudents /> : <HomeOverview />}</main>
+      <main id="dashboard-content">{section === "notifications" ? <Notifications notifications={notifications} onRead={(id) => setReadIds((previous) => previous.includes(id) ? previous : [...previous, id])} /> : section === "recent" ? <RecentStudents /> : section === "missed" ? <MissedWorkouts /> : <HomeOverview />}</main>
     </div>
   </div>;
 }

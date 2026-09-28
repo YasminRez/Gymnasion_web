@@ -1,0 +1,22 @@
+.missed-workout-row td { padding: 9px 12px; border-block: 1px solid #4a2424; background: #211818; }
+.missed-workout-row:nth-child(even) td { background: #161616; }
+.missed-workout-row td:first-child { border-left: 1px solid #4a2424; border-radius: 7px 0 0 7px; }
+.missed-workout-row td:last-child { border-right: 1px solid #4a2424; border-radius: 0 7px 7px 0; }
+.missed-workout-row__identity { display: flex; align-items: center; gap: 9px; }
+.missed-workout-row__identity strong { display: block; font-size: 12px; font-weight: 600; }
+.missed-workout-row__identity small { display: block; margin-top: 3px; color: #999; font-size: 10px; }
+.missed-workout-row__avatar { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; background: #501c1c; color: #ffdf3b; font-size: 10px; font-weight: 700; }
+.missed-workout-row__avatar--3 { background: #42421b; }
+.missed-workout-row__avatar--4 { background: #153d60; }
+.missed-workout-row__avatar--5 { background: #411e5b; }
+.missed-workout-row__avatar--6 { background: #1b5026; }
+.missed-workout-row__sport, .missed-workout-row__days { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 10px; white-space: nowrap; }
+.missed-workout-row__sport--swimming { background: #103b5f; color: #7cc5ff; }
+.missed-workout-row__sport--gym { background: #264c1c; color: #8ccc6b; }
+.missed-workout-row__sport--tennis { background: #412060; color: #d49bff; }
+.missed-workout-row__days { background: #503300; color: #ffbd36; }
+.missed-workout-row__days--critical { background: #641818; color: #ff7474; }
+.missed-workout-row__workout { font-size: 11px; color: #bbb; }
+.missed-workout-row button { padding: 5px 9px; border: 1px solid #c32a2a; border-radius: 5px; background: #4c1111; color: #ff7777; font-size: 11px; cursor: pointer; }
+.missed-workout-row button:hover:not(:disabled) { background: #702020; }
+.missed-workout-row button:disabled { opacity: .6; cursor: default; }
