@@ -9,7 +9,7 @@ export const personalTrainerService = {
   async gerarConvite(modalidadeId: number): Promise<ConviteAlunoResponse> {
     const payload: ConviteAlunoPayload = { modalidadeId };
     const { data } = await api.post<ConviteAlunoResponse>(
-      "/api/personal-trainer/convite-aluno",
+      "/api/personal-trainers/convites",
       payload
     );
     return data;
@@ -17,23 +17,23 @@ export const personalTrainerService = {
 
   async listarPendentes(): Promise<AlunoResponse[]> {
     const { data } = await api.get<AlunoResponse[]>(
-      "/api/personal-trainer/alunos/pendentes"
+      "/api/personal-trainers/alunos/pendentes"
     );
     return data;
   },
 
   async listarTodos(): Promise<AlunoResponse[]> {
     const { data } = await api.get<AlunoResponse[]>(
-      "/api/personal-trainer/alunos"
+      "/api/personal-trainers/alunos"
     );
     return data;
   },
 
   async aprovarAtleta(alunoId: string): Promise<void> {
-    await api.patch(`/api/personal-trainer/atletas/${alunoId}/aprovar`);
+    await api.patch(`/api/personal-trainers/alunos/${alunoId}/aprovar`);
   },
 
   async recusarAtleta(alunoId: string): Promise<void> {
-    await api.patch(`/api/personal-trainer/atletas/${alunoId}/recusar`);
+    await api.patch(`/api/personal-trainers/alunos/${alunoId}/recusar`);
   },
 };
