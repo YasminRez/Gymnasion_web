@@ -31,6 +31,7 @@ function Students() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [action, setAction] = useState<StudentAction | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const closeNotice = useCallback(() => setNotice(""), []);
 
@@ -94,9 +95,26 @@ function Students() {
     }
   }
 
-  function confirmStatus() {
+  async function confirmStatus() {
     if (!action || (action.type !== "deactivate" && action.type !== "reactivate")) return;
-    const status = action.type === "deactivate" ? "inactive" : "active";
+    const deactivate = action.type === "deactivate";
+    const status = deactivate ? "inactive" : "active";
+
+    setSubmitting(true);
+    try {
+      const alunoId = String(action.student.id);
+      if (deactivate) {
+        await personalTrainerService.desativarAtleta(alunoId);
+      } else {
+        await personalTrainerService.reativarAtleta(alunoId);
+      }
+    } catch (err) {
+      handleApiError(err, `Erro ao ${deactivate ? "desativar" : "reativar"} o aluno no servidor.`);
+      return;
+    } finally {
+      setSubmitting(false);
+    }
+
     setStudents((previous) => previous.map((student) => student.id === action.student.id ? { ...student, status } : student));
     setAction(null);
     setNotice(`${action.student.name}: aluno ${status === "active" ? "reativado" : "desativado"} com sucesso!`);
@@ -124,7 +142,7 @@ function Students() {
         )}
       </main>
       {inviteOpen && <StudentInviteModal onClose={() => setInviteOpen(false)} onViewStudents={() => { setInviteOpen(false); setSearch(""); setFilter(null); }} />}
-      {action && <StudentActionModal action={action} onClose={() => setAction(null)} onConfirm={confirmStatus} />}
+      {action && <StudentActionModal action={action} loading={submitting} onClose={() => setAction(null)} onConfirm={confirmStatus} />}
       {notice && <StudentToast message={notice} onClose={closeNotice} />}
     </>
   );

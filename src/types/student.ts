@@ -14,7 +14,7 @@ export interface AlunoResponse {
   usuario: UsuarioAluno;
   personalId: string;
   nomePersonal: string;
-  status: "PENDENTE" | "ATIVO" | "RECUSADO" | string;
+  status: "PENDENTE" | "ATIVO" | "INATIVO" | "RECUSADO" | string;
   modalidades: Modalidade[];
 }
 

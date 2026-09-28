@@ -1,4 +1,5 @@
 import { api } from "./api";
+import type { MensagemResponse } from "../types/api";
 import type {
   AlunoResponse,
   ConviteAlunoPayload,
@@ -35,5 +36,19 @@ export const personalTrainerService = {
 
   async recusarAtleta(alunoId: string): Promise<void> {
     await api.patch(`/api/personal-trainers/alunos/${alunoId}/recusar`);
+  },
+
+  async desativarAtleta(alunoId: string): Promise<MensagemResponse> {
+    const { data } = await api.patch<MensagemResponse>(
+      `/api/personal-trainers/alunos/${alunoId}/desativar`
+    );
+    return data;
+  },
+
+  async reativarAtleta(alunoId: string): Promise<MensagemResponse> {
+    const { data } = await api.patch<MensagemResponse>(
+      `/api/personal-trainers/alunos/${alunoId}/reativar`
+    );
+    return data;
   },
 };

@@ -5,8 +5,9 @@ import SignIn from "./pages/SignIn/SignIn";
 import Home from "./pages/Home/Home";
 import SignUp from "./pages/SignUp/SignUp";
 import Students from "./pages/Students/Students";
-import Dashboard from "./pages/Dashboard/Dashboard";
 import SignUpStudent from "./pages/SingUpStudent/SingUpStudent";
+import Dashboard from "./pages/Dashboard/Dashboard";
+
 
 function App() {
   return (
@@ -23,6 +24,8 @@ function App() {
         <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />
         <Route path="/home/ultimos-aceitos" element={<Dashboard section="recent" />} />
         <Route path="/cadastro-aluno" element={<SignUpStudent />} />
+        <Route path="/home" element={<Dashboard />} />
+        <Route path="/home/notificacoes" element={<Dashboard section="notifications"/>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
