@@ -11,6 +11,7 @@
 .student-action-modal--warning .student-action-modal__icon { background: #4b3100; color: #ffab00; }
 .student-action-modal--warning .student-action-modal__confirm { background: #d60000; color: white; border-color: #d60000; }
 .student-action-modal button:hover { filter: brightness(1.2); }
+.student-action-modal button:disabled { opacity: 0.6; cursor: not-allowed; filter: none; }
 .student-action-modal :focus-visible { outline: 2px solid white; outline-offset: 3px; }
 .student-action-modal--rejected { border-color: #dc2929; }
 .student-action-modal--rejected .student-action-modal__icon { background: #561313; color: #ff6565; }

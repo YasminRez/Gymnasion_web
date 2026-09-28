@@ -5,3 +5,7 @@ export interface ProblemDetail {
   type?: string;
   invalidFields?: Record<string, string>;
 }
+
+export interface MensagemResponse {
+  mensagem: string;
+}
