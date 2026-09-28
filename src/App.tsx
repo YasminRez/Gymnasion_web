@@ -1,16 +1,34 @@
 // src/App.tsx
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 import SignIn from "./pages/SignIn/SignIn";
 import Home from "./pages/Home/Home";
 import SignUp from "./pages/SignUp/SignUp";
 import Students from "./pages/Students/Students";
 import SignUpStudent from "./pages/SingUpStudent/SingUpStudent";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
+import { SESSION_EXPIRED_EVENT } from "./services/session";
 import Metrics from "./pages/Metrics/Metrics";
 
 
 function App() {
+  const navigate = useNavigate();
+
+  // Quando a API recusa o token, volta para o login avisando o motivo
+  useEffect(() => {
+    function onSessionExpired(event: Event) {
+      const detail = (event as CustomEvent<string | undefined>).detail;
+      toast.error(detail || "Sua sessão expirou. Faça login novamente.", { id: "session-expired" });
+      navigate("/login", { replace: true });
+    }
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, [navigate]);
+
   return (
     <>
       {/* Configuração global do Pop-up */}
@@ -18,17 +36,22 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<SignIn />} />
-        <Route path="/cadastro" element={<SignUp />} />
-        <Route path="/alunos" element={<Students />} />
-        <Route path="/metricas" element={<Metrics />} />
-        <Route path="/home" element={<Dashboard />} />
-        <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />
-        <Route path="/home/ultimos-aceitos" element={<Dashboard section="recent" />} />
-        <Route path="/home/sem-treino" element={<Dashboard section="missed" />} />
         <Route path="/cadastro-aluno" element={<SignUpStudent />} />
-        <Route path="/home" element={<Dashboard />} />
-        <Route path="/home/notificacoes" element={<Dashboard section="notifications"/>} />
+
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="/login" element={<SignIn />} />
+          <Route path="/cadastro" element={<SignUp />} />
+        </Route>
+
+        <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
+          <Route path="/alunos" element={<Students />} />
+          <Route path="/metricas" element={<Metrics />} />
+          <Route path="/home" element={<Dashboard />} />
+          <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />
+          <Route path="/home/ultimos-aceitos" element={<Dashboard section="recent" />} />
+          <Route path="/home/sem-treino" element={<Dashboard section="missed" />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

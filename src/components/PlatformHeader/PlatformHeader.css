@@ -4,5 +4,8 @@
 .platform-header__nav a[aria-current="page"] { color: #e02929; }
 .platform-header__nav a:hover { color: #ff6262; }
 .platform-header__nav button:disabled { cursor: not-allowed; color: #aaa; }
+.platform-header__account { display: flex; align-items: center; gap: 16px; }
+.platform-header__logout { padding: 7px 14px; border: 1px solid #454545; border-radius: 5px; background: #131313; color: #ddd; font-size: 14px; cursor: pointer; }
+.platform-header__logout:hover { border-color: #e02929; color: #ff6262; }
 .platform-header__brand { padding: 6px 12px; border-radius: 5px; background: #650d0d; color: #fff; font-size: clamp(18px, 2.5vw, 30px); font-weight: 800; letter-spacing: 1.5px; text-decoration: none; white-space: nowrap; }
-@media (max-width: 760px) { .platform-header { flex-wrap: wrap; gap: 8px; padding: 12px; } .platform-header__brand { order: -1; } .platform-header__nav { width: 100%; justify-content: space-between; gap: 10px; } .platform-header__nav a, .platform-header__nav button { font-size: 13px; } }
+@media (max-width: 760px) { .platform-header { flex-wrap: wrap; gap: 8px; padding: 12px; } .platform-header__account { order: -1; width: 100%; justify-content: space-between; } .platform-header__brand { order: -1; } .platform-header__nav { width: 100%; justify-content: space-between; gap: 10px; } .platform-header__nav a, .platform-header__nav button { font-size: 13px; } }

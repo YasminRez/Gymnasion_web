@@ -1,4 +1,5 @@
-import { api, TOKEN_KEY, USER_KEY } from "./api";
+import { api } from "./api";
+import { session } from "./session";
 import type { LoginPayload, LoginResponse, SignUpPersonalPayload, SignUpPersonalResponse, SignUpAlunoPayload, SignUpAlunoResponse } from "../types/auth";
 
 export const authService = {
@@ -6,15 +7,13 @@ export const authService = {
     const { data } = await api.post<LoginResponse>("/api/auth/login", payload);
 
     // Salva o JWT e dados básicos no localStorage
-    localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify({ id: data.id, role: data.role }));
+    session.save(data);
 
     return data;
   },
 
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    session.clear();
   },
 
   async registroPersonal(payload: SignUpPersonalPayload): Promise<SignUpPersonalResponse> {

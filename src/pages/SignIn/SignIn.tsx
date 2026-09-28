@@ -1,10 +1,11 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../../components/Navbar/Navbar";
 import Button from "../../components/Button/Button";
 import FormField from "../../components/FormField/FormField";
 import { authService } from "../../services/authService";
+import { PRIVATE_HOME } from "../../services/session";
 import { handleApiError } from "../../utils/handleApiError";
 import "../SignUp/SignUp.css";
 import "./SignIn.css";
@@ -13,6 +14,9 @@ type Credentials = { email: string; password: string };
 
 function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Página protegida que o usuário tentou abrir antes de ser mandado ao login
+  const from = (location.state as { from?: string } | null)?.from;
 
   const [values, setValues] = useState<Credentials>({ email: "", password: "" });
   const [touched, setTouched] = useState<Partial<Record<keyof Credentials, boolean>>>({});
@@ -56,15 +60,20 @@ function SignIn() {
     try {
       setIsSubmitting(true);
 
-      await authService.login({
+      const { role } = await authService.login({
         email: values.email.trim(),
         password: values.password,
       });
 
-      toast.success("Login realizado com sucesso!");
+      // Por enquanto a área web só tem telas para o personal trainer
+      if (role !== "PERSONAL_TRAINER") {
+        authService.logout();
+        toast.error("O acesso pela web é exclusivo para personal trainers.");
+        return;
+      }
 
-      // Redirecionamento temporário para a tela de Alunos
-      navigate("/alunos");
+      toast.success("Login realizado com sucesso!");
+      navigate(from || PRIVATE_HOME, { replace: true });
     } catch (err) {
       handleApiError(err, "E-mail ou senha incorretos.");
     } finally {
