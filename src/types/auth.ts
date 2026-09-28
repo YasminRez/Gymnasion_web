@@ -38,8 +38,10 @@ export interface LoginPayload {
   password: string;
 }
 
+export type UserRole = "PERSONAL_TRAINER" | "ALUNO" | "ADMIN";
+
 export interface LoginResponse {
   token: string;
   id: string;
-  role: "ROLE_PERSONAL_TRAINER" | "ROLE_ALUNO";
+  role: UserRole;
 }
