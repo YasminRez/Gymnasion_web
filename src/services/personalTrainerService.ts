@@ -27,7 +27,7 @@ export const personalTrainerService = {
       "/api/personal-trainers/alunos"
     );
     return data;
-  },
+  }, 
 
   async aprovarAtleta(alunoId: string): Promise<void> {
     await api.patch(`/api/personal-trainers/alunos/${alunoId}/aprovar`);
