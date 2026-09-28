@@ -1,0 +1,13 @@
+.recent-students { padding: 26px 22px 36px 18px; }
+.recent-students > h1 { font-size: 16px; font-weight: 400; line-height: 1.5; color: #ddd; margin-bottom: 24px; }
+.recent-students__panel { padding: 14px 14px 28px; min-height: max(490px, calc(100dvh - 218px)); border: 1px solid #2c2c2c; border-radius: 12px; background: #1a1a1a; }
+.recent-students__panel h2 { font-size: 14px; font-weight: 600; padding-bottom: 9px; border-bottom: 1px solid #303030; }
+.recent-students__scroll { overflow-x: auto; }
+.recent-students__table { width: 100%; min-width: 590px; border-collapse: separate; border-spacing: 0 7px; text-align: left; }
+.recent-students__table th { padding: 4px 12px; border-bottom: 1px solid #303030; font-size: 10px; font-weight: 400; color: #999; }
+.recent-students__table th:first-child { width: 33%; }
+.recent-students__table th:nth-child(2) { width: 18%; }
+.recent-students__table th:nth-child(3) { width: 18%; }
+.recent-students__demo { margin-top: 12px; font-size: 10px; color: #999; }
+.recent-students__sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 760px) { .recent-students { padding: 20px 12px; } .recent-students__panel { padding-inline: 10px; } }

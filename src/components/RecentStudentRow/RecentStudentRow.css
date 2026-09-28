@@ -1,0 +1,26 @@
+.recent-student-row td { padding: 8px 12px; background: #1d1d1d; border-block: 1px solid #333; }
+.recent-student-row:nth-of-type(even) td { background: #161616; }
+.recent-student-row td:first-child { border-left: 1px solid #333; border-radius: 8px 0 0 8px; }
+.recent-student-row td:last-child { border-right: 1px solid #333; border-radius: 0 8px 8px 0; padding: 4px; width: 36px; }
+.recent-student-row__identity { display: flex; align-items: center; gap: 10px; }
+.recent-student-row__identity strong { display: block; font-size: 12px; font-weight: 600; }
+.recent-student-row__identity small { display: block; margin-top: 3px; font-size: 10px; color: #999; }
+.recent-student-row__avatar { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; color: #ffe739; font-size: 10px; font-weight: 700; }
+.recent-student-row__avatar--red { background: #501c1c; }
+.recent-student-row__avatar--blue { background: #1b375a; }
+.recent-student-row__avatar--purple { background: #3c2057; }
+.recent-student-row__avatar--green { background: #1d502a; }
+.recent-student-row__avatar--amber { background: #513806; }
+.recent-student-row__avatar--cyan { background: #164652; }
+.recent-student-row__avatar--pink { background: #50213d; }
+.recent-student-row__avatar--olive { background: #3e3e1a; }
+.recent-student-row__sport, .recent-student-row__status { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+.recent-student-row__sport--swimming { color: #7cc5ff; background: #103b5f; }
+.recent-student-row__sport--gym { color: #8ccc6b; background: #264c1c; }
+.recent-student-row__sport--tennis { color: #d49bff; background: #412060; }
+.recent-student-row__status { color: #74cf80; background: #1a4924; }
+.recent-student-row__status--inactive { color: #ffbd36; background: #503300; }
+.recent-student-row__date { color: #b0b0b0; font-size: 11px; white-space: nowrap; }
+.recent-student-row__toggle { width: 30px; height: 30px; border: 0; border-radius: 5px; background: transparent; color: #aaa; cursor: pointer; font-size: 20px; }
+.recent-student-row__toggle:hover { background: #333; color: white; }
+.recent-student-row__details td { padding: 12px; color: #bbb; font-size: 12px; line-height: 1.5; background: #222; border-radius: 6px; }

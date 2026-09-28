@@ -1,5 +1,5 @@
 export type StudentStatus = "active" | "inactive" | "pending";
-export type Student = { id: number; name: string; sport: string; status: StudentStatus; birthDate?: string };
+export type Student = { id: string | number; name: string; sport: string; status: StudentStatus; birthDate?: string; email?: string; phone?: string };
 // Dados demonstrativos até a integração com a API de alunos do personal autenticado.
 export const initialStudents: Student[] = [
   { id: 1, name: "Carlos Silva", sport: "Natação", status: "active" },
