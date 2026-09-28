@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
+import Metrics from "./pages/Metrics/Metrics";
 
 
 function App() {
@@ -44,9 +45,11 @@ function App() {
 
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
           <Route path="/alunos" element={<Students />} />
+          <Route path="/metricas" element={<Metrics />} />
           <Route path="/home" element={<Dashboard />} />
           <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />
           <Route path="/home/ultimos-aceitos" element={<Dashboard section="recent" />} />
+          <Route path="/home/sem-treino" element={<Dashboard section="missed" />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
