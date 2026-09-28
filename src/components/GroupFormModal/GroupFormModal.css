@@ -1,0 +1,41 @@
+.group-form { margin: auto; width: min(480px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 0; border: 1px solid #3b3b3b; border-radius: 12px; background: #222; color: #fff; }
+.group-form::backdrop { background: rgb(0 0 0 / 80%); }
+.group-form__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px 12px; border-bottom: 1px solid #3b3b3b; }
+.group-form h2 { font-size: 17px; font-weight: 500; }
+.group-form__close { border: 0; background: transparent; color: #bbb; font-size: 22px; line-height: 1; cursor: pointer; }
+.group-form__close:hover { color: #fff; }
+.group-form__body { padding: 14px 24px 0; }
+.group-form fieldset { min-width: 0; margin: 14px 0 0; padding: 0; border: 0; }
+.group-form legend.group-form__label { margin-top: 0; }
+.group-form__label { display: block; margin: 14px 0 6px; padding: 0; color: #999; font-size: 10px; letter-spacing: .4px; text-transform: uppercase; }
+.group-form__label span { text-transform: none; }
+.group-form__body > .group-form__label:first-child { margin-top: 0; }
+.group-form__input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid transparent; border-radius: 6px; background: #3a3736; color: #eee; font-size: 13px; color-scheme: dark; }
+.group-form__input::placeholder { color: #bbb; }
+.group-form__input:focus-visible { outline: none; border-color: #7b6fe0; }
+.group-form__input[aria-invalid="true"] { border-color: #f04438; }
+.group-form__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.group-form__chips button { padding: 6px 12px; border: 1px solid #6a6a6a; border-radius: 999px; background: transparent; color: #ccc; font-size: 12px; cursor: pointer; }
+.group-form__chips button:hover { border-color: #aaa; color: #fff; }
+.group-form__chips button[aria-pressed="true"] { border-color: #7b6fe0; background: #7b6fe0; color: #fff; }
+.group-form__chips[data-invalid="true"] button:not(.group-form__more) { border-color: #f04438; }
+.group-form__chips .group-form__more { border-style: dashed; color: #999; }
+.group-form__students { max-height: 240px; overflow-y: auto; border: 1px solid #555; border-radius: 6px; list-style: none; }
+.group-form__students[data-invalid="true"] { border-color: #f04438; box-shadow: inset 0 0 0 1px #f04438; }
+.group-form__students li + li { border-top: 1px solid #555; }
+.group-form__students label { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #332f2e; cursor: pointer; }
+.group-form__students label:hover { background: #3d3837; }
+.group-form__students input { width: 16px; height: 16px; flex-shrink: 0; accent-color: #5b4fd6; cursor: pointer; }
+.group-form__avatar { display: grid; flex-shrink: 0; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-size: 9px; font-weight: 600; text-transform: uppercase; }
+.group-form__student { display: flex; flex-direction: column; min-width: 0; color: #eee; font-size: 12px; overflow-wrap: anywhere; }
+.group-form__student small { color: #999; font-size: 10px; }
+.group-form__empty { padding: 14px; border: 1px dashed #555; border-radius: 6px; color: #bbb; font-size: 12px; line-height: 1.5; }
+.group-form__empty a { color: #9a93f0; }
+.group-form__error { margin-top: 6px; color: #f04438; font-size: 11px; }
+.group-form__actions { display: flex; justify-content: flex-end; gap: 10px; padding: 24px; }
+.group-form__actions button { padding: 10px 16px; border: 1px solid #555; border-radius: 6px; background: transparent; color: #bbb; font-size: 12px; cursor: pointer; }
+.group-form__actions button:hover:not(:disabled) { filter: brightness(1.25); }
+.group-form__actions .group-form__primary { border-color: #5b4fd6; background: #5b4fd6; color: #fff; font-weight: 500; }
+.group-form button:disabled { opacity: .5; cursor: not-allowed; }
+.group-form :focus-visible { outline: 2px solid #eee; outline-offset: 2px; }
+@media (max-width: 380px) { .group-form__header, .group-form__body, .group-form__actions { padding-inline: 16px; } .group-form__actions { flex-direction: column-reverse; } }

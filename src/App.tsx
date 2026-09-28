@@ -8,6 +8,7 @@ import SignUp from "./pages/SignUp/SignUp";
 import Students from "./pages/Students/Students";
 import SignUpStudent from "./pages/SingUpStudent/SingUpStudent";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import Groups from "./pages/Groups/Groups";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
@@ -44,6 +45,7 @@ function App() {
 
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
           <Route path="/alunos" element={<Students />} />
+          <Route path="/grupos" element={<Groups />} />
           <Route path="/home" element={<Dashboard />} />
           <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />
           <Route path="/home/ultimos-aceitos" element={<Dashboard section="recent" />} />

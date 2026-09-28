@@ -1,14 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
 import "./PlatformHeader.css";
-function PlatformHeader({ activePage = "home" }: { activePage?: "home" | "students" }) {
+function PlatformHeader({ activePage = "home" }: { activePage?: "home" | "students" | "groups" }) {
   const navigate = useNavigate();
   function logout() { authService.logout(); navigate("/login", { replace: true }); }
   return <header className="platform-header">
     <nav aria-label="Navegação da plataforma" className="platform-header__nav">
       <a href="/home" aria-current={activePage === "home" ? "page" : undefined}>Home</a>
       <a href="/alunos" aria-current={activePage === "students" ? "page" : undefined}>Alunos</a>
-      <button type="button" disabled title="Em breve">Grupos</button>
+      <a href="/grupos" aria-current={activePage === "groups" ? "page" : undefined}>Grupos</a>
       <button type="button" disabled title="Em breve">Modalidades</button>
     </nav>
     <div className="platform-header__account">
