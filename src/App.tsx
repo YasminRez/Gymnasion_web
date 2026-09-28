@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
 import Metrics from "./pages/Metrics/Metrics";
+import Routines from "./pages/Routines/Routines";
 
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
           <Route path="/alunos" element={<Students />} />
           <Route path="/grupos" element={<Groups />} />
+          <Route path="/rotinas" element={<Routines />} />
           <Route path="/metricas" element={<Metrics />} />
           <Route path="/home" element={<Dashboard />} />
           <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />

@@ -1,0 +1,8 @@
+.routine-form { width: min(540px, calc(100% - 32px)); }
+.routine-form__days button { min-width: 44px; }
+.routine-form__goal { resize: vertical; min-height: 64px; line-height: 1.5; font-family: inherit; }
+.routine-form .group-form__empty[data-invalid="true"] { border-color: #f04438; }
+.routine-form__no-metrics { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border-color: #714500; background: #2a2112; color: #e7c287; }
+.routine-form__no-metrics button, .routine-form__add-metric { padding: 6px 12px; border: 1px solid #5b4fd6; border-radius: 6px; background: transparent; color: #b9b3f5; font-size: 12px; cursor: pointer; }
+.routine-form__no-metrics button:hover, .routine-form__add-metric:hover { background: #5b4fd6; color: #fff; }
+.routine-form__add-metric { margin-top: 8px; border-style: dashed; }
