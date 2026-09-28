@@ -7,6 +7,7 @@ import SignUp from "./pages/SignUp/SignUp";
 import Students from "./pages/Students/Students";
 import SignUpStudent from "./pages/SingUpStudent/SingUpStudent";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import Metrics from "./pages/Metrics/Metrics";
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/login" element={<SignIn />} />
         <Route path="/cadastro" element={<SignUp />} />
         <Route path="/alunos" element={<Students />} />
+        <Route path="/metricas" element={<Metrics />} />
         <Route path="/home" element={<Dashboard />} />
         <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />
         <Route path="/home/ultimos-aceitos" element={<Dashboard section="recent" />} />

@@ -1,0 +1,14 @@
+.metrics { padding: 32px 24px; }
+.metrics__heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.metrics h1 { font-size: 25px; }
+.metrics__heading p { margin-top: 8px; color: #aaa; font-size: 14px; line-height: 1.5; }
+.metrics__heading > button { padding: 12px 18px; border: 0; border-radius: 6px; background: #c51e24; color: white; cursor: pointer; white-space: nowrap; }
+.metrics__filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 18px; margin: 30px 0 22px; }
+.metrics__filters label { color: #bbb; font-size: 12px; }
+.metrics__filters select { display: block; margin-top: 7px; padding: 10px; border: 1px solid #444; border-radius: 6px; background: #1a1a1a; color: #eee; }
+.metrics__filters > span { padding-bottom: 10px; color: #999; font-size: 12px; }
+.metrics__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.metrics__empty { padding: 60px 12px; text-align: center; color: #aaa; }
+.metrics__demo { margin-top: 24px; color: #999; font-size: 11px; line-height: 1.5; }
+@media (max-width: 1100px) { .metrics__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .metrics { padding: 24px 12px; } .metrics__heading { align-items: flex-start; flex-direction: column; } .metrics__grid { grid-template-columns: 1fr; } }

@@ -1,0 +1,10 @@
+.metric-card { padding: 20px; border: 1px solid #343434; border-radius: 10px; background: #1b1b1b; min-width: 0; }
+.metric-card__sport { display: inline-block; padding: 4px 9px; border-radius: 12px; background: #402020; color: #f3a3a3; font-size: 11px; }
+.metric-card h3 { font-size: 17px; margin: 16px 0 8px; overflow-wrap: anywhere; }
+.metric-card p { color: #aaa; font-size: 13px; line-height: 1.5; }
+.metric-card__count { margin-top: 20px; }
+.metric-card__actions { display: flex; gap: 10px; margin-top: 18px; }
+.metric-card button { padding: 7px 12px; border: 1px solid #555; background: #222; color: #eee; border-radius: 5px; cursor: pointer; }
+.metric-card button:last-child { border-color: #823333; color: #ff9393; background: #391919; }
+.metric-card--discontinued { border-style: dashed; }
+.metric-card__archived { display: block; margin-top: 18px; color: #d8b16c; font-size: 12px; }
