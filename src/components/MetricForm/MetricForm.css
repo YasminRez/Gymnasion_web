@@ -1,0 +1,5 @@
+.metric-form label { display: block; margin: 16px 0 6px; font-size: 13px; color: #ccc; }
+.metric-form input, .metric-form select { width: 100%; padding: 11px; background: #141414; color: #eee; border: 1px solid #555; border-radius: 6px; }
+.metric-form select:disabled { opacity: .65; cursor: not-allowed; }
+.metric-form .metric-form__warning { border-left: 3px solid #d89927; padding: 10px; background: #32291a; color: #e7c287; }
+.metric-form .metric-form__error { color: #ff8e8e; }
