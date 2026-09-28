@@ -3,3 +3,9 @@ export interface Modalidade {
   nome: string;
   descricao: string;
 }
+
+export interface ModalidadeResponseDTO {
+  id: number;
+  nome: string;
+  descricao?: string;
+}
