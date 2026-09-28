@@ -1,0 +1,12 @@
+.notifications { padding: 26px 22px 36px 18px; }
+.notifications > h1 { font-size: 16px; font-weight: 400; line-height: 1.5; color: #ddd; margin-bottom: 24px; }
+.notifications__panel { padding: 14px 12px 20px; border: 1px solid #2c2c2c; border-radius: 12px; background: #1a1a1a; }
+.notifications__panel h2 { font-size: 13px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #2e2e2e; }
+.notifications__filters { display: flex; flex-wrap: wrap; gap: 24px; margin: 0 0 12px; }
+.notifications__filters button { padding: 4px 12px; border: 1px solid #393939; border-radius: 20px; background: #141414; color: #aaa; font-size: 10px; cursor: pointer; }
+.notifications__filters button[aria-pressed="true"] { background: #c51e24; border-color: #c51e24; color: #fff; }
+.notifications__list { list-style: none; display: grid; gap: 10px; }
+.notifications__empty { text-align: center; padding: 48px 16px; color: #bbb; font-size: 14px; }
+.notifications__announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.notifications__demo { margin-top: 12px; font-size: 10px; color: #999; }
+@media (max-width: 760px) { .notifications { padding: 20px 12px; } .notifications__filters { gap: 8px; } }

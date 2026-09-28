@@ -1,0 +1,8 @@
+.account-sidebar { display: flex; flex-direction: column; background: #a6a6a6; min-height: 100dvh; }
+.account-sidebar__stripe { height: 48px; flex-shrink: 0; background: #a85555; margin-top: 8px; }
+.account-sidebar__avatar { width: calc(100% - 16px); max-width: 134px; margin: 14px auto 50px; padding: 10px; border-radius: 50%; background: #d9d9d9; }
+.account-sidebar__avatar svg { display: block; width: 100%; border-radius: 50%; }
+.account-sidebar__links { display: flex; flex-direction: column; gap: 24px; }
+.account-sidebar button { border: 0; background: transparent; padding: 4px 16px; text-align: left; color: #393939; font-size: 12px; cursor: not-allowed; }
+.account-sidebar__share { margin-top: auto; margin-bottom: 20px; }
+@media (max-width: 760px) { .account-sidebar { min-height: auto; flex-direction: row; align-items: center; gap: 12px; padding: 10px 12px; } .account-sidebar__stripe { display: none; } .account-sidebar__avatar { width: 46px; padding: 4px; margin: 0; flex-shrink: 0; } .account-sidebar__links { flex-direction: row; flex-wrap: wrap; gap: 8px; } .account-sidebar button { padding: 4px; font-size: 11px; } .account-sidebar__share { margin: 0 0 0 auto; } }

@@ -1,0 +1,6 @@
+.home-navigation { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 18px; background: #101010; border-bottom: 1px solid #272727; }
+.home-navigation a, .home-navigation button { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid #303030; border-radius: 5px; background: #050505; color: #aaa; font-size: 11px; text-decoration: none; }
+.home-navigation a[aria-current="page"] { border-color: #b71c1c; color: #eee; }
+.home-navigation button:disabled { cursor: not-allowed; }
+.home-navigation small { font-size: 9px; color: #aaa; }
+.home-navigation__badge { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding-inline: 3px; border-radius: 50%; background: #d51920; color: white; font-size: 9px; }
