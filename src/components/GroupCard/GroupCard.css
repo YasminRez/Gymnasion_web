@@ -1,0 +1,24 @@
+.group-card { display: flex; flex-direction: column; min-height: 230px; overflow: hidden; border: 1px solid #252525; border-radius: 8px; background: #1a1a1a; }
+.group-card__header { padding: 10px 16px 8px; background: var(--group-bg); color: var(--group-text); }
+.group-card__title, .group-card__meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.group-card h2 { overflow: hidden; font-size: 14px; font-weight: 500; line-height: 1.5; white-space: nowrap; text-overflow: ellipsis; }
+.group-card__edit { flex-shrink: 0; padding: 0 2px; border: 0; border-radius: 4px; background: transparent; color: inherit; font-size: 14px; opacity: .7; cursor: pointer; }
+.group-card__edit:hover { opacity: 1; }
+.group-card__meta { margin-top: 6px; font-size: 11px; }
+.group-card__badge { padding: 2px 8px; border-radius: 5px; background: var(--group-badge); }
+.group-card__students { margin: 0 16px; list-style: none; }
+.group-card__add { align-self: flex-start; margin: 8px 16px auto; padding: 4px 0; border: 0; background: transparent; color: #aaa; font-size: 12px; cursor: pointer; }
+.group-card__add:hover { color: #fff; }
+.group-card__students li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #3a3a3a; }
+.group-card__avatar { display: grid; flex-shrink: 0; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.group-card__name { display: flex; flex: 1; flex-direction: column; min-width: 0; color: #ddd; font-size: 13px; overflow-wrap: anywhere; }
+.group-card__name small { color: #888; font-size: 11px; }
+.group-card__students button { border: 0; background: transparent; color: #bbb; font-size: 16px; line-height: 1; cursor: pointer; }
+.group-card__students button:hover { color: #ff6262; }
+.group-card__students button:disabled { opacity: .4; cursor: wait; }
+.group-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 16px; padding: 8px 0 18px; color: #999; font-size: 11px; }
+.group-card__footer button { border: 0; background: transparent; color: #7b72e8; font-size: 11px; white-space: nowrap; cursor: pointer; }
+.group-card__footer button:hover { color: #9a93f0; }
+.group-card__progress { height: 4px; background: #f2f2f2; }
+.group-card__progress span { display: block; height: 100%; background: var(--group-accent); }
+.group-card :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }

@@ -1,0 +1,4 @@
+.group-add__row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #332f2e; }
+.group-add__row .group-form__student { flex: 1; }
+.group-add__row button { flex-shrink: 0; padding: 5px 10px; border: 1px solid #5b4fd6; border-radius: 6px; background: transparent; color: #b9b3f5; font-size: 11px; cursor: pointer; }
+.group-add__row button:hover:not(:disabled) { background: #5b4fd6; color: #fff; }
