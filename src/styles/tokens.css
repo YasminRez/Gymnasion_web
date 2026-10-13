@@ -1,0 +1,60 @@
+/* Gymnasion v2 · Figma: 409:4876 (Identidade visual). */
+:root {
+  --color-primary-50: #fff4ef;
+  --color-primary-100: #ffe4d9;
+  --color-primary-500: #f05a28;
+  --color-primary-600: #d9461a;
+
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b;
+  --color-ink-700: #334155;
+  --color-ink-900: #0f172a;
+  --color-border: #e7eaf0;
+  --color-background: #f6f7fb;
+  --color-surface: #ffffff;
+
+  --color-success: #12b76a;
+  --color-warning: #f79009;
+  --color-danger: #f04438;
+  --color-info: #2e90fa;
+
+  --color-sport-natacao: #2e90fa;
+  --color-sport-tenis: #65a30d;
+  --color-sport-academia: #7a5af8;
+  --color-sport-corrida: #e11d48;
+  --color-sport-ciclismo: #0e9384;
+  --color-sport-funcional: #dc6803;
+
+  --color-text: var(--color-ink-900);
+  --color-text-secondary: var(--color-ink-700);
+  --color-text-muted: var(--color-ink-500);
+  --color-text-inverse: var(--color-surface);
+  --color-action: var(--color-primary-500);
+  --color-action-hover: var(--color-primary-600);
+  --color-focus: var(--color-primary-600);
+  --gradient-brand-soft: linear-gradient(90deg, var(--color-primary-100), var(--color-primary-50));
+
+  --font-family: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', Arial, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-size-display: 3.75rem;
+  --font-size-title-1: 2rem;
+  --font-size-title-2: 1.5rem;
+  --font-size-card-title: 1rem;
+  --font-size-body: 0.875rem;
+  --font-size-caption: 0.75rem;
+  --line-height-heading: 1.18;
+  --line-height-body: 1.5;
+  --letter-spacing-heading: -0.02em;
+
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-modal: 20px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 4px 12px 0 rgb(15 23 42 / 4%), 0 1px 2px 0 rgb(15 23 42 / 5%);
+  --shadow-lg: 0 24px 48px -8px rgb(15 23 42 / 12%), 0 8px 24px 0 rgb(15 23 42 / 8%);
+}

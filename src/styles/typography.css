@@ -1,0 +1,45 @@
+/* Classes opt-in: a hierarquia visual independe da tag HTML utilizada. */
+.text-display,
+.text-title-1,
+.text-title-2 {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-heading);
+}
+
+.text-display {
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-heading);
+}
+
+.text-title-1 {
+  font-size: var(--font-size-title-1);
+  line-height: var(--line-height-heading);
+}
+
+.text-title-2 {
+  font-size: var(--font-size-title-2);
+  line-height: var(--line-height-body);
+}
+
+.text-card-title,
+.text-body,
+.text-caption {
+  font-family: var(--font-family);
+  line-height: var(--line-height-body);
+}
+
+.text-card-title {
+  font-size: var(--font-size-card-title);
+  font-weight: var(--font-weight-bold);
+}
+
+.text-body {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+}
+
+.text-caption {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+}
