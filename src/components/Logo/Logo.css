@@ -1,0 +1,3 @@
+.ds-logo { display: inline-flex; align-items: center; gap: 10px; color: var(--color-text); font: 800 22px/1.5 var(--font-family); letter-spacing: -.03em; white-space: nowrap; }
+.ds-logo img { flex: none; }
+.ds-logo--white { color: var(--color-text-inverse); }

@@ -1,0 +1,8 @@
+.ds-sport-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+.ds-sport-tag img { flex: none; }
+.ds-sport-tag--natacao { color: var(--color-sport-natacao); background: var(--color-sport-natacao-50); }
+.ds-sport-tag--tenis { color: var(--color-sport-tenis); background: var(--color-sport-tenis-50); }
+.ds-sport-tag--academia { color: var(--color-sport-academia); background: var(--color-sport-academia-50); }
+.ds-sport-tag--corrida { color: var(--color-sport-corrida); background: var(--color-sport-corrida-50); }
+.ds-sport-tag--ciclismo { color: var(--color-sport-ciclismo); background: var(--color-sport-ciclismo-50); }
+.ds-sport-tag--funcional { color: var(--color-sport-funcional); background: var(--color-sport-funcional-50); }

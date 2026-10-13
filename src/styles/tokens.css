@@ -18,6 +18,20 @@
   --color-warning: #f79009;
   --color-danger: #f04438;
   --color-info: #2e90fa;
+  --color-success-50: #ecfdf3;
+  --color-success-700: #067647;
+  --color-warning-50: #fffaeb;
+  --color-warning-700: #b54708;
+  --color-danger-50: #fef3f2;
+  --color-danger-700: #b42318;
+  --color-info-50: #eff8ff;
+  --color-sport-natacao-50: #eff8ff;
+  --color-sport-tenis-50: #f3fce8;
+  --color-sport-academia-50: #f4f3ff;
+  --color-sport-corrida-50: #fff1f3;
+  --color-sport-ciclismo-50: #f0fdf9;
+  --color-sport-funcional-50: #fef6ee;
+  --shadow-focus: 0 0 0 4px rgb(240 90 40 / 15%);
 
   --color-sport-natacao: #2e90fa;
   --color-sport-tenis: #65a30d;

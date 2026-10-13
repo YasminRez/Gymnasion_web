@@ -1,18 +1,18 @@
 import { useState, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
 import "./FormField.css";
 
-type CommonProps = { id: string; label: string; error?: string };
+type CommonProps = { id: string; label: string; error?: string; hint?: string; selectPlaceholder?: string };
 type FormFieldProps = CommonProps & (
   | ({ options?: never } & InputHTMLAttributes<HTMLInputElement>)
   | ({ options: { value: string; label: string }[] } & SelectHTMLAttributes<HTMLSelectElement>)
 );
 
-function FormField({ id, label, error, ...props }: FormFieldProps) {
+function FormField({ id, label, error, hint, selectPlaceholder = "Selecionar", ...props }: FormFieldProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const errorId = `${id}-error`;
   const accessibilityProps = {
     "aria-invalid": error ? true : props["aria-invalid"],
-    "aria-describedby": [props["aria-describedby"], error ? errorId : undefined]
+    "aria-describedby": [props["aria-describedby"], error ? errorId : hint ? `${id}-hint` : undefined]
       .filter(Boolean).join(" ") || undefined,
   };
 
@@ -27,7 +27,7 @@ function FormField({ id, label, error, ...props }: FormFieldProps) {
             const { options, ...selectProps } = props;
             return (
               <select {...selectProps} {...accessibilityProps} id={id}>
-                <option value="" disabled>Selecionar</option>
+                <option value="" disabled>{selectPlaceholder}</option>
                 {options.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
@@ -63,9 +63,9 @@ function FormField({ id, label, error, ...props }: FormFieldProps) {
           <input {...props} {...accessibilityProps} id={id} />
         )
       )}
+      {!error && hint && <p className="form-field__hint" id={`${id}-hint`}>{hint}</p>}
       {error && (
         <p className="form-field__error" id={errorId} role="alert">
-          <span className="form-field__error-icon" aria-hidden="true">!</span>
           {error}
         </p>
       )}

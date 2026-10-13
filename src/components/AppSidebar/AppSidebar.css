@@ -1,0 +1,18 @@
+.ds-sidebar { display: flex; flex-direction: column; gap: 2px; width: 264px; flex: 0 0 264px; min-height: 960px; padding: 24px 16px; background: var(--color-surface); border-right: 1px solid var(--color-border); color: var(--color-text); }
+.ds-sidebar__brand { padding: 0 8px 16px; }
+.ds-sidebar__role { align-self: flex-start; margin: -10px 8px 10px; padding: 3px 10px; border-radius: var(--radius-pill); color: var(--color-info); background: var(--color-info-50); font-size: 11px; font-weight: 700; }
+.ds-sidebar__section { padding: 16px 12px 6px; color: var(--color-ink-400); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ds-sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+.ds-sidebar__item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--color-text-secondary); font-size: 14px; font-weight: 500; line-height: 1.5; text-align: left; text-decoration: none; cursor: pointer; }
+.ds-sidebar__item > img { flex: none; }
+.ds-sidebar__item > span:first-of-type { flex: 1; }
+.ds-sidebar__item:hover:not(:disabled), .ds-sidebar__item--active { background: var(--color-primary-50); color: var(--color-primary-600); }
+.ds-sidebar__item:disabled { opacity: .5; cursor: not-allowed; }
+.ds-sidebar__count { padding: 2px 8px; border-radius: var(--radius-pill); background: var(--color-primary-500); color: var(--color-text-inverse); font-size: 11px; font-weight: 700; }
+.ds-sidebar__spacer { flex: 1; min-height: 24px; }
+.ds-sidebar__user { display: flex; gap: 10px; align-items: center; padding: 16px 8px 0; }
+.ds-sidebar__user > div { flex: 1; min-width: 0; }
+.ds-sidebar__user strong { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.ds-sidebar__user div > span { display: block; font-size: 12px; color: var(--color-text-muted); }
+.ds-sidebar__user button { flex: none; border: 0; padding: 0; background: transparent; cursor: pointer; }
+@media (max-width: 600px) { .ds-sidebar { width: 100%; flex-basis: auto; min-height: auto; } }

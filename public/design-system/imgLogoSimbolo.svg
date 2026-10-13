@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Logo/S&#195;&#173;mbolo" clip-path="url(#clip0_0_57)">
+<path id="Vector" d="M28 0H12C5.37258 0 0 5.37258 0 12V28C0 34.6274 5.37258 40 12 40H28C34.6274 40 40 34.6274 40 28V12C40 5.37258 34.6274 0 28 0Z" fill="url(#paint0_linear_0_57)"/>
+<path id="Vector_2" d="M26.7 13.3C25.1415 11.7496 23.0936 10.7877 20.9052 10.5783C18.7169 10.3688 16.5237 10.9248 14.6994 12.1513C12.8751 13.3779 11.5326 15.1992 10.9009 17.3048C10.2691 19.4104 10.3871 21.6699 11.2347 23.6982C12.0824 25.7265 13.6072 27.3981 15.5493 28.428C17.4915 29.4579 19.7307 29.7824 21.8853 29.3461C24.0399 28.9099 25.9765 27.7399 27.365 26.0356C28.7536 24.3314 29.5081 22.1983 29.5 20H26L24.4 17.2L22 22.8L20.4 20H18.5" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_57" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FF8A3D"/>
+<stop offset="1" stop-color="#E5391B"/>
+</linearGradient>
+<clipPath id="clip0_0_57">
+<rect width="40" height="40" fill="white"/>
+</clipPath>
+</defs>
+</svg>

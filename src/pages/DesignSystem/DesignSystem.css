@@ -1,0 +1,12 @@
+.design-system { display: flex; flex-direction: column; align-items: stretch; gap: 40px; min-height: 100vh; padding: 48px; background: var(--color-surface); color: var(--color-text); }
+.design-system__intro { margin-top: -24px; color: var(--color-text-muted); }
+.design-system__row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.design-system__row[aria-label="Logos"] { gap: 40px; }
+.design-system__dark { padding: 20px; background: var(--color-ink-900); border-radius: var(--radius-card); }
+.design-system__fields { display: grid; grid-template-columns: repeat(4, minmax(0, 320px)); gap: 24px; align-items: start; }
+.design-system__layouts { display: flex; align-items: flex-start; gap: 40px; flex-wrap: wrap; }
+.design-system__topbar { flex: 1; min-width: 320px; }
+.design-system__notice { position: fixed; z-index: 1000; top: 24px; right: 24px; max-width: calc(100vw - 48px); }
+@media (max-width: 1000px) { .design-system__fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .design-system__topbar { order: -1; flex-basis: 100%; } }
+@media (max-width: 600px) { .design-system { padding: 24px 16px; gap: 32px; } .design-system__fields { grid-template-columns: minmax(0, 1fr); } .design-system__topbar { min-width: 0; } .design-system__layouts { flex-direction: column; } .design-system__topbar { width: 100%; } }
+

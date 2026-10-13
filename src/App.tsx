@@ -14,6 +14,7 @@ import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
 import Metrics from "./pages/Metrics/Metrics";
 import Routines from "./pages/Routines/Routines";
+import DesignSystem from "./pages/DesignSystem/DesignSystem";
 
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
       <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
 
       <Routes>
+        {import.meta.env.DEV && <Route path="/design-system" element={<DesignSystem />} />}
         <Route path="/" element={<Home />} />
         <Route path="/cadastro-aluno" element={<SignUpStudent />} />
 
