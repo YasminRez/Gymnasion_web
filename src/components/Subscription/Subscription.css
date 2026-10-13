@@ -1,0 +1,13 @@
+.institutional-subscription { padding-block: 40px 96px; }
+.institutional-subscription__card { display: grid; grid-template-columns: minmax(0, 600px) minmax(0, 440px); gap: 48px; align-items: center; padding: 56px; border-radius: 32px; background: linear-gradient(90deg, #ff8a3d, #e5391b); color: var(--color-text-inverse); }
+.institutional-subscription__copy { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.institutional-subscription__label { padding: 6px 12px; background: rgb(255 255 255 / 20%); border-radius: var(--radius-pill); font-size: 13px; font-weight: 700; }
+.institutional-subscription h2 { max-width: 520px; font-size: 40px; font-weight: 800; line-height: 46px; letter-spacing: -.02em; }
+.institutional-subscription ul { display: flex; flex-direction: column; gap: 10px; list-style: none; }
+.institutional-subscription li { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 500; }
+.institutional-subscription li > span { display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 22px; border-radius: var(--radius-pill); background: rgb(255 255 255 / 25%); }
+.institutional-subscription .button { padding: 15px 26px; border: 0; }
+.institutional-subscription__photo { width: 100%; height: 380px; object-fit: cover; border-radius: 24px; }
+@media (max-width: 1050px) { .institutional-subscription__card { padding: 36px; gap: 32px; } }
+@media (max-width: 850px) { .institutional-subscription__card { grid-template-columns: 1fr; } .institutional-subscription h2 { max-width: 100%; } }
+@media (max-width: 600px) { .institutional-subscription { padding-block: 16px 56px; } .institutional-subscription__card { padding: 28px; } .institutional-subscription h2 { font-size: 32px; line-height: 1.18; } .institutional-subscription__photo { height: 280px; } }

@@ -1,6 +1,12 @@
-.home {
-  min-height: 100vh;
-  background: #000000;
-  color: #ffffff;
-  overflow-x: hidden;
-}
+.institutional-home { min-height: 100vh; background: var(--color-surface); color: var(--color-text); }
+.institutional-home a { text-decoration: none; }
+.institutional-container { width: min(1200px, calc(100% - 64px)); margin-inline: auto; }
+.institutional-section { padding-block: 96px; }
+.institutional-home section { scroll-margin-top: 24px; }
+.institutional-eyebrow { color: var(--color-primary-600); font-size: 13px; font-weight: 700; line-height: 1.5; letter-spacing: .1em; text-transform: uppercase; }
+.institutional-heading { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 620px; margin-inline: auto; text-align: center; }
+.institutional-heading h2 { font-size: 40px; line-height: 1.18; font-weight: 800; letter-spacing: -.02em; }
+.institutional-heading > p:last-child { color: var(--color-text-muted); font-size: 17px; line-height: 1.5; }
+.institutional-skip { position: absolute; top: 8px; left: 8px; z-index: 10; padding: 12px; border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-primary-600); transform: translateY(-150%); }
+.institutional-skip:focus { transform: translateY(0); }
+@media (max-width: 600px) { .institutional-container { width: calc(100% - 40px); } .institutional-section { padding-block: 56px; } .institutional-heading h2 { font-size: 32px; } }

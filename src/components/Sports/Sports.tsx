@@ -1,60 +1,18 @@
+import SportTag from "../SportTag/SportTag";
 import "./Sports.css";
-
 const sports = [
-  {
-    name: "Musculação",
-    image:
-      "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    name: "Natação",
-    image:
-      "https://images.unsplash.com/photo-1519315901367-f34ff9154487?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    name: "Tênis",
-    image:
-      "https://images.unsplash.com/photo-1530915365347-e35b749a0381?auto=format&fit=crop&w=900&q=80",
-  },
+  { title: "Natação", text: "Ritmo por 100m, distância, braçadas", image: "imgFrame.png" },
+  { title: "Tênis", text: "% de saque, duração do rally, sets", image: "imgFrame1.png" },
+  { title: "Academia", text: "Cargas, séries, repetições", image: "imgPhoto.png" },
 ];
-
-function Sports() {
-  return (
-    <section className="sports" id="esportes">
-      <h2>Nossos Esportes</h2>
-
-      <div className="sports-frame">
-        <svg
-          className="sports-frame-svg"
-          viewBox="0 0 1200 480"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <rect
-            x="10"
-            y="10"
-            width="1180"
-            height="460"
-            rx="44"
-            className="sports-frame-outline"
-          />
-          <line x1="360" y1="10" x2="440" y2="470" className="sports-frame-x" />
-          <line x1="440" y1="10" x2="360" y2="470" className="sports-frame-x" />
-          <line x1="760" y1="10" x2="840" y2="470" className="sports-frame-x" />
-          <line x1="840" y1="10" x2="760" y2="470" className="sports-frame-x" />
-        </svg>
-
-        <div className="sports-grid">
-          {sports.map((sport) => (
-            <div className="sports-item" key={sport.name}>
-              <img src={sport.image} alt={sport.name} loading="lazy" />
-              <span>{sport.name}</span>
-            </div>
-          ))}
-        </div>
+export default function Sports() {
+  return <section className="institutional-section institutional-sports" id="modalidades" aria-labelledby="sports-title"><span id="esportes" />
+    <div className="institutional-container">
+      <div className="institutional-sports__heading"><div><p className="institutional-eyebrow">Modalidades</p><h2 id="sports-title">Feito para qualquer esporte</h2></div><p>Natação, tênis e academia são só o começo — cadastre corrida, ciclismo, funcional ou qualquer outro esporte.</p></div>
+      <div className="institutional-sports__grid">
+        {sports.map(sport => <article className="institutional-sports__card" key={sport.title}><img src={`/institutional/${sport.image}`} alt="" loading="lazy" /><div><h3>{sport.title}</h3><p>{sport.text}</p></div></article>)}
+        <article className="institutional-sports__more"><div><SportTag sport="corrida" /><SportTag sport="ciclismo" /><SportTag sport="funcional" /></div><h3>E muito mais</h3><p>Cadastre qualquer modalidade com ícone, cor e métricas próprias.</p></article>
       </div>
-    </section>
-  );
+    </div>
+  </section>;
 }
-
-export default Sports;

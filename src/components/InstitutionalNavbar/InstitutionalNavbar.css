@@ -1,0 +1,20 @@
+.institutional-nav { background: var(--color-surface); }
+.institutional-nav__inner { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding-block: 24px; }
+.institutional-nav__menu { display: flex; align-items: center; justify-content: space-between; flex: 1; gap: 24px; margin-left: auto; max-width: 886px; }
+.institutional-nav__links { display: flex; align-items: center; gap: 36px; }
+.institutional-nav__links a { color: var(--color-text-secondary); font-size: 15px; font-weight: 500; }
+.institutional-nav__links a:hover { color: var(--color-primary-600); }
+.institutional-nav__actions { display: flex; gap: 10px; flex-shrink: 0; }
+.institutional-nav .institutional-nav__toggle { display: none; }
+@media (max-width: 1150px) {
+  .institutional-nav__inner { flex-wrap: wrap; gap: 16px; }
+  .institutional-nav .institutional-nav__toggle { display: inline-flex; }
+  .institutional-nav__menu { display: none; flex-basis: 100%; max-width: none; }
+  .institutional-nav__menu--open { display: flex; }
+  .institutional-nav__links { flex-wrap: wrap; gap: 20px; }
+}
+@media (max-width: 700px) {
+  .institutional-nav__menu--open, .institutional-nav__links { flex-direction: column; align-items: stretch; }
+  .institutional-nav__menu { padding-block: 8px; }
+  .institutional-nav__actions { flex-wrap: wrap; }
+}

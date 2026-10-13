@@ -1,0 +1,29 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="244" height="70" viewBox="0 0 244 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="chart">
+<g id="Vector">
+<path d="M0 8H244Z" fill="black"/>
+<path d="M0 8H244" stroke="#EEF0F4" stroke-dasharray="4 4"/>
+</g>
+<g id="Vector_2">
+<path d="M0 26H244Z" fill="black"/>
+<path d="M0 26H244" stroke="#EEF0F4" stroke-dasharray="4 4"/>
+</g>
+<g id="Vector_3">
+<path d="M0 44H244Z" fill="black"/>
+<path d="M0 44H244" stroke="#EEF0F4" stroke-dasharray="4 4"/>
+</g>
+<g id="Vector_4">
+<path d="M0 62H244Z" fill="black"/>
+<path d="M0 62H244" stroke="#EEF0F4" stroke-dasharray="4 4"/>
+</g>
+<path id="Vector_5" d="M8 62C27 62 27 51.2 46 51.2C65 51.2 65 56.6 84 56.6C103 56.6 103 40.4 122 40.4C141 40.4 141 29.6 160 29.6C179 29.6 179 18.8 198 18.8C217 18.8 217 8 236 8V70H8V62Z" fill="url(#paint0_linear_0_54)"/>
+<path id="Vector_6" d="M8 62C27 62 27 51.2 46 51.2C65 51.2 65 56.6 84 56.6C103 56.6 103 40.4 122 40.4C141 40.4 141 29.6 160 29.6C179 29.6 179 18.8 198 18.8C217 18.8 217 8 236 8" stroke="#2E90FA" stroke-width="3" stroke-linecap="round"/>
+<path id="Vector_7" d="M236 13C238.761 13 241 10.7614 241 8C241 5.23858 238.761 3 236 3C233.239 3 231 5.23858 231 8C231 10.7614 233.239 13 236 13Z" fill="white" stroke="#2E90FA" stroke-width="3"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_54" x1="2.92795e-07" y1="1.68239e-08" x2="2.92795e-07" y2="70" gradientUnits="userSpaceOnUse">
+<stop stop-color="#2E90FA" stop-opacity="0.2"/>
+<stop offset="1" stop-color="#2E90FA" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>
