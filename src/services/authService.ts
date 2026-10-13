@@ -3,11 +3,10 @@ import { session } from "./session";
 import type { LoginPayload, LoginResponse, SignUpPersonalPayload, SignUpPersonalResponse, SignUpAlunoPayload, SignUpAlunoResponse } from "../types/auth";
 
 export const authService = {
-  async login(payload: LoginPayload): Promise<LoginResponse> {
+  async login(payload: LoginPayload, remember = false): Promise<LoginResponse> {
     const { data } = await api.post<LoginResponse>("/api/auth/login", payload);
 
-    // Salva o JWT e dados básicos no localStorage
-    session.save(data);
+    session.save(data, remember);
 
     return data;
   },

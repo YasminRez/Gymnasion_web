@@ -25,24 +25,33 @@ function isTokenExpired(token: string): boolean {
 }
 
 export const session = {
-  save(data: LoginResponse): void {
-    localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify({ id: data.id, role: data.role }));
+  save(data: LoginResponse, remember = false): void {
+    session.clear();
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem(TOKEN_KEY, data.token);
+    storage.setItem(USER_KEY, JSON.stringify({ id: data.id, role: data.role }));
   },
 
   clear(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
   },
 
   getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    const token = sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+    if (token && isTokenExpired(token)) {
+      session.clear();
+      return null;
+    }
+    return token;
   },
 
   // Retorna o usuário apenas se houver um token ainda dentro da validade.
   getUser(): SessionUser | null {
-    const token = localStorage.getItem(TOKEN_KEY);
-    const user = localStorage.getItem(USER_KEY);
+    const token = session.getToken();
+    const user = sessionStorage.getItem(TOKEN_KEY) ? sessionStorage.getItem(USER_KEY) : localStorage.getItem(USER_KEY);
     if (!token || !user || isTokenExpired(token)) return null;
 
     try {

@@ -23,7 +23,7 @@ export function isSessionError(err: unknown): boolean {
 api.interceptors.request.use(
   (config) => {
     const token = session.getToken();
-    if (token) {
+    if (token && !config.url?.startsWith("/api/auth/")) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
