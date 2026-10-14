@@ -15,6 +15,8 @@ import { SESSION_EXPIRED_EVENT } from "./services/session";
 import Metrics from "./pages/Metrics/Metrics";
 import Routines from "./pages/Routines/Routines";
 import DesignSystem from "./pages/DesignSystem/DesignSystem";
+import PersonalProvider from "./features/personal/PersonalProvider";
+import PersonalLayout from "./components/PersonalLayout/PersonalLayout";
 
 
 function App() {
@@ -48,14 +50,16 @@ function App() {
         </Route>
 
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
-          <Route path="/alunos" element={<Students />} />
+          <Route element={<PersonalProvider><PersonalLayout /></PersonalProvider>}>
+            <Route path="/alunos" element={<Students />} />
+            <Route path="/home" element={<Dashboard />} />
+          </Route>
           <Route path="/grupos" element={<Groups />} />
           <Route path="/rotinas" element={<Routines />} />
           <Route path="/metricas" element={<Metrics />} />
-          <Route path="/home" element={<Dashboard />} />
-          <Route path="/home/notificacoes" element={<Dashboard section="notifications" />} />
-          <Route path="/home/ultimos-aceitos" element={<Dashboard section="recent" />} />
-          <Route path="/home/sem-treino" element={<Dashboard section="missed" />} />
+          <Route path="/home/notificacoes" element={<Navigate to="/home#notificacoes" replace />} />
+          <Route path="/home/ultimos-aceitos" element={<Navigate to="/home#recentes" replace />} />
+          <Route path="/home/sem-treino" element={<Navigate to="/home#sem-rotina" replace />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

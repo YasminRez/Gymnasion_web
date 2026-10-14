@@ -1,0 +1,12 @@
+.student-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.student-identity > div { min-width: 0; }
+.student-identity strong { display: block; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.student-identity small { display: block; font-size: 12px; color: var(--color-ink-500); overflow-wrap: anywhere; }
+.student-sports { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.student-sports__other { background: var(--color-background); color: var(--color-ink-700); padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+.student-avatar--blue { background: var(--color-info-50); color: var(--color-info); }
+.student-avatar--purple { background: var(--color-sport-academia-50); color: var(--color-sport-academia); }
+.student-avatar--green { background: var(--color-sport-tenis-50); color: var(--color-sport-tenis); }
+.student-avatar--mint { background: var(--color-success-50); color: var(--color-success); }
+.student-avatar--amber { background: var(--color-warning-50); color: var(--color-warning); }
+.student-identity strong { color: var(--color-ink-900); }

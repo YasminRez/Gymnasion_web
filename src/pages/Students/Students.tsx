@@ -1,151 +1,49 @@
-import { useCallback, useEffect, useState } from "react";
-import PlatformHeader from "../../components/PlatformHeader/PlatformHeader";
-import StudentCard from "../../components/StudentCard/StudentCard";
-import StudentToolbar from "../../components/StudentToolbar/StudentToolbar";
-import PendingStudent from "../../components/PendingStudent/PendingStudent";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import StudentRoutineDialog from "../../components/StudentRoutineDialog/StudentRoutineDialog";
+import { lastSession, displayDate } from "../../features/personal/dashboardModel";
+import Button from "../../components/Button/Button";
+import Badge from "../../components/Badge/Badge";
+import StudentIdentity, { StudentSports } from "../../components/StudentIdentity/StudentIdentity";
 import StudentInviteModal from "../../components/StudentInviteModal/StudentInviteModal";
-import { type Student, type StudentStatus } from "./studentData";
-import "./Students.css";
-import StudentActionModal, { type StudentAction } from "../../components/StudentActionModal/StudentActionModal";
-import StudentsEmptyState from "../../components/StudentsEmptyState/StudentsEmptyState";
-import StudentToast from "../../components/StudentToast/StudentToast";
-import { personalTrainerService } from "../../services/personalTrainerService";
-import { handleApiError } from "../../utils/handleApiError";
+import StudentStatusDialog from "../../components/StudentStatusDialog/StudentStatusDialog";
+import { usePersonal } from "../../features/personal/PersonalContext";
+import { studentCounts, studentRoutines, visibleStudents, type StudentFilter, type StudentMutation } from "../../features/personal/studentModel";
 import type { AlunoResponse } from "../../types/student";
+import "./Students.css";
 
-function mapAlunoToStudent(aluno: AlunoResponse): Student {
-  return {
-    id: aluno.id,
-    name: aluno.usuario.nome,
-    email: aluno.usuario.email,
-    phone: aluno.usuario.celular,
-    sport: aluno.modalidades.map((m) => m.nome).join(", ") || "Geral",
-    status: aluno.status === "PENDENTE" ? "pending" : aluno.status === "ATIVO" ? "active" : "inactive",
-  };
+export default function Students() {
+  const { students, routines, refresh, mutate, busyId, histories, notificationBusy } = usePersonal();
+  const [params, setParams] = useSearchParams();
+  const filter = (["all", "active", "inactive", "pending"].includes(params.get("status") || "") ? params.get("status") : "all") as StudentFilter;
+  const search = params.get("busca") || "";
+  const modality = params.get("modalidade") || "";
+  const [page, setPage] = useState(1);
+  const [assign, setAssign] = useState<AlunoResponse | null>(null);
+  const [invite, setInvite] = useState(false);
+  const [action, setAction] = useState<{student: AlunoResponse; action: Exclude<StudentMutation, "approve">} | null>(null);
+  const counts = studentCounts(students.data);
+  const visible = visibleStudents(students.data, filter, search, modality);
+  const pages = Math.max(1, Math.ceil(visible.length / 8));
+  const currentPage = Math.min(page, pages);
+  const displayed = visible.slice((currentPage - 1) * 8, currentPage * 8);
+  const modalities = [...new Map(students.data.flatMap(student => student.modalidades).map(item => [item.id, item])).values()];
+  function update(key: string, value: string) { const next = new URLSearchParams(params); if (value) next.set(key, value); else next.delete(key); setParams(next, { replace: true }); setPage(1); }
+  return <section className="students-v2" aria-label="Alunos">
+    <div className="students-v2__toolbar">
+      <div className="students-v2__tabs" aria-label="Filtrar por status">{([['all','Todos'],['active','Ativos'],['inactive','Inativos'],['pending','Pendentes']] as const).map(([key,label]) => <button key={key} aria-pressed={filter === key} onClick={() => update("status", key)}>{label}<span>{students.loading ? "—" : counts[key]}</span></button>)}</div>
+      <input aria-label="Buscar aluno por nome ou e-mail" placeholder="Buscar aluno..." value={search} onChange={event => update("busca", event.target.value)} />
+      <select aria-label="Filtrar modalidade" value={modality} onChange={event => update("modalidade", event.target.value)}><option value="">Todas as modalidades</option>{modalities.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select>
+      <Button onClick={() => setInvite(true)}>+ Cadastrar aluno</Button>
+    </div>
+    {students.error && <div className="workspace-error" role="alert">{students.error}<Button variant="secondary" onClick={() => void refresh()}>Tentar novamente</Button></div>}
+    {students.loading ? <div className="workspace-card workspace-empty" role="status">Carregando alunos...</div> : !students.error && visible.length === 0 ? <div className="workspace-card workspace-empty"><h2>{search ? 'Nenhum aluno encontrado para “' + search + '”' : "Nenhum aluno nesta lista"}</h2><p>{search || modality ? "Experimente outro nome ou modalidade." : "Os cadastros aparecerão aqui assim que estiverem disponíveis."}</p></div> : filter === "pending" ? <div className="students-v2__pending">{displayed.map(student => <article className="workspace-card students-v2__pending-card" key={student.id}>
+      <StudentIdentity student={student} /><StudentSports student={student} /><Badge tone="warning">Pendente</Badge><div className="students-v2__details"><span>E-mail</span><strong>{student.usuario.email}</strong><span>Telefone</span><strong>{student.usuario.celular || "Não informado"}</strong></div>
+      <div className="students-v2__actions"><Button variant="secondary" disabled={Boolean(busyId) || notificationBusy} onClick={() => setAction({student,action:"reject"})}>Recusar</Button><Button loading={busyId === student.id} disabled={Boolean(busyId) || notificationBusy} onClick={() => void mutate(student,"approve")}>Aceitar aluno</Button></div>
+    </article>)}</div> : visible.length > 0 && <div className="workspace-card students-v2__table"><table><thead><tr><th>Aluno</th><th>Modalidade</th><th>Rotina</th><th>Última sessão</th><th>Status</th><th><span className="students-v2__sr">Ações</span></th></tr></thead><tbody>{displayed.map(student => <tr key={student.id}><td><StudentIdentity student={student} /></td><td><StudentSports student={student} /></td><td>{routines.loading ? "Carregando..." : routines.error ? "Indisponível" : studentRoutines(routines.data, student.id).map(item => item.titulo).join(", ") || (student.status === "ATIVO" ? <button className="workspace-link" onClick={()=>setAssign(student)}>Vincular rotina</button> : "Sem rotina")}</td><td>{histories.loading ? "Carregando..." : histories.error ? <span title={histories.error}>Indisponível</span> : lastSession(histories.data,student.id)?.dataReal ? displayDate(lastSession(histories.data,student.id)!.dataReal!) : "Sem sessões"}</td><td><Badge tone={student.status === "ATIVO" ? "success" : "neutral"}>{student.status === "ATIVO" ? "Ativo" : "Inativo"}</Badge></td><td><button className="students-v2__more" aria-label={'Alterar status de ' + student.usuario.nome} title={student.status === "ATIVO" ? "Desativar aluno" : "Reativar aluno"} disabled={Boolean(busyId) || notificationBusy} onClick={() => setAction({student,action:student.status === "ATIVO" ? "deactivate" : "reactivate"})}><img src="/workspace/401-744-imgIconMore.svg" alt="" /></button></td></tr>)}</tbody></table></div>}
+    {visible.length > 0 && <nav className="students-v2__pagination" aria-label="Paginação"><span>Mostrando {(currentPage-1)*8+1}–{Math.min(currentPage*8,visible.length)} de {visible.length} alunos</span><Button variant="secondary" disabled={currentPage === 1} onClick={() => setPage(currentPage-1)}>Anterior</Button><span>{currentPage} / {pages}</span><Button variant="secondary" disabled={currentPage === pages} onClick={() => setPage(currentPage+1)}>Próxima</Button></nav>}
+    {assign && <StudentRoutineDialog student={assign} onClose={()=>setAssign(null)} />}
+    {invite && <StudentInviteModal onClose={() => setInvite(false)} />}
+    {action && <StudentStatusDialog {...action} onClose={() => setAction(null)} />}
+  </section>;
 }
-
-function Students() {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<StudentStatus | null>(null);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [action, setAction] = useState<StudentAction | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const closeNotice = useCallback(() => setNotice(""), []);
-
-  // Busca todos os alunos e pendentes da API
-  const loadStudentsFromApi = useCallback(async () => {
-    try {
-      const [todos, pendentes] = await Promise.all([
-        personalTrainerService.listarTodos(),
-        personalTrainerService.listarPendentes(),
-      ]);
-
-      // Junta as duas listas removendo eventuais duplicidades pelo id
-      const combinedMap = new Map<string, AlunoResponse>();
-      todos.forEach((item) => combinedMap.set(item.id, item));
-      pendentes.forEach((item) => combinedMap.set(item.id, item));
-
-      const mapped = Array.from(combinedMap.values()).map(mapAlunoToStudent);
-      setStudents(mapped);
-    } catch (err) {
-      handleApiError(err, "Não foi possível carregar a lista de alunos.");
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStudentsFromApi();
-  }, [loadStudentsFromApi]);
-
-  const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const visible = students.filter((student) => normalize(student.name).includes(normalize(search.trim())) && (!filter || student.status === filter));
-  const enrolled = visible.filter((student) => student.status !== "pending");
-  const pending = visible.filter((student) => student.status === "pending");
-  
-  const counts = { active: 0, inactive: 0, pending: 0 };
-  students.forEach((student) => {
-    if (counts[student.status] !== undefined) {
-      counts[student.status]++;
-    }
-  });
-
-  async function handleDecision(student: Student, accept: boolean) {
-    if (accept) {
-      try {
-        await personalTrainerService.aprovarAtleta(String(student.id));
-        setStudents((previous) =>
-          previous.map((item) => (item.id === student.id ? { ...item, status: "active" } : item))
-        );
-        setNotice(`${student.name}: aluno aprovado com sucesso!`);
-        setAction({ type: "approved", student });
-      } catch (err) {
-        handleApiError(err, "Erro ao aprovar o aluno no servidor.");
-      }
-    } else {
-      try {
-        await personalTrainerService.recusarAtleta(String(student.id));
-        setStudents((previous) => previous.filter((item) => item.id !== student.id));
-        setNotice(`${student.name}: solicitação recusada.`);
-        setAction({ type: "rejected", student });
-      } catch (err) {
-        handleApiError(err, "Erro ao recusar o aluno no servidor.");
-      }
-    }
-  }
-
-  async function confirmStatus() {
-    if (!action || (action.type !== "deactivate" && action.type !== "reactivate")) return;
-    const deactivate = action.type === "deactivate";
-    const status = deactivate ? "inactive" : "active";
-
-    setSubmitting(true);
-    try {
-      const alunoId = String(action.student.id);
-      if (deactivate) {
-        await personalTrainerService.desativarAtleta(alunoId);
-      } else {
-        await personalTrainerService.reativarAtleta(alunoId);
-      }
-    } catch (err) {
-      handleApiError(err, `Erro ao ${deactivate ? "desativar" : "reativar"} o aluno no servidor.`);
-      return;
-    } finally {
-      setSubmitting(false);
-    }
-
-    setStudents((previous) => previous.map((student) => student.id === action.student.id ? { ...student, status } : student));
-    setAction(null);
-    setNotice(`${action.student.name}: aluno ${status === "active" ? "reativado" : "desativado"} com sucesso!`);
-  }
-
-  return (
-    <>
-      <PlatformHeader activePage="students" />
-      <main className="students" aria-label="Alunos">
-        <h1 className="students__sr-only">Alunos</h1>
-        <StudentToolbar search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} counts={counts} onRegister={() => setInviteOpen(true)} />
-        {visible.length === 0 && <StudentsEmptyState search={search.trim()} filtered={Boolean(filter)} onRegister={() => setInviteOpen(true)} />}
-        {enrolled.length > 0 && (
-          <section className="students__grid" aria-label="Alunos cadastrados">
-            {enrolled.map((student) => <StudentCard key={student.id} student={student} onStatusChange={(selected) => { setNotice(""); setAction({ type: selected.status === "active" ? "deactivate" : "reactivate", student: selected }); }} />)}
-          </section>
-        )}
-        {pending.length > 0 && (
-          <section className="students__pending" aria-labelledby="pending-title">
-            <h2 id="pending-title">Pendentes</h2>
-            <div className="students__pending-grid">
-              {pending.map((student) => <PendingStudent key={student.id} student={student} onDecision={handleDecision} />)}
-            </div>
-          </section>
-        )}
-      </main>
-      {inviteOpen && <StudentInviteModal onClose={() => setInviteOpen(false)} onViewStudents={() => { setInviteOpen(false); setSearch(""); setFilter(null); }} />}
-      {action && <StudentActionModal action={action} loading={submitting} onClose={() => setAction(null)} onConfirm={confirmStatus} />}
-      {notice && <StudentToast message={notice} onClose={closeNotice} />}
-    </>
-  );
-}
-
-export default Students;

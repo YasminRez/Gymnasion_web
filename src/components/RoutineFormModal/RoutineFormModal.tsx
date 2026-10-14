@@ -17,6 +17,7 @@ type Props = {
   modalities: Modalidade[];
   suggestedModalityIds: number[];
   students: AlunoResponse[];
+  initialStudentId?: string;
   onClose: () => void;
   onSaved: (message: string) => void;
 };
@@ -24,13 +25,13 @@ type Props = {
 const NO_METRICS_MESSAGE = "Nenhuma métrica cadastrada para essa modalidade. Cadastre ao menos uma métrica antes de continuar.";
 
 // US-10: criação de rotina de treino com métricas da modalidade.
-function RoutineFormModal({ modalities, suggestedModalityIds, students, onClose, onSaved }: Props) {
+function RoutineFormModal({ modalities, suggestedModalityIds, students, initialStudentId, onClose, onSaved }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [title, setTitle] = useState("");
   const [modalityId, setModalityId] = useState<number | null>(null);
   const [frequency, setFrequency] = useState<number | null>(null);
   const [goal, setGoal] = useState("");
-  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(() => new Set());
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(() => new Set(initialStudentId ? [initialStudentId] : []));
   const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(() => new Set());
   const [metrics, setMetrics] = useState<MetricaResponseDTO[]>([]);
   const [metricsState, setMetricsState] = useState<"idle" | "loading" | "loaded" | "error">("idle");

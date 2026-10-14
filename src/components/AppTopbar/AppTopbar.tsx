@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Avatar from "../Avatar/Avatar";
 import "./AppTopbar.css";
-type Props = { title: string; subtitle?: string; userName: string; avatar?: string; onSearch: (query: string) => void; onNotifications: () => void };
-export default function AppTopbar({ title, subtitle, userName, avatar, onSearch, onNotifications }: Props) {
+type Props = { title: string; subtitle?: string; userName: string; avatar?: string; searchLabel?: string; notificationCount?: number; onSearch: (query: string) => void; onNotifications: () => void };
+export default function AppTopbar({ title, subtitle, userName, avatar, searchLabel = "Buscar alunos e turmas", notificationCount, onSearch, onNotifications }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   useEffect(() => {
@@ -17,10 +17,10 @@ export default function AppTopbar({ title, subtitle, userName, avatar, onSearch,
     <div className="ds-topbar__actions">
       <form className="ds-topbar__search" role="search" onSubmit={event => { event.preventDefault(); onSearch(query.trim()); }}>
         <img src="/design-system/imgIconSearch.svg" alt="" />
-        <input ref={searchRef} type="search" aria-label="Buscar alunos e turmas" placeholder="Buscar alunos, turmas…" value={query} onChange={event => setQuery(event.target.value)} />
+        <input ref={searchRef} type="search" aria-label={searchLabel} placeholder={`${searchLabel}…`} value={query} onChange={event => setQuery(event.target.value)} />
         <kbd title="Control ou Command + K">⌘K</kbd>
       </form>
-      <button type="button" className="ds-topbar__notifications" aria-label="Abrir notificações" onClick={onNotifications}><img src="/design-system/imgBell.svg" alt="" /></button>
+      <button type="button" className="ds-topbar__notifications" aria-label={notificationCount ? "Abrir notificações: "+notificationCount+" não lidas" : "Abrir notificações"} onClick={onNotifications}><img src="/design-system/imgBell.svg" alt="" />{Boolean(notificationCount) && <span className="ds-topbar__notification-count">{notificationCount}</span>}</button>
       <Avatar name={userName} src={avatar} />
     </div>
   </header>;

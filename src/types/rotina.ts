@@ -7,6 +7,7 @@ export interface RotinaResponse {
   nomeModalidade: string;
   frequenciaSemanal: number;
   objetivos: string | null;
+  ativo?: boolean;
   alunos: { id: string; nome: string | null }[];
   metricas: { id: string; titulo: string; tipo: TipoMetrica }[];
 }

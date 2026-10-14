@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import PlatformHeader from "../../components/PlatformHeader/PlatformHeader";
 import GroupToolbar from "../../components/GroupToolbar/GroupToolbar";
@@ -17,6 +18,8 @@ import type { RotinaResponse } from "../../types/rotina";
 import "../Groups/Groups.css";
 
 function Routines() {
+  const [params, setParams] = useSearchParams();
+  const requestedStudent = params.get("aluno") || undefined;
   const [routines, setRoutines] = useState<RotinaResponse[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -27,6 +30,12 @@ function Routines() {
   const [filter, setFilter] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (requestedStudent && studentsLoaded && students.some(student => student.id === requestedStudent)) setCreating(true);
+  }, [requestedStudent, studentsLoaded, students]);
+
+  function closeCreate() { setCreating(false); if (requestedStudent) setParams({}, { replace: true }); }
 
   const closeNotice = useCallback(() => setNotice(""), []);
 
@@ -90,9 +99,10 @@ function Routines() {
           modalities={modalities}
           suggestedModalityIds={suggestedModalityIds}
           students={students}
-          onClose={() => setCreating(false)}
+          initialStudentId={requestedStudent}
+          onClose={closeCreate}
           // US-10 - Cenário 1: fecha o modal e volta para a lista de rotinas.
-          onSaved={(message) => { setCreating(false); setNotice(message); loadRoutines(); }}
+          onSaved={(message) => { closeCreate(); setNotice(message); loadRoutines(); }}
         />
       )}
       {notice && <StudentToast message={notice} onClose={closeNotice} />}

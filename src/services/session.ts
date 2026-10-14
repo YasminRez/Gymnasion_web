@@ -7,7 +7,7 @@ const USER_KEY = "@Gymnasion:user";
 export const SESSION_EXPIRED_EVENT = "gymnasion:session-expired";
 
 // Rota inicial da área autenticada do personal.
-export const PRIVATE_HOME = "/alunos";
+export const PRIVATE_HOME = "/home";
 
 export interface SessionUser {
   id: string;

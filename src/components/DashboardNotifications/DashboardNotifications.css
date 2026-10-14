@@ -1,0 +1,4 @@
+.dashboard-notifications__actions { display: flex; gap: 12px; justify-content: space-between; margin-top: 12px; }
+.dashboard-notifications__actions button { font-size: 11px; }
+.dashboard-notifications__actions button:disabled { opacity: .5; cursor: default; }
+.dashboard-v2__notification time { display: block; font-size: 10px; color: var(--color-ink-400); margin-top: 4px; }
