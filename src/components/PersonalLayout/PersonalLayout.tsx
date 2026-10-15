@@ -9,13 +9,16 @@ import { studentCounts } from "../../features/personal/studentModel";
 import "./PersonalLayout.css";
 
 export default function PersonalLayout() {
-  const { students, notifications } = usePersonal();
+  const { students, notifications, groups } = usePersonal();
   const [menuOpen, setMenuOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const name = students.data.find(student => student.nomePersonal)?.nomePersonal || "Personal";
   const isStudents = location.pathname === "/alunos";
+  const isGroups = location.pathname === "/grupos" || location.pathname.startsWith("/grupos/");
+  const isGroupDetail = location.pathname.startsWith("/grupos/");
+  const group = groups.data.find(item => item.id === decodeURIComponent(location.pathname.slice("/grupos/".length)));
   const isProfile = location.pathname.startsWith("/alunos/");
   const profileStudent = isProfile ? students.data.find(student => student.id === decodeURIComponent(location.pathname.slice("/alunos/".length))) : undefined;
   const date = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" }).format(new Date());
@@ -39,9 +42,9 @@ export default function PersonalLayout() {
         footer={<div className="personal-layout__strava"><img src="/design-system/imgIconZap1.svg" alt="" /><strong>Sincronize com o Strava</strong><p>Integração disponível em breve.</p><button disabled>Conectar →</button></div>} />
     </div>
     <div className="personal-layout__body">
-      <AppTopbar title={isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
-        subtitle={isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : `${date} · Aqui está o resumo dos seus alunos`}
-        notificationCount={notifications.data.filter(item=>!item.lida).length} userName={name} searchLabel="Buscar alunos" onSearch={query => navigate(`/alunos?busca=${encodeURIComponent(query)}`)} onNotifications={() => navigate("/home#notificacoes")} />
+      <AppTopbar title={isGroups ? isGroupDetail ? group?.nome || "Gerenciar turma" : "Turmas" : isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
+        subtitle={isGroups ? isGroupDetail ? "Turmas / Gerenciar turma" : "Organize alunos em grupos por modalidade ou horário" : isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : `${date} · Aqui está o resumo dos seus alunos`}
+        notificationCount={notifications.data.filter(item=>!item.lida).length} userName={name} searchLabel={isGroups ? "Buscar turmas" : "Buscar alunos"} onSearch={query => navigate(`${isGroups ? "/grupos" : "/alunos"}?busca=${encodeURIComponent(query)}`)} onNotifications={() => navigate("/home#notificacoes")} />
       <main id="personal-content"><Outlet /></main>
     </div>
     {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}

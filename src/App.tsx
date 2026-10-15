@@ -11,6 +11,7 @@ import StudentProfile from "./pages/StudentProfile/StudentProfile";
 import SignUpStudent from "./pages/SingUpStudent/SingUpStudent";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Groups from "./pages/Groups/Groups";
+import GroupDetails from "./pages/GroupDetails/GroupDetails";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
@@ -57,8 +58,9 @@ function App() {
             <Route path="/alunos" element={<Students />} />
             <Route path="/alunos/:studentId" element={<StudentProfile />} />
             <Route path="/home" element={<Dashboard />} />
+            <Route path="/grupos" element={<Groups />} />
+            <Route path="/grupos/:groupId" element={<GroupDetails />} />
           </Route>
-          <Route path="/grupos" element={<Groups />} />
           <Route path="/rotinas" element={<Routines />} />
           <Route path="/metricas" element={<Metrics />} />
           <Route path="/home/notificacoes" element={<Navigate to="/home#notificacoes" replace />} />
