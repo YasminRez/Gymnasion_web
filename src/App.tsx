@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import PasswordRecovery from "./pages/PasswordRecovery/PasswordRecovery";
 import SignIn from "./pages/SignIn/SignIn";
 import Home from "./pages/Home/Home";
 import SignUp from "./pages/SignUp/SignUp";
@@ -42,6 +43,7 @@ function App() {
       <Routes>
         {import.meta.env.DEV && <Route path="/design-system" element={<DesignSystem />} />}
         <Route path="/" element={<Home />} />
+        <Route path="/recuperar-senha" element={<PasswordRecovery />} />
         <Route path="/cadastro-aluno" element={<SignUpStudent />} />
 
         <Route element={<PublicOnlyRoute />}>

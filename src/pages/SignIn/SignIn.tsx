@@ -21,7 +21,6 @@ export default function SignIn() {
   const [touched, setTouched] = useState<Partial<Record<keyof Credentials, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [remember, setRemember] = useState(false);
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const errors: Partial<Record<keyof Credentials, string>> = {};
@@ -76,8 +75,7 @@ export default function SignIn() {
       {routeState?.registered && <p className="auth-form__notice" role="status">Cadastro realizado com sucesso! Entre para continuar.</p>}
       <FormField id="signin-email" name="email" {...fieldProps("email")} label="E-mail" type="email" autoComplete="username" placeholder="seu@email.com" required />
       <FormField id="signin-password" name="password" {...fieldProps("password")} label="Senha" type="password" autoComplete="current-password" placeholder="Digite sua senha" required />
-      <div className="signin-form__options"><Checkbox label="Lembrar de mim" checked={remember} onChange={event => setRemember(event.target.checked)} disabled={isSubmitting} /><button type="button" className="auth-form__link" onClick={() => setNotice("A recuperação de senha ainda não está disponível.")}>Esqueci minha senha</button></div>
-      {notice && <p className="auth-form__notice" role="status">{notice}</p>}
+      <div className="signin-form__options"><Checkbox label="Lembrar de mim" checked={remember} onChange={event => setRemember(event.target.checked)} disabled={isSubmitting} /><Link className="auth-form__link" to="/recuperar-senha">Esqueci minha senha</Link></div>
       <AuthCaptcha />
       <Button type="submit" className="auth-form__submit" loading={isSubmitting}>{isSubmitting ? "Entrando..." : "Entrar"}</Button>
       <div className="signin-form__divider"><span>ou</span></div>

@@ -1,159 +1,104 @@
-import { useState, useEffect, type FormEvent } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import toast from "react-hot-toast";
-import Navbar from "../../components/Navbar/Navbar";
+import { useState, type ChangeEvent, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Clock3, Link2, ShieldCheck } from "lucide-react";
+import AuthLayout from "../../components/AuthLayout/AuthLayout";
 import Button from "../../components/Button/Button";
+import Checkbox from "../../components/Checkbox/Checkbox";
 import FormField from "../../components/FormField/FormField";
+import PasswordRules from "../../components/PasswordRules/PasswordRules";
+import TermsModal from "../../components/TermsModal/TermsModal";
+import { formatPhone, validateStudentSignUp, type SignUpValues, type SignUpErrors } from "../SignUp/validation";
 import { authService } from "../../services/authService";
-import { handleApiError } from "../../utils/handleApiError";
-import "../SignUp/SignUp.css";
+import { authError } from "../../utils/authError";
+import "./SingUpStudent.css";
 
-function SignUpStudent() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get("token");
+type Values = Omit<SignUpValues, "modality">;
+const initialValues: Values = { name: "", email: "", phone: "", cpf: "", password: "", confirmPassword: "" };
 
-  const [values, setValues] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    cpf: "",
-    phone: "",
-  });
+export default function SignUpStudent() {
+  const [params] = useSearchParams();
+  const token = params.get("token")?.trim();
+  const [values, setValues] = useState<Values>(initialValues);
+  const [touched, setTouched] = useState<Partial<Record<keyof Values, boolean>>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [serverErrors, setServerErrors] = useState<SignUpErrors>({});
+  const errors = validateStudentSignUp(values);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Redireciona se o link de convite não contiver um token válido
-  useEffect(() => {
-    if (!token) {
-      toast.error("Link de convite inválido ou expirado.");
-      navigate("/login");
-    }
-  }, [token, navigate]);
-
-  function handleChange(field: keyof typeof values, value: string) {
-    if (field === "cpf") value = value.replace(/\D/g, "").slice(0, 11);
-    if (field === "phone") value = value.replace(/\D/g, "").slice(0, 11);
-    setValues((prev) => ({ ...prev, [field]: value }));
+  function fieldProps(name: keyof Values) {
+    return {
+      name, value: values[name], disabled: busy,
+      error: serverErrors[name] || (submitted || touched[name] ? errors[name] : undefined),
+      onBlur: () => setTouched(previous => ({ ...previous, [name]: true })),
+      onChange: (event: ChangeEvent<HTMLInputElement>) => {
+        let value = event.target.value;
+        if (name === "phone") value = formatPhone(value);
+        if (name === "cpf") value = value.replace(/\D/g, "").slice(0, 11).replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3}\.\d{3})(\d)/, "$1.$2").replace(/^(\d{3}\.\d{3}\.\d{3})(\d)/, "$1-$2");
+        setValues(previous => ({ ...previous, [name]: value }));
+        setServerErrors(previous => ({ ...previous, [name]: undefined }));
+        setNotice("");
+      },
+    };
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!token) {
-      toast.error("Token de convite ausente.");
+    if (busy || !token) return;
+    setSubmitted(true);
+    setNotice("");
+    const firstInvalid = Object.keys(errors)[0];
+    if (firstInvalid || !accepted) {
+      const field = event.currentTarget.elements.namedItem(firstInvalid || "terms");
+      if (field instanceof HTMLElement) field.focus();
       return;
     }
-
-    if (values.password !== values.confirmPassword) {
-      toast.error("As senhas não coincidem.");
-      return;
-    }
-
+    setBusy(true);
+    setServerErrors({});
     try {
-      setIsSubmitting(true);
-
       await authService.registroAlunoConvite(token, {
-        nome: values.name,
-        email: values.email,
-        password: values.password,
-        cpf: values.cpf,
-        celular: values.phone,
+        nome: values.name.trim(), email: values.email.trim().toLowerCase(),
+        password: values.password, cpf: values.cpf.replace(/\D/g, ""), celular: values.phone.replace(/\D/g, ""),
       });
-
-      toast.success("Cadastro realizado com sucesso! Aguarde a aprovação do seu Personal Trainer.");
-      navigate("/login");
-    } catch (err) {
-      handleApiError(err, "Falha ao realizar o cadastro pelo convite.");
-    } finally {
-      setIsSubmitting(false);
-    }
+      setSuccess(true);
+      setValues(initialValues);
+    } catch (error) {
+      const result = authError(error, "Não foi possível cadastrar. Se o convite expirou, peça um novo link ao seu personal.");
+      setNotice(result.message);
+      setServerErrors(result.fields);
+    } finally { setBusy(false); }
   }
 
-  return (
-    <>
-      <div className="signup__navigation"><Navbar /></div>
-      <main className="signup">
-        <section className="signup__content">
-          <h1 className="signup__title">
-            <span className="signup__desktop-title">Cadastro de <span>Aluno</span></span>
-          </h1>
-          <p className="signup__subtitle">Conclua seu cadastro para acessar seus treinos</p>
-
-          <form className="signup__form" onSubmit={handleSubmit} noValidate>
-            <div className="signup__fields">
-              <FormField
-                id="student-name"
-                name="name"
-                label="Nome completo"
-                placeholder="Seu nome"
-                value={values.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                required
-              />
-              <FormField
-                id="student-email"
-                name="email"
-                label="E-mail"
-                type="email"
-                placeholder="seu@email.com"
-                value={values.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                required
-              />
-              <FormField
-                id="student-password"
-                name="password"
-                label="Senha"
-                type="password"
-                placeholder="Mínimo 8 caracteres"
-                value={values.password}
-                onChange={(e) => handleChange("password", e.target.value)}
-                required
-              />
-              <FormField
-                id="student-confirmPassword"
-                name="confirmPassword"
-                label="Confirme a senha"
-                type="password"
-                placeholder="Repita a senha"
-                value={values.confirmPassword}
-                onChange={(e) => handleChange("confirmPassword", e.target.value)}
-                required
-              />
-              <FormField
-                id="student-cpf"
-                name="cpf"
-                label="CPF"
-                placeholder="Apenas números"
-                value={values.cpf}
-                onChange={(e) => handleChange("cpf", e.target.value)}
-                required
-              />
-              <FormField
-                id="student-phone"
-                name="phone"
-                label="Celular"
-                placeholder="DDD + Número"
-                value={values.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                required
-              />
-            </div>
-
-            <Button type="submit" className="signup__submit" disabled={isSubmitting}>
-              {isSubmitting ? "Cadastrando..." : "Concluir Cadastro"}
-            </Button>
-
-            <p className="signup__login-link">
-              Já possui uma conta? <Link to="/login">Entrar</Link>
-            </p>
-          </form>
-        </section>
-      </main>
-    </>
-  );
+  return <AuthLayout variant="student">
+    {!token ? <section className="auth-form student-signup student-signup__state" aria-labelledby="invite-title">
+      <span className="student-signup__icon"><Link2 aria-hidden="true" /></span>
+      <div className="auth-form__heading"><h1 id="invite-title">Você precisa de um convite</h1><p>Para criar sua conta de aluno, abra o link enviado pelo seu personal. Se ele não funcionar, solicite um novo convite.</p></div>
+      <Link className="auth-form__link" to="/">Voltar ao site</Link>
+    </section> : success ? <section className="auth-form student-signup student-signup__state" aria-labelledby="student-success" role="status">
+      <span className="student-signup__icon"><Clock3 aria-hidden="true" /></span>
+      <div className="auth-form__heading"><h1 id="student-success">Cadastro enviado!</h1><p>Sua conta está aguardando aprovação do personal.</p></div>
+      <p className="auth-form__notice">Seu personal recebeu a solicitação. Aguarde a aprovação para começar a acompanhar seus treinos.</p>
+      <Link className="auth-form__link" to="/">Voltar ao site</Link>
+    </section> : <form className="auth-form student-signup" onSubmit={submit} noValidate aria-labelledby="student-title">
+      <div className="auth-form__heading"><h1 id="student-title">Complete seu cadastro</h1><p>Preencha seus dados para se vincular ao seu personal. Seus dados não precisam ser enviados por terceiros.</p></div>
+      <div className="student-signup__invite"><ShieldCheck size={24} aria-hidden="true" /><div><strong>Cadastro por convite</strong><p>Sua solicitação será enviada ao personal responsável pelo link.</p></div></div>
+      {notice && <p className="auth-form__error" role="alert">{notice}</p>}
+      <div className="student-signup__grid">
+        <FormField id="student-name" {...fieldProps("name")} label="Nome completo" placeholder="Seu nome completo" autoComplete="name" maxLength={150} required />
+        <FormField id="student-email" {...fieldProps("email")} label="E-mail" type="email" placeholder="seu@email.com" autoComplete="email" maxLength={100} required />
+        <FormField id="student-cpf" {...fieldProps("cpf")} label="CPF" inputMode="numeric" placeholder="000.000.000-00" maxLength={14} required />
+        <FormField id="student-phone" {...fieldProps("phone")} label="Contato (celular)" type="tel" inputMode="numeric" autoComplete="tel-national" placeholder="(00) 00000-0000" maxLength={15} required />
+        <FormField id="student-password" {...fieldProps("password")} label="Senha" type="password" autoComplete="new-password" placeholder="Crie sua senha" maxLength={255} required />
+        <FormField id="student-confirm" {...fieldProps("confirmPassword")} label="Confirmar senha" type="password" autoComplete="new-password" placeholder="Repita sua senha" maxLength={255} required />
+      </div>
+      <PasswordRules password={values.password} />
+      <div className="student-signup__terms"><Checkbox name="terms" label="Li e aceito os" checked={accepted} disabled={busy} onChange={event => setAccepted(event.target.checked)} aria-invalid={submitted && !accepted || undefined} aria-describedby={submitted && !accepted ? "student-terms-error" : undefined} /><button type="button" className="auth-form__link" onClick={() => setTermsOpen(true)}>Termos de Uso e Política de Privacidade</button></div>
+      {submitted && !accepted && <p className="auth-form__error" id="student-terms-error" role="alert">Aceite os termos para continuar.</p>}
+      <Button type="submit" className="auth-form__submit" loading={busy}>{busy ? "Cadastrando..." : "Criar minha conta"}</Button>
+    </form>}
+    {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} onAccept={() => { setAccepted(true); setTermsOpen(false); }} />}
+  </AuthLayout>;
 }
-
-export default SignUpStudent;

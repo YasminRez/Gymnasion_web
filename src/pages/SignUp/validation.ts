@@ -19,7 +19,7 @@ export const passwordRules = [
   { label: "1 número", test: (value: string) => /[0-9]/.test(value) },
   { label: "1 caractere especial", test: (value: string) => /[^A-Za-z0-9\s]/.test(value) },
 ];
-export function validateSignUp(values: SignUpValues): SignUpErrors {
+export function validateStudentSignUp(values: Omit<SignUpValues, "modality">): SignUpErrors {
   const errors: SignUpErrors = {};
   if (!values.name.trim()) errors.name = "Preencha o nome completo.";
   else if (values.name.trim().length > 150) errors.name = "Use até 150 caracteres.";
@@ -32,6 +32,11 @@ export function validateSignUp(values: SignUpValues): SignUpErrors {
   else if (values.confirmPassword !== values.password) errors.confirmPassword = "As senhas não coincidem.";
   if (values.cpf.replace(/\D/g, "").length !== 11) errors.cpf = "Preencha os 11 números do CPF.";
   if (!/^[1-9]{2}9\d{8}$/.test(values.phone.replace(/\D/g, ""))) errors.phone = "Informe um celular com DDD e 9 dígitos, começando por 9: (11) 99999-9999.";
+  return errors;
+}
+
+export function validateSignUp(values: SignUpValues): SignUpErrors {
+  const errors = validateStudentSignUp(values);
   if (!values.modality || !Number.isSafeInteger(Number(values.modality)) || Number(values.modality) <= 0) errors.modality = "Selecione a modalidade principal.";
   return errors;
 }

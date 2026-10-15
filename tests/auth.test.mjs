@@ -128,3 +128,25 @@ test("network and server failures are not misreported as invalid credentials", (
   assert.match(authError({ isAxiosError: true }, "Credenciais inválidas").message, /conectar ao servidor/);
   assert.match(authError(apiError(500, {}), "Credenciais inválidas").message, /indisponível/);
 });
+
+test("student registration validates account fields without requiring a modality", () => {
+  const { validateStudentSignUp } = loadModule("pages/SignUp/validation.ts");
+  const student = { name: "Aluno Teste", email: "teste@example.com", cpf: "123.456.789-00", phone: "(11) 99999-9999", password: "Teste123!", confirmPassword: "Teste123!" };
+  assert.equal(Object.keys(validateStudentSignUp(student)).length, 0);
+  assert.ok(validateStudentSignUp({ ...student, email: "invalido", phone: "123" }).email);
+  assert.ok(validateStudentSignUp({ ...student, confirmPassword: "outra" }).confirmPassword);
+});
+
+test("student invitation registration passes token as a query parameter without creating a session", async () => {
+  let request;
+  const response = { id: "student-test", status: "PENDENTE" };
+  const { authService } = loadModule("services/authService.ts", {}, {
+    "./api": { api: { post: async (...args) => { request = args; return { data: response }; } } },
+    "./session": { session: { save: () => { throw new Error("Student registration must not sign in"); } } },
+  });
+  const payload = { nome: "Aluno Teste", email: "teste@example.com", password: "Teste123!", cpf: "12345678900", celular: "11999999999" };
+  assert.equal(await authService.registroAlunoConvite("invite-test", payload), response);
+  assert.equal(request[0], "/api/auth/registro-aluno-convite");
+  assert.equal(request[1], payload);
+  assert.equal(request[2].params.token, "invite-test");
+});
