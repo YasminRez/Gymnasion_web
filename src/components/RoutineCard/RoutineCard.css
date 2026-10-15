@@ -1,15 +1,250 @@
-.routine-card { display: flex; flex-direction: column; min-height: 230px; overflow: hidden; border: 1px solid #252525; border-radius: 8px; background: #1a1a1a; }
-.routine-card__header { padding: 10px 16px 8px; background: var(--routine-bg); color: var(--routine-text); }
-.routine-card h2 { overflow: hidden; font-size: 14px; font-weight: 500; line-height: 1.5; white-space: nowrap; text-overflow: ellipsis; }
-.routine-card__meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11px; }
-.routine-card__badge { padding: 2px 8px; border-radius: 5px; background: var(--routine-badge); }
-.routine-card__body { flex: 1; padding: 10px 16px 16px; }
-.routine-card__goal { display: -webkit-box; overflow: hidden; margin-bottom: 4px; color: #ccc; font-size: 12px; line-height: 1.5; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.routine-card h3 { margin: 10px 0 6px; color: #999; font-size: 10px; font-weight: 400; letter-spacing: .4px; text-transform: uppercase; }
-.routine-card__metrics { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; }
-.routine-card__metrics li { padding: 3px 8px; border: 1px solid #3a3a3a; border-radius: 999px; background: #232323; color: #ddd; font-size: 11px; }
-.routine-card__students { list-style: none; }
-.routine-card__students li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #3a3a3a; color: #ddd; font-size: 13px; overflow-wrap: anywhere; }
-.routine-card__avatar { display: grid; flex-shrink: 0; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-size: 9px; font-weight: 600; text-transform: uppercase; }
-.routine-card__students .routine-card__more { border-bottom: 0; color: #999; font-size: 11px; }
-.routine-card__accent { height: 4px; background: var(--routine-accent); }
+.routine-card-v2 {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card, 16px);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.routine-card-v2:hover {
+  border-color: var(--color-ink-300);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.routine-card-v2--ended {
+  opacity: 0.85;
+  background: #fafbfc;
+}
+
+.routine-card-v2__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.routine-card-v2__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.routine-card-v2__badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.routine-card-v2__sport-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  border-radius: 6px;
+}
+
+.routine-card-v2__title-group h2 {
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.routine-card-v2__menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.routine-card-v2__menu-trigger {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.routine-card-v2__menu-trigger:hover {
+  background: var(--color-background);
+  border-color: var(--color-border);
+}
+
+.routine-card-v2__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.routine-card-v2__dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 190px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  z-index: 21;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.routine-card-v2__dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-ink-700);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.routine-card-v2__dropdown button:hover {
+  background: var(--color-background);
+  color: var(--color-ink-900);
+}
+
+.routine-card-v2__dropdown button img {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.routine-card-v2__dropdown .routine-card-v2__delete-btn {
+  color: var(--color-danger);
+}
+
+.routine-card-v2__dropdown .routine-card-v2__delete-btn:hover {
+  background: var(--color-danger-50);
+}
+
+.routine-card-v2__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.routine-card-v2__goal {
+  font-size: 13px;
+  color: var(--color-ink-700);
+  line-height: 1.5;
+  background: var(--color-background);
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.routine-card-v2__goal strong {
+  color: var(--color-text);
+}
+
+.routine-card-v2__section h3 {
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.routine-card-v2__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.routine-card-v2__metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--color-ink-700);
+}
+
+.routine-card-v2__metric-chip img {
+  width: 14px;
+  height: 14px;
+}
+
+.routine-card-v2__students {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.routine-card-v2__student-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--color-background);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.routine-card-v2__student-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.routine-card-v2__student-profile span {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.routine-card-v2__unlink-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.routine-card-v2__unlink-btn:hover {
+  opacity: 1;
+  background: var(--color-danger-50);
+}
+
+.routine-card-v2__unlink-btn img {
+  width: 12px;
+  height: 12px;
+}

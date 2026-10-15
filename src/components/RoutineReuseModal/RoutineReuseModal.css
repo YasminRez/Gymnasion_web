@@ -1,0 +1,83 @@
+.routine-reuse {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.routine-reuse__warning {
+  padding: 12px 14px;
+  background: var(--color-warning-50);
+  color: var(--color-warning-700);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.routine-reuse__row {
+  display: flex;
+  gap: 12px;
+}
+
+.routine-reuse__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.routine-reuse__field label {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.routine-reuse__textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input, 10px);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.routine-reuse__textarea:focus {
+  outline: 2px solid var(--color-focus);
+  background: var(--color-surface);
+}
+
+.routine-reuse__error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.routine-reuse__callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-info-50);
+  border: 1px solid #d0e7ff;
+  border-radius: 12px;
+}
+
+.routine-reuse__callout img {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.routine-reuse__callout strong {
+  display: block;
+  font-size: 13px;
+  color: var(--color-ink-900);
+  margin-bottom: 2px;
+}
+
+.routine-reuse__callout p {
+  font-size: 12px;
+  color: var(--color-ink-700);
+  line-height: 1.4;
+}

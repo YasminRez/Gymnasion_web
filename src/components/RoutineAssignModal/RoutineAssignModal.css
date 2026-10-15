@@ -1,0 +1,60 @@
+.routine-assign {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.routine-assign__empty {
+  color: var(--color-ink-500);
+  font-size: 14px;
+  padding: 16px;
+  background: var(--color-background);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.routine-assign__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.routine-assign__item label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.routine-assign__item label:hover {
+  background: #f1f4f9;
+  border-color: var(--color-ink-300);
+}
+
+.routine-assign__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.routine-assign__info strong {
+  font-size: 14px;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.routine-assign__info small {
+  font-size: 12px;
+  color: var(--color-ink-500);
+}

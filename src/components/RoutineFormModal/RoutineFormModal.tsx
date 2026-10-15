@@ -1,212 +1,381 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import WorkspaceDialog from "../WorkspaceDialog/WorkspaceDialog";
+import Button from "../Button/Button";
+import FormField from "../FormField/FormField";
+import Avatar from "../Avatar/Avatar";
+import Checkbox from "../Checkbox/Checkbox";
 import MetricCreateModal from "../MetricCreateModal/MetricCreateModal";
 import { rotinaService } from "../../services/rotinaService";
 import { metricaService } from "../../services/metricaService";
-import { handleApiError } from "../../utils/handleApiError";
-import { initials } from "../../pages/Students/studentData";
-import { avatarColor } from "../../pages/Groups/groupData";
-import { metricTypeLabel, WEEK_DAYS } from "../../pages/Routines/routineData";
-import type { Modalidade } from "../../types/modalidade";
+import { authError } from "../../utils/authError";
+import {
+  eligibleStudentsForRoutine,
+  metricIcons,
+  metricLabels,
+  validateCreateRoutinePayload,
+  WEEK_DAYS,
+} from "../../features/routines/routineModel";
 import type { MetricaResponseDTO } from "../../types/metric";
 import type { AlunoResponse } from "../../types/student";
-// Mesmo visual do modal de turma.
-import "../GroupFormModal/GroupFormModal.css";
+import type { RotinaResponse } from "../../types/rotina";
 import "./RoutineFormModal.css";
 
-type Props = {
-  modalities: Modalidade[];
-  suggestedModalityIds: number[];
+interface Props {
+  modalities: { id: number; nome: string; descricao?: string }[];
   students: AlunoResponse[];
+  routines: RotinaResponse[];
   initialStudentId?: string;
   onClose: () => void;
-  onSaved: (message: string) => void;
-};
+  onSaved: (routine: RotinaResponse) => void;
+}
 
-const NO_METRICS_MESSAGE = "Nenhuma métrica cadastrada para essa modalidade. Cadastre ao menos uma métrica antes de continuar.";
-
-// US-10: criação de rotina de treino com métricas da modalidade.
-function RoutineFormModal({ modalities, suggestedModalityIds, students, initialStudentId, onClose, onSaved }: Props) {
-  const dialog = useRef<HTMLDialogElement>(null);
+export default function RoutineFormModal({
+  modalities,
+  students,
+  routines,
+  initialStudentId,
+  onClose,
+  onSaved,
+}: Props) {
   const [title, setTitle] = useState("");
-  const [modalityId, setModalityId] = useState<number | null>(null);
-  const [frequency, setFrequency] = useState<number | null>(null);
+  const [modalityId, setModalityId] = useState<number | null>(modalities[0]?.id || null);
+  const [frequency, setFrequency] = useState<number>(3);
   const [goal, setGoal] = useState("");
-  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(() => new Set(initialStudentId ? [initialStudentId] : []));
-  const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(() => new Set());
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(
+    () => new Set(initialStudentId ? [initialStudentId] : [])
+  );
+  const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(new Set());
+
   const [metrics, setMetrics] = useState<MetricaResponseDTO[]>([]);
-  const [metricsState, setMetricsState] = useState<"idle" | "loading" | "loaded" | "error">("idle");
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState("");
   const [creatingMetric, setCreatingMetric] = useState(false);
-  const [showAllModalities, setShowAllModalities] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Carrega métricas da modalidade selecionada
   useEffect(() => {
-    const element = dialog.current;
-    const previousFocus = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    element?.showModal();
-    document.body.style.overflow = "hidden";
-    return () => { element?.close(); document.body.style.overflow = previousOverflow; if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus(); };
-  }, []);
-
-  // As métricas dependem da modalidade escolhida (US-18).
-  useEffect(() => {
-    if (modalityId === null) return;
+    if (!modalityId) return;
     let cancelled = false;
-    setMetricsState("loading");
+    setMetricsLoading(true);
+    setMetricsError("");
     setSelectedMetrics(new Set());
-    metricaService.listarPorModalidade(modalityId)
-      .then((data) => { if (!cancelled) { setMetrics(data.filter((metric) => metric.ativo)); setMetricsState("loaded"); } })
-      .catch((err) => { if (!cancelled) { handleApiError(err, "Não foi possível carregar as métricas."); setMetricsState("error"); } });
-    return () => { cancelled = true; };
+
+    metricaService
+      .listarPorModalidade(modalityId)
+      .then((data) => {
+        if (!cancelled) {
+          const activeMetrics = data.filter((m) => m.ativo);
+          setMetrics(activeMetrics);
+          // Pré-seleciona até 3 métricas se houver
+          if (activeMetrics.length > 0) {
+            setSelectedMetrics(new Set(activeMetrics.slice(0, 3).map((m) => m.id)));
+          }
+          setMetricsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMetricsError("Não foi possível carregar as métricas para esta modalidade.");
+          setMetricsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [modalityId]);
 
-  const modality = modalities.find((item) => item.id === modalityId);
-  const shortList = modalities.filter((m) => suggestedModalityIds.includes(m.id) || m.id === modalityId);
-  const visibleModalities = showAllModalities || shortList.length === 0 ? modalities : shortList;
-  const canExpand = shortList.length > 0 && shortList.length < modalities.length;
+  const candidateStudents = eligibleStudentsForRoutine(students, routines);
 
-  // Alunos da modalidade escolhida aparecem primeiro.
-  const practices = (aluno: AlunoResponse) => aluno.modalidades.some((m) => m.id === modalityId);
-  const studentOptions = [...students].sort((a, b) => Number(practices(b)) - Number(practices(a)) || a.usuario.nome.localeCompare(b.usuario.nome, "pt-BR"));
+  function toggleStudent(id: string) {
+    setSelectedStudents((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
-  const errors = {
-    title: !title.trim() ? "Informe o título da rotina." : title.trim().length > 150 ? "O título deve ter no máximo 150 caracteres." : "",
-    modality: modalityId === null ? "Selecione uma modalidade." : "",
-    frequency: frequency === null ? "Selecione a frequência semanal." : "",
-    goal: !goal.trim() ? "Informe o objetivo da rotina." : "",
-    students: selectedStudents.size === 0 ? "Selecione pelo menos 1 aluno." : "",
-    metrics: modalityId !== null && metricsState === "loaded" && metrics.length > 0 && selectedMetrics.size === 0 ? "Selecione pelo menos 1 métrica." : "",
-  };
-  const noMetrics = metricsState === "loaded" && metrics.length === 0;
-  const invalid = Object.values(errors).some(Boolean) || noMetrics || metricsState !== "loaded";
-  const show = (key: keyof typeof errors) => submitted && Boolean(errors[key]);
-
-  function toggle(setter: typeof setSelectedStudents, id: string) {
-    setter((previous) => {
-      const next = new Set(previous);
-      if (next.has(id)) next.delete(id); else next.add(id);
+  function toggleMetric(id: string) {
+    setSelectedMetrics((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setSubmitted(true);
-    if (invalid || modalityId === null || frequency === null) return;
+    const payload = {
+      titulo: title.trim(),
+      modalidadeId: modalityId || 0,
+      frequenciaSemanal: frequency,
+      objetivos: goal.trim(),
+      alunosIds: Array.from(selectedStudents),
+      metricasIds: Array.from(selectedMetrics),
+    };
+
+    const clientErrors = validateCreateRoutinePayload(payload);
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
 
     setSaving(true);
+    setServerError("");
     try {
-      await rotinaService.criar({
-        titulo: title.trim(),
-        modalidadeId: modalityId,
-        frequenciaSemanal: frequency,
-        objetivos: goal.trim(),
-        alunosIds: Array.from(selectedStudents),
-        metricasIds: Array.from(selectedMetrics),
-      });
-      onSaved("Treino criado com sucesso!");
-    } catch (err) {
-      handleApiError(err, "Não foi possível criar a rotina.");
+      const created = await rotinaService.criar(payload);
+      onSaved(created);
+    } catch (err: unknown) {
+      setServerError(
+        authError(
+          err,
+          "Não foi possível salvar a rotina. Verifique se o aluno já possui rotina ativa."
+        ).message
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  function handleMetricCreated(metric: MetricaResponseDTO) {
-    setCreatingMetric(false);
-    setMetrics((previous) => [...previous, metric]);
-    setSelectedMetrics((previous) => new Set(previous).add(metric.id));
-  }
+  const selectedModality = modalities.find((m) => m.id === modalityId);
 
-  return <dialog ref={dialog} className="group-form routine-form" aria-labelledby="routine-form-title" onCancel={(event) => { event.preventDefault(); if (!saving && !creatingMetric) onClose(); }}>
-    <form onSubmit={handleSubmit} noValidate>
-      <header className="group-form__header">
-        <h2 id="routine-form-title">Nova rotina</h2>
-        <button type="button" className="group-form__close" aria-label="Fechar" disabled={saving} onClick={onClose}>×</button>
-      </header>
+  return (
+    <WorkspaceDialog
+      title="Nova rotina de treino"
+      description="Configure o planejamento, modalidade, frequência semanal, alunos e métricas."
+      icon="/design-system/imgIconDumbbell.svg"
+      busy={saving}
+      wide
+      onClose={onClose}
+      actions={
+        <>
+          <Button variant="secondary" disabled={saving} onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="routine-form"
+            loading={saving}
+            disabled={saving || metricsLoading}
+          >
+            Criar rotina
+          </Button>
+        </>
+      }
+    >
+      <form id="routine-form" onSubmit={handleSubmit} className="routine-form-v2">
+        <FormField
+          id="routine-title"
+          label="Título da rotina"
+          placeholder="Ex: Treino de Força e Resistência"
+          value={title}
+          maxLength={150}
+          onChange={(e) => setTitle(e.target.value)}
+          error={errors.titulo}
+          disabled={saving}
+          autoFocus
+        />
 
-      <div className="group-form__body">
-        <label className="group-form__label" htmlFor="routine-title">Título</label>
-        <input id="routine-title" className="group-form__input" maxLength={150} placeholder="Ex: Hipertrofia A – Membros superiores" value={title} onChange={(event) => setTitle(event.target.value)} aria-invalid={show("title")} aria-describedby={show("title") ? "routine-title-error" : undefined} autoFocus />
-        {show("title") && <p className="group-form__error" id="routine-title-error">{errors.title}</p>}
-
-        <fieldset>
-          <legend className="group-form__label">Modalidade</legend>
-          <div className="group-form__chips" data-invalid={show("modality")}>
-            {visibleModalities.map((item) => (
-              <button key={item.id} type="button" aria-pressed={modalityId === item.id} onClick={() => setModalityId(item.id)}>{item.nome}</button>
+        <div className="routine-form-v2__field">
+          <label className="routine-form-v2__label">Modalidade</label>
+          <div className="routine-form-v2__chips">
+            {modalities.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`routine-form-v2__chip ${modalityId === item.id ? "routine-form-v2__chip--active" : ""}`}
+                onClick={() => setModalityId(item.id)}
+                disabled={saving}
+              >
+                {item.nome}
+              </button>
             ))}
-            {canExpand && <button type="button" className="group-form__more" onClick={() => setShowAllModalities(!showAllModalities)}>{showAllModalities ? "Menos" : "+ Outras"}</button>}
           </div>
-          {show("modality") && <p className="group-form__error">{errors.modality}</p>}
-        </fieldset>
-
-        <fieldset>
-          <legend className="group-form__label">Frequência semanal <span>(dias por semana)</span></legend>
-          <div className="group-form__chips routine-form__days" data-invalid={show("frequency")}>
-            {WEEK_DAYS.map((day) => (
-              <button key={day} type="button" aria-pressed={frequency === day} aria-label={`${day} ${day === 1 ? "dia" : "dias"} por semana`} onClick={() => setFrequency(day)}>{day}x</button>
-            ))}
-          </div>
-          {show("frequency") && <p className="group-form__error">{errors.frequency}</p>}
-        </fieldset>
-
-        <label className="group-form__label" htmlFor="routine-goal">Objetivo</label>
-        <textarea id="routine-goal" className="group-form__input routine-form__goal" rows={3} placeholder="Ex: Ganho de massa magra e resistência muscular." value={goal} onChange={(event) => setGoal(event.target.value)} aria-invalid={show("goal")} aria-describedby={show("goal") ? "routine-goal-error" : undefined} />
-        {show("goal") && <p className="group-form__error" id="routine-goal-error">{errors.goal}</p>}
-
-        <fieldset>
-          <legend className="group-form__label">Alunos ({selectedStudents.size} {selectedStudents.size === 1 ? "selecionado" : "selecionados"})</legend>
-          <ul className="group-form__students" data-invalid={show("students")}>
-            {studentOptions.map((aluno) => (
-              <li key={aluno.id}>
-                <label>
-                  <input type="checkbox" checked={selectedStudents.has(aluno.id)} onChange={() => toggle(setSelectedStudents, aluno.id)} />
-                  <span className="group-form__avatar" style={{ background: avatarColor(aluno.usuario.nome) }} aria-hidden="true">{initials(aluno.usuario.nome)}</span>
-                  <span className="group-form__student">{aluno.usuario.nome}<small>{aluno.modalidades.map((m) => m.nome).join(", ") || "Geral"}</small></span>
-                </label>
-              </li>
-            ))}
-          </ul>
-          {show("students") && <p className="group-form__error">{errors.students}</p>}
-        </fieldset>
-
-        <fieldset>
-          <legend className="group-form__label">Métricas ({selectedMetrics.size} {selectedMetrics.size === 1 ? "selecionada" : "selecionadas"})</legend>
-          {modalityId === null && <p className="group-form__empty" data-invalid={submitted}>Selecione uma modalidade para ver as métricas disponíveis.</p>}
-          {metricsState === "loading" && <p className="group-form__empty">Carregando métricas...</p>}
-          {metricsState === "error" && <p className="group-form__empty">Não foi possível carregar as métricas desta modalidade.</p>}
-          {noMetrics && (
-            <div className="group-form__empty routine-form__no-metrics" role="alert">
-              <p>{NO_METRICS_MESSAGE}</p>
-              <button type="button" onClick={() => setCreatingMetric(true)}>+ Cadastrar métrica</button>
-            </div>
+          {errors.modalidadeId && (
+            <p className="routine-form-v2__error">{errors.modalidadeId}</p>
           )}
-          {metricsState === "loaded" && metrics.length > 0 && <>
-            <ul className="group-form__students" data-invalid={show("metrics")}>
-              {metrics.map((metric) => (
-                <li key={metric.id}>
-                  <label>
-                    <input type="checkbox" checked={selectedMetrics.has(metric.id)} onChange={() => toggle(setSelectedMetrics, metric.id)} />
-                    <span className="group-form__student">{metric.titulo}<small>{metricTypeLabel[metric.tipo]}</small></span>
-                  </label>
-                </li>
-              ))}
+        </div>
+
+        <div className="routine-form-v2__field">
+          <label className="routine-form-v2__label">
+            Frequência semanal <span>(dias por semana)</span>
+          </label>
+          <div className="routine-form-v2__chips routine-form-v2__chips--days">
+            {WEEK_DAYS.map((day) => (
+              <button
+                key={day}
+                type="button"
+                className={`routine-form-v2__chip ${frequency === day ? "routine-form-v2__chip--active" : ""}`}
+                onClick={() => setFrequency(day)}
+                disabled={saving}
+              >
+                {day}x
+              </button>
+            ))}
+          </div>
+          {errors.frequenciaSemanal && (
+            <p className="routine-form-v2__error">{errors.frequenciaSemanal}</p>
+          )}
+        </div>
+
+        <div className="routine-form-v2__field">
+          <label htmlFor="routine-goal" className="routine-form-v2__label">
+            Objetivos do treinamento
+          </label>
+          <textarea
+            id="routine-goal"
+            className="routine-form-v2__textarea"
+            rows={2}
+            placeholder="Ex: Aumento da capacidade cardiorrespiratória e ritmo."
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            disabled={saving}
+          />
+          {errors.objetivos && (
+            <p className="routine-form-v2__error">{errors.objetivos}</p>
+          )}
+        </div>
+
+        <div className="routine-form-v2__field">
+          <div className="routine-form-v2__section-header">
+            <label className="routine-form-v2__label">
+              Alunos vinculados ({selectedStudents.size}{" "}
+              {selectedStudents.size === 1 ? "selecionado" : "selecionados"})
+            </label>
+            <span className="routine-form-v2__subnote">
+              Apenas alunos ativos sem outra rotina ativa
+            </span>
+          </div>
+
+          {candidateStudents.length === 0 ? (
+            <p className="routine-form-v2__empty">
+              Nenhum aluno ativo sem rotina disponível. Cadastre novos alunos ou encerre rotinas anteriores.
+            </p>
+          ) : (
+            <ul className="routine-form-v2__items-list" aria-label="Alunos disponíveis">
+              {candidateStudents.map((aluno) => {
+                const checked = selectedStudents.has(aluno.id);
+                return (
+                  <li key={aluno.id} className="routine-form-v2__item">
+                    <Checkbox
+                      checked={checked}
+                      onChange={() => toggleStudent(aluno.id)}
+                      disabled={saving}
+                      label={
+                        <div className="routine-form-v2__item-content">
+                          <Avatar name={aluno.usuario.nome} tone="info" />
+                          <div className="routine-form-v2__item-info">
+                            <strong>{aluno.usuario.nome}</strong>
+                            <small>
+                              {aluno.modalidades.map((m) => m.nome).join(", ") || "Geral"}
+                            </small>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </li>
+                );
+              })}
             </ul>
-            <button type="button" className="routine-form__add-metric" onClick={() => setCreatingMetric(true)}>+ Nova métrica para {modality?.nome}</button>
-          </>}
-          {show("metrics") && <p className="group-form__error">{errors.metrics}</p>}
-        </fieldset>
-      </div>
+          )}
+          {errors.alunosIds && (
+            <p className="routine-form-v2__error">{errors.alunosIds}</p>
+          )}
+        </div>
 
-      <footer className="group-form__actions">
-        <button type="button" disabled={saving} onClick={onClose}>Cancelar</button>
-        <button type="submit" className="group-form__primary" disabled={saving || noMetrics} aria-busy={saving}>{saving ? "Salvando..." : "Criar rotina"}</button>
-      </footer>
-    </form>
-    {creatingMetric && modality && <MetricCreateModal modality={modality} onClose={() => setCreatingMetric(false)} onCreated={handleMetricCreated} />}
-  </dialog>;
+        <div className="routine-form-v2__field">
+          <div className="routine-form-v2__section-header">
+            <label className="routine-form-v2__label">
+              Métricas acompanhadas ({selectedMetrics.size}{" "}
+              {selectedMetrics.size === 1 ? "selecionada" : "selecionadas"})
+            </label>
+            {selectedModality && (
+              <button
+                type="button"
+                className="routine-form-v2__add-metric-btn"
+                onClick={() => setCreatingMetric(true)}
+              >
+                + Nova métrica
+              </button>
+            )}
+          </div>
+
+          {metricsLoading ? (
+            <p className="routine-form-v2__empty">Carregando métricas da modalidade...</p>
+          ) : metricsError ? (
+            <p className="routine-form-v2__empty routine-form-v2__empty--error">
+              {metricsError}
+            </p>
+          ) : metrics.length === 0 ? (
+            <div className="routine-form-v2__empty routine-form-v2__empty--alert">
+              <p>
+                Nenhuma métrica cadastrada para {selectedModality?.nome || "esta modalidade"}.
+              </p>
+              <Button
+                variant="secondary"
+                onClick={() => setCreatingMetric(true)}
+              >
+                + Cadastrar métrica agora
+              </Button>
+            </div>
+          ) : (
+            <ul className="routine-form-v2__items-list" aria-label="Métricas disponíveis">
+              {metrics.map((metric) => {
+                const checked = selectedMetrics.has(metric.id);
+                const icon = metricIcons[metric.tipo] || "imgIconActivity1";
+                return (
+                  <li key={metric.id} className="routine-form-v2__item">
+                    <Checkbox
+                      checked={checked}
+                      onChange={() => toggleMetric(metric.id)}
+                      disabled={saving}
+                      label={
+                        <div className="routine-form-v2__item-content">
+                          <img
+                            src={`/student-profile/${icon}.svg`}
+                            alt=""
+                            className="routine-form-v2__metric-icon"
+                          />
+                          <div className="routine-form-v2__item-info">
+                            <strong>{metric.titulo}</strong>
+                            <small>{metricLabels[metric.tipo] || metric.tipo}</small>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {errors.metricasIds && (
+            <p className="routine-form-v2__error">{errors.metricasIds}</p>
+          )}
+        </div>
+
+        {serverError && (
+          <p className="workspace-dialog__error" role="alert">
+            {serverError}
+          </p>
+        )}
+      </form>
+
+      {creatingMetric && selectedModality && (
+        <MetricCreateModal
+          modality={selectedModality}
+          onClose={() => setCreatingMetric(false)}
+          onCreated={(created) => {
+            setCreatingMetric(false);
+            setMetrics((prev) => [...prev, created]);
+            setSelectedMetrics((prev) => new Set(prev).add(created.id));
+          }}
+        />
+      )}
+    </WorkspaceDialog>
+  );
 }
-
-export default RoutineFormModal;

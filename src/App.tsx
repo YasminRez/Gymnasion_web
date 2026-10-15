@@ -16,6 +16,7 @@ import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
 import Metrics from "./pages/Metrics/Metrics";
 import Routines from "./pages/Routines/Routines";
+import NewRoutine from "./pages/Routines/NewRoutine";
 import DesignSystem from "./pages/DesignSystem/DesignSystem";
 import PersonalProvider from "./features/personal/PersonalProvider";
 import PersonalLayout from "./components/PersonalLayout/PersonalLayout";
@@ -57,9 +58,10 @@ function App() {
             <Route path="/alunos" element={<Students />} />
             <Route path="/alunos/:studentId" element={<StudentProfile />} />
             <Route path="/home" element={<Dashboard />} />
+            <Route path="/rotinas" element={<Routines />} />
+            <Route path="/rotinas/nova" element={<NewRoutine />} />
           </Route>
           <Route path="/grupos" element={<Groups />} />
-          <Route path="/rotinas" element={<Routines />} />
           <Route path="/metricas" element={<Metrics />} />
           <Route path="/home/notificacoes" element={<Navigate to="/home#notificacoes" replace />} />
           <Route path="/home/ultimos-aceitos" element={<Navigate to="/home#recentes" replace />} />
