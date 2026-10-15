@@ -1,4 +1,5 @@
 import Avatar from "../Avatar/Avatar";
+import { Link } from "react-router-dom";
 import SportTag, { type Sport } from "../SportTag/SportTag";
 import { normalizeSearch } from "../../features/personal/studentModel";
 import type { AlunoResponse } from "../../types/student";
@@ -14,5 +15,5 @@ export function StudentSports({ student }: { student: AlunoResponse }) {
 export default function StudentIdentity({ student, detail }: { student: AlunoResponse; detail?: string }) {
   const tones = ["orange", "blue", "purple", "green", "mint", "amber"];
   const tone = tones[Array.from(student.id).reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % tones.length];
-  return <div className="student-identity"><Avatar name={student.usuario.nome} className={`student-avatar--${tone}`} /><div><strong>{student.usuario.nome}</strong><small>{detail ?? student.usuario.email}</small></div></div>;
+  return <div className="student-identity"><Avatar name={student.usuario.nome} className={`student-avatar--${tone}`} /><div><Link className="student-identity__link" to={`/alunos/${encodeURIComponent(student.id)}`}><strong>{student.usuario.nome}</strong></Link><small>{detail ?? student.usuario.email}</small></div></div>;
 }

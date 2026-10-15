@@ -1,0 +1,4 @@
+.unavailable-action { display: inline-flex; position: relative; max-width: 100%; }
+.unavailable-action > button { cursor: not-allowed; }
+.unavailable-action__tip { display: none; position: absolute; z-index: 20; right: 0; bottom: calc(100% + 8px); width: max-content; max-width: min(280px, 80vw); padding: 10px 12px; background: var(--color-ink-900); color: white; border-radius: 8px; box-shadow: var(--shadow-sm); font-size: 12px; line-height: 1.5; font-weight: 400; }
+.unavailable-action:hover .unavailable-action__tip, .unavailable-action:focus-within .unavailable-action__tip { display: block; }

@@ -1,0 +1,16 @@
+.session-register-dialog { width: min(600px, calc(100vw - 32px)); }
+.session-register__form { display: flex; flex-direction: column; gap: 20px; }
+.session-register__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.session-register__metrics-title { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.session-register__info { display: flex; align-items: center; gap: 10px; border-radius: 10px; background: var(--color-info-50); padding: 10px 12px; color: var(--color-ink-700); font-size: 13px; }
+.session-register__info img { flex: none; }
+.session-register__rpe { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+.session-register__rpe button { --effort: var(--color-warning); height: 52px; border: 1.5px solid var(--effort); border-radius: 10px; background: white; color: var(--color-ink-700); font-size: 16px; font-weight: 800; cursor: pointer; }
+.session-register__rpe button:nth-child(-n+3) { --effort: var(--color-success); }
+.session-register__rpe button:nth-child(n+8) { --effort: var(--color-danger); }
+.session-register__rpe button[aria-pressed="true"] { background: var(--effort); color: white; box-shadow: 0 0 0 3px var(--color-warning-50); }
+.session-register__scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--color-ink-500); }
+.session-register__effort { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px; background: var(--color-warning-50); }
+.session-register__effort > strong { display: grid; place-items: center; width: 36px; height: 36px; flex: none; background: var(--color-warning); color: white; border-radius: 8px; }
+.session-register__effort p { font-size: 13px; color: var(--color-ink-500); }
+@media (max-width: 520px) { .session-register__grid { grid-template-columns: 1fr; } .session-register__rpe { grid-template-columns: repeat(5,minmax(0,1fr)); } }

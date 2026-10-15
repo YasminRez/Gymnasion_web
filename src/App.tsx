@@ -7,6 +7,7 @@ import SignIn from "./pages/SignIn/SignIn";
 import Home from "./pages/Home/Home";
 import SignUp from "./pages/SignUp/SignUp";
 import Students from "./pages/Students/Students";
+import StudentProfile from "./pages/StudentProfile/StudentProfile";
 import SignUpStudent from "./pages/SingUpStudent/SingUpStudent";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Groups from "./pages/Groups/Groups";
@@ -54,6 +55,7 @@ function App() {
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
           <Route element={<PersonalProvider><PersonalLayout /></PersonalProvider>}>
             <Route path="/alunos" element={<Students />} />
+            <Route path="/alunos/:studentId" element={<StudentProfile />} />
             <Route path="/home" element={<Dashboard />} />
           </Route>
           <Route path="/grupos" element={<Groups />} />

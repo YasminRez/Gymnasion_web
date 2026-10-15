@@ -1,0 +1,14 @@
+.profile-routine header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.profile-routine header p { margin-top: 2px; font-size: 13px; color: var(--color-ink-500); }
+.profile-routine__actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.profile-routine__edit { padding: 8px; }
+.profile-routine__metrics { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.profile-routine__metrics > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 10px; background: var(--color-background); border-radius: 8px; font-size: 12px; }
+.profile-routine__metrics small { font-size: inherit; color: var(--color-ink-500); }
+.profile-routine__week-label { color: var(--color-ink-500); font-size: 12px; font-weight: 600; }
+.profile-routine__week { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 8px; margin-top: 16px; }
+.profile-routine__week > div { border: 1px solid transparent; background: var(--color-background); border-radius: 10px; padding: 8px; display: flex; align-items: center; flex-direction: column; gap: 4px; color: var(--color-ink-400); font-size: 11px; min-height: 52px; }
+.profile-routine__week .is-completed { background: var(--color-primary-50); color: var(--color-primary-600); }
+.profile-routine__week .is-today { border-color: var(--color-primary-500); }
+.profile-routine__day-dot { height: 14px; width: 14px; border: 1px solid var(--color-ink-300); border-radius: 50%; }
+@media (max-width: 640px) { .profile-routine header { flex-wrap: wrap; } .profile-routine__week { gap: 4px; } }

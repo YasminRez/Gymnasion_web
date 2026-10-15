@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import type { ReactNode } from "react";
 import Avatar from "../Avatar/Avatar";
 import Logo from "../Logo/Logo";
+import UnavailableAction from "../UnavailableAction/UnavailableAction";
 import "./AppSidebar.css";
 
 export type SidebarItem = { id: string; label: string; icon: string; to?: string; onClick?: () => void; count?: number };
@@ -18,8 +19,9 @@ export default function AppSidebar({ role = "personal", user, menu, general, act
   const renderItem = (item: SidebarItem) => {
     const content = <><img src={`/design-system/${item.icon}.svg`} alt="" /><span>{item.label}</span>{item.count !== undefined && item.count > 0 && <span className="ds-sidebar__count">{item.count}</span>}</>;
     return item.to
-      ? <NavLink key={item.id} to={item.to} end className={({ isActive }) => `ds-sidebar__item ${isActive ? "ds-sidebar__item--active" : ""}`}>{content}</NavLink>
-      : <button key={item.id} type="button" onClick={item.onClick} disabled={!item.onClick} aria-current={activeId === item.id ? "page" : undefined} className={`ds-sidebar__item ${activeId === item.id ? "ds-sidebar__item--active" : ""}`}>{content}</button>;
+      ? <NavLink key={item.id} to={item.to} end={item.to === "/" || item.to === "/home"} className={({ isActive }) => `ds-sidebar__item ${isActive ? "ds-sidebar__item--active" : ""}`}>{content}</NavLink>
+      : !item.onClick ? <UnavailableAction key={item.id} variant="ghost" className="ds-sidebar__item" reason="Esta funcionalidade ainda não está disponível nesta versão.">{content}</UnavailableAction>
+      : <button key={item.id} type="button" onClick={item.onClick} aria-current={activeId === item.id ? "page" : undefined} className={`ds-sidebar__item ${activeId === item.id ? "ds-sidebar__item--active" : ""}`}>{content}</button>;
   };
   return <aside className="ds-sidebar" aria-label={role === "student" ? "Área do aluno" : "Área do personal"}>
     <div className="ds-sidebar__brand"><Logo /></div>

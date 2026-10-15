@@ -9,7 +9,7 @@ export interface RotinaResponse {
   objetivos: string | null;
   ativo?: boolean;
   alunos: { id: string; nome: string | null }[];
-  metricas: { id: string; titulo: string; tipo: TipoMetrica }[];
+  metricas: { id: string; titulo: string; tipo: TipoMetrica; obrigatoria?: boolean; quemPreenche?: "ALUNO" | "PERSONAL" | "AMBOS" }[];
 }
 
 export interface CriarRotinaPayload {

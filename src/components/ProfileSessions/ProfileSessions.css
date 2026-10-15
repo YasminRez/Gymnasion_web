@@ -1,0 +1,11 @@
+.profile-sessions { padding: 0; overflow: hidden; }
+.profile-sessions header { padding: 20px; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.profile-sessions__scroll { overflow-x: auto; }
+.profile-sessions table { border-collapse: collapse; text-align: left; width: 100%; font-size: 13px; }
+.profile-sessions th { background: var(--color-background); color: var(--color-ink-500); font-size: 11px; text-transform: uppercase; font-weight: 600; }
+.profile-sessions td, .profile-sessions th { padding: 16px 20px; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.profile-sessions td { color: var(--color-ink-700); max-width: 280px; white-space: normal; overflow-wrap: anywhere; min-width: 90px; }
+.profile-sessions td:first-child { white-space: nowrap; color: var(--color-ink-900); font-weight: 600; }
+.profile-sessions__rpe { padding: 3px 8px; border-radius: 6px; background: var(--color-background); }
+.profile-sessions__empty { padding: 20px; color: var(--color-ink-500); }
+.profile-sessions footer { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 16px; }

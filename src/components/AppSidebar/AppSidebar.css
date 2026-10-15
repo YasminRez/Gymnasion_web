@@ -16,3 +16,6 @@
 .ds-sidebar__user div > span { display: block; font-size: 12px; color: var(--color-text-muted); }
 .ds-sidebar__user button { flex: none; border: 0; padding: 0; background: transparent; cursor: pointer; }
 @media (max-width: 600px) { .ds-sidebar { width: 100%; flex-basis: auto; min-height: auto; } }
+.ds-sidebar .unavailable-action { width: 100%; }
+.ds-sidebar .unavailable-action > button { width: 100%; justify-content: flex-start; }
+.ds-sidebar .unavailable-action__tip { left: 0; right: auto; }
