@@ -49,24 +49,28 @@ export default function Routines() {
       });
   }, []);
 
+  const routinesList = useMemo(() => {
+    return Array.isArray(routines?.data) ? routines.data : [];
+  }, [routines?.data]);
+
   // Modalidades consolidadas
   const allModalities = useMemo(() => {
     const map = new Map<number, { id: number; nome: string }>();
     for (const m of modalities) map.set(m.id, { id: m.id, nome: m.nome });
-    for (const r of routines.data) {
+    for (const r of routinesList) {
       const id = r.modalidadeId ?? r.modalidade?.id;
       const nome = r.nomeModalidade || r.modalidade?.nome;
       if (id && nome && !map.has(id)) map.set(id, { id, nome });
     }
     return Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }, [modalities, routines.data]);
+  }, [modalities, routinesList]);
 
   // Contadores para as tabs de modalidades (Apenas esportes com rotinas cadastradas)
   const modalityTabs = useMemo(() => {
-    return routineModalityCounts(routines.data, allModalities, {
+    return routineModalityCounts(routinesList, allModalities, {
       activeModalityId: selectedModalityId,
     });
-  }, [routines.data, allModalities, selectedModalityId]);
+  }, [routinesList, allModalities, selectedModalityId]);
 
   // Atualiza query params
   function handleSelectModality(id: number | null) {
@@ -89,7 +93,7 @@ export default function Routines() {
   const filteredRoutines = useMemo(() => {
     const query = normalize(search.trim());
 
-    return routines.data.filter((r) => {
+    return routinesList.filter((r) => {
       // Filtro de modalidade
       if (selectedModalityId !== null) {
         const rModId = r.modalidadeId ?? r.modalidade?.id;
@@ -111,7 +115,7 @@ export default function Routines() {
 
       return true;
     });
-  }, [routines.data, selectedModalityId, search]);
+  }, [routinesList, selectedModalityId, search]);
 
   // Confirmação de exclusão
   async function handleConfirmDelete() {

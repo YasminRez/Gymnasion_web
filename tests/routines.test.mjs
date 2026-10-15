@@ -171,7 +171,11 @@ test("rotinaService integration signatures and URLs match API routes", async () 
     delete: async (url) => { calledUrl = url; calledMethod = "DELETE"; return { data: { mensagem: "Sucesso" } }; },
   };
 
-  const serviceModule = load("services/rotinaService.ts", { "./api": { api: mockApi } });
+  const apiTypes = load("types/api.ts");
+  const serviceModule = load("services/rotinaService.ts", {
+    "./api": { api: mockApi },
+    "../types/api": apiTypes,
+  });
   const { rotinaService } = serviceModule;
 
   await rotinaService.listar();

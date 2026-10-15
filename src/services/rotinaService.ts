@@ -1,4 +1,6 @@
 import { api } from "./api";
+import type { PaginatedOrArray } from "../types/api";
+import { unpackPage } from "../types/api";
 import type {
   CriarRotinaPayload,
   PlanejamentoRotinaResponseDTO,
@@ -9,9 +11,11 @@ import type {
 const BASE_URL = "/api/personal-trainers/rotinas";
 
 export const rotinaService = {
-  async listar(): Promise<RotinaResponse[]> {
-    const { data } = await api.get<RotinaResponse[]>(BASE_URL);
-    return data;
+  async listar(params?: { page?: number; size?: number }): Promise<RotinaResponse[]> {
+    const { data } = await api.get<PaginatedOrArray<RotinaResponse>>(BASE_URL, {
+      params: { size: 100, ...params },
+    });
+    return unpackPage(data);
   },
 
   async buscarPorId(id: string): Promise<RotinaResponse> {
@@ -19,9 +23,11 @@ export const rotinaService = {
     return data;
   },
 
-  async listarPorAluno(alunoId: string): Promise<RotinaResponse[]> {
-    const { data } = await api.get<RotinaResponse[]>(`${BASE_URL}/aluno/${alunoId}`);
-    return data;
+  async listarPorAluno(alunoId: string, params?: { page?: number; size?: number }): Promise<RotinaResponse[]> {
+    const { data } = await api.get<PaginatedOrArray<RotinaResponse>>(`${BASE_URL}/aluno/${alunoId}`, {
+      params: { size: 100, ...params },
+    });
+    return unpackPage(data);
   },
 
   async criar(payload: CriarRotinaPayload): Promise<RotinaResponse> {

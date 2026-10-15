@@ -14,12 +14,14 @@ export default function PersonalLayout() {
   const [termsOpen, setTermsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const name = students.data.find(student => student.nomePersonal)?.nomePersonal || "Personal";
+  const studentsList = Array.isArray(students?.data) ? students.data : [];
+  const notificationsList = Array.isArray(notifications?.data) ? notifications.data : [];
+  const name = studentsList.find(student => student.nomePersonal)?.nomePersonal || "Personal";
   const isStudents = location.pathname === "/alunos";
   const isProfile = location.pathname.startsWith("/alunos/");
   const isNewRoutine = location.pathname === "/rotinas/nova";
   const isRoutines = location.pathname === "/rotinas";
-  const profileStudent = isProfile ? students.data.find(student => student.id === decodeURIComponent(location.pathname.slice("/alunos/".length))) : undefined;
+  const profileStudent = isProfile ? studentsList.find(student => student.id === decodeURIComponent(location.pathname.slice("/alunos/".length))) : undefined;
   const date = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" }).format(new Date());
   useEffect(() => { setMenuOpen(false); }, [location.pathname, location.search]);
   return <div className="personal-layout">
@@ -29,7 +31,7 @@ export default function PersonalLayout() {
       <AppSidebar user={{ name, subtitle: "Personal Trainer" }} onLogout={() => { authService.logout(); navigate("/login", { replace: true }); }}
         menu={[
           { id: "home", label: "Início", icon: "imgIconHome", to: "/home" },
-          { id: "students", label: "Alunos", icon: "imgIconUsers", to: "/alunos", count: studentCounts(students.data).pending },
+          { id: "students", label: "Alunos", icon: "imgIconUsers", to: "/alunos", count: studentCounts(studentsList).pending },
           { id: "groups", label: "Turmas", icon: "imgIconLayers", to: "/grupos" },
           { id: "routines", label: "Rotinas de treino", icon: "imgIconDumbbell", to: "/rotinas" },
           { id: "metrics", label: "Métricas", icon: "imgIconActivity", to: "/metricas" },
@@ -44,7 +46,7 @@ export default function PersonalLayout() {
       <AppTopbar
         title={isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : isNewRoutine ? "Nova rotina" : isRoutines ? "Rotinas de treino" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
         subtitle={isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : isNewRoutine ? "Rotinas de treino / Nova rotina" : isRoutines ? "Planeje sessões com métricas personalizadas por modalidade" : `${date} · Aqui está o resumo dos seus alunos`}
-        notificationCount={notifications.data.filter(item=>!item.lida).length}
+        notificationCount={notificationsList.filter(item=>!item.lida).length}
         userName={name}
         searchLabel="Buscar alunos, turmas..."
         onSearch={query => navigate(isRoutines ? `/rotinas?busca=${encodeURIComponent(query)}` : `/alunos?busca=${encodeURIComponent(query)}`)}

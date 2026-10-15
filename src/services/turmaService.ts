@@ -1,13 +1,16 @@
 import { api } from "./api";
-import type { MensagemResponse } from "../types/api";
+import type { MensagemResponse, PaginatedOrArray } from "../types/api";
+import { unpackPage } from "../types/api";
 import type { AtualizarTurmaPayload, CriarTurmaPayload, TurmaResponse } from "../types/turma";
 
 const BASE_URL = "/api/personal-trainers/turmas";
 
 export const turmaService = {
-  async listar(): Promise<TurmaResponse[]> {
-    const { data } = await api.get<TurmaResponse[]>(BASE_URL);
-    return data;
+  async listar(params?: { page?: number; size?: number }): Promise<TurmaResponse[]> {
+    const { data } = await api.get<PaginatedOrArray<TurmaResponse>>(BASE_URL, {
+      params: { size: 100, ...params },
+    });
+    return unpackPage(data);
   },
 
   async buscarPorId(turmaId: string): Promise<TurmaResponse> {

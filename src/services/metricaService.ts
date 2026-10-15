@@ -1,4 +1,6 @@
 import { api } from "./api";
+import type { PaginatedOrArray } from "../types/api";
+import { unpackPage } from "../types/api";
 import {
   MetricaResponseDTO,
   CriarMetricaRequestDTO,
@@ -7,11 +9,11 @@ import {
 } from '../types/metric';
 
 export const metricaService = {
-  async listarPorModalidade(modalidadeId: number): Promise<MetricaResponseDTO[]> {
-    const response = await api.get<MetricaResponseDTO[]>('/api/personal-trainers/metricas', {
-      params: { modalidadeId },
+  async listarPorModalidade(modalidadeId: number, params?: { page?: number; size?: number }): Promise<MetricaResponseDTO[]> {
+    const response = await api.get<PaginatedOrArray<MetricaResponseDTO>>('/api/personal-trainers/metricas', {
+      params: { modalidadeId, size: 100, ...params },
     });
-    return response.data;
+    return unpackPage(response.data);
   },
 
   async criarMetrica(data: CriarMetricaRequestDTO): Promise<MetricaResponseDTO> {

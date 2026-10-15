@@ -1,9 +1,13 @@
 import { api } from "./api";
+import type { PaginatedOrArray } from "../types/api";
+import { unpackPage } from "../types/api";
 import type { Modalidade } from "../types/modalidade";
 
 export const modalidadeService = {
-  async listarTodas(): Promise<Modalidade[]> {
-    const { data } = await api.get<Modalidade[]>("/api/modalidades");
-    return data;
+  async listarTodas(params?: { page?: number; size?: number }): Promise<Modalidade[]> {
+    const { data } = await api.get<PaginatedOrArray<Modalidade>>("/api/modalidades", {
+      params: { size: 100, ...params },
+    });
+    return unpackPage(data);
   },
 };

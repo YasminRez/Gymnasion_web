@@ -192,13 +192,15 @@ export default function NewRoutine() {
 
   // Alunos elegíveis para a modalidade
   const eligibleStudents = useMemo(() => {
+    const studentsList = Array.isArray(students?.data) ? students.data : [];
+    const routinesList = Array.isArray(routines?.data) ? routines.data : [];
     return eligibleStudentsForRoutine(
-      students.data,
-      routines.data,
+      studentsList,
+      routinesList,
       undefined,
       modalidadeId
     );
-  }, [students.data, routines.data, modalidadeId]);
+  }, [students?.data, routines?.data, modalidadeId]);
 
   // Alunos elegíveis que ainda não foram selecionados
   const candidateStudents = useMemo(() => {
