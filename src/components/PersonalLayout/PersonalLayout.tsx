@@ -21,6 +21,7 @@ export default function PersonalLayout() {
   const isProfile = location.pathname.startsWith("/alunos/");
   const isNewRoutine = location.pathname === "/rotinas/nova";
   const isRoutines = location.pathname === "/rotinas";
+  const isMetrics = location.pathname === "/metricas";
   const profileStudent = isProfile ? studentsList.find(student => student.id === decodeURIComponent(location.pathname.slice("/alunos/".length))) : undefined;
   const date = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" }).format(new Date());
   useEffect(() => { setMenuOpen(false); }, [location.pathname, location.search]);
@@ -44,12 +45,12 @@ export default function PersonalLayout() {
     </div>
     <div className="personal-layout__body">
       <AppTopbar
-        title={isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : isNewRoutine ? "Nova rotina" : isRoutines ? "Rotinas de treino" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
-        subtitle={isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : isNewRoutine ? "Rotinas de treino / Nova rotina" : isRoutines ? "Planeje sessões com métricas personalizadas por modalidade" : `${date} · Aqui está o resumo dos seus alunos`}
+        title={isMetrics ? "Minhas métricas" : isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : isNewRoutine ? "Nova rotina" : isRoutines ? "Rotinas de treino" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
+        subtitle={isMetrics ? "Crie campos personalizados de desempenho por modalidade" : isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : isNewRoutine ? "Rotinas de treino / Nova rotina" : isRoutines ? "Planeje sessões com métricas personalizadas por modalidade" : `${date} · Aqui está o resumo dos seus alunos`}
         notificationCount={notificationsList.filter(item=>!item.lida).length}
         userName={name}
         searchLabel="Buscar alunos, turmas..."
-        onSearch={query => navigate(isRoutines ? `/rotinas?busca=${encodeURIComponent(query)}` : `/alunos?busca=${encodeURIComponent(query)}`)}
+        onSearch={query => navigate(isRoutines ? `/rotinas?busca=${encodeURIComponent(query)}` : isMetrics ? `/metricas?busca=${encodeURIComponent(query)}` : `/alunos?busca=${encodeURIComponent(query)}`)}
         onNotifications={() => navigate("/home#notificacoes")}
       />
       <main id="personal-content"><Outlet /></main>

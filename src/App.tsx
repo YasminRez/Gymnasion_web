@@ -60,9 +60,9 @@ function App() {
             <Route path="/home" element={<Dashboard />} />
             <Route path="/rotinas" element={<Routines />} />
             <Route path="/rotinas/nova" element={<NewRoutine />} />
+            <Route path="/metricas" element={<Metrics />} />
           </Route>
           <Route path="/grupos" element={<Groups />} />
-          <Route path="/metricas" element={<Metrics />} />
           <Route path="/home/notificacoes" element={<Navigate to="/home#notificacoes" replace />} />
           <Route path="/home/ultimos-aceitos" element={<Navigate to="/home#recentes" replace />} />
           <Route path="/home/sem-treino" element={<Navigate to="/home#sem-rotina" replace />} />
