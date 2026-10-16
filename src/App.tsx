@@ -11,6 +11,8 @@ import StudentProfile from "./pages/StudentProfile/StudentProfile";
 import SignUpStudent from "./pages/SingUpStudent/SingUpStudent";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Groups from "./pages/Groups/Groups";
+import GroupDetails from "./pages/GroupDetails/GroupDetails";
+import AccountHome from "./pages/AccountHome/AccountHome";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
@@ -53,6 +55,9 @@ function App() {
           <Route path="/cadastro" element={<SignUp />} />
         </Route>
 
+        <Route element={<ProtectedRoute />}>
+          <Route path="/conta" element={<AccountHome />} />
+        </Route>
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
           <Route element={<PersonalProvider><PersonalLayout /></PersonalProvider>}>
             <Route path="/alunos" element={<Students />} />

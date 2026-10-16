@@ -1,161 +1,61 @@
-import { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import PlatformHeader from "../../components/PlatformHeader/PlatformHeader";
-import GroupToolbar from "../../components/GroupToolbar/GroupToolbar";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import GroupCard from "../../components/GroupCard/GroupCard";
-import GroupFormModal from "../../components/GroupFormModal/GroupFormModal";
-import GroupAddStudentModal from "../../components/GroupAddStudentModal/GroupAddStudentModal";
-import GroupConfirmModal from "../../components/GroupConfirmModal/GroupConfirmModal";
-import GroupsEmptyState from "../../components/GroupsEmptyState/GroupsEmptyState";
-import StudentToast from "../../components/StudentToast/StudentToast";
+import GroupDataForm from "../../components/GroupDataForm/GroupDataForm";
+import WorkspaceDialog from "../../components/WorkspaceDialog/WorkspaceDialog";
+import Button from "../../components/Button/Button";
+import Toast, { type ToastProps } from "../../components/Toast/Toast";
+import { usePersonal } from "../../features/personal/PersonalContext";
+import { filterGroups } from "../../features/groups/groupModel";
 import { turmaService } from "../../services/turmaService";
 import { modalidadeService } from "../../services/modalidadeService";
-import { personalTrainerService } from "../../services/personalTrainerService";
-import { handleApiError } from "../../utils/handleApiError";
-import { normalize } from "./groupData";
-import type { Modalidade } from "../../types/modalidade";
-import type { AlunoResponse } from "../../types/student";
 import type { TurmaResponse } from "../../types/turma";
+import type { Modalidade } from "../../types/modalidade";
 import "./Groups.css";
-
-type Form = { mode: "create" } | { mode: "edit"; group: TurmaResponse };
-type Removal = { group: TurmaResponse; studentId: string };
-
-function Groups() {
+export default function Groups() {
+  const { students, refresh } = usePersonal();
   const [groups, setGroups] = useState<TurmaResponse[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loadFailed, setLoadFailed] = useState(false);
   const [modalities, setModalities] = useState<Modalidade[]>([]);
-  const [students, setStudents] = useState<AlunoResponse[]>([]);
-  const [studentsLoaded, setStudentsLoaded] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<number | null>(null);
-  const [form, setForm] = useState<Form | null>(null);
-  const [adding, setAdding] = useState<TurmaResponse | null>(null);
-  const [removal, setRemoval] = useState<Removal | null>(null);
-  const [removing, setRemoving] = useState(false);
-  const [notice, setNotice] = useState("");
-
-  const closeNotice = useCallback(() => setNotice(""), []);
-
-  const loadGroups = useCallback(async () => {
-    try {
-      setGroups(await turmaService.listar());
-      setLoadFailed(false);
-    } catch (err) {
-      handleApiError(err, "Não foi possível carregar as turmas.");
-      setLoadFailed(true);
-    } finally {
-      setLoaded(true);
-    }
-  }, []);
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [modalityError, setModalityError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const [creating, setCreating] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<ToastProps | null>(null);
+  const [params, setParams] = useSearchParams();
+  const search = params.get("busca") || "";
+  const filter = params.get("modalidade") || "";
+  const generation = useRef(0);
   useEffect(() => {
-    loadGroups();
-    modalidadeService.listarTodas().then(setModalities).catch((err) => handleApiError(err, "Erro ao carregar as modalidades."));
-    // Só alunos ativos podem entrar em uma turma.
-    personalTrainerService.listarTodos()
-      .then((data) => { setStudents(data.filter((aluno) => aluno.status === "ATIVO")); setStudentsLoaded(true); })
-      .catch((err) => handleApiError(err, "Não foi possível carregar a lista de alunos."));
-  }, [loadGroups]);
-
-  // Filtros: apenas as modalidades que já possuem turma.
-  const groupModalities = Array.from(new Map(groups.map((group) => [group.modalidadeId, { id: group.modalidadeId, nome: group.nomeModalidade }])).values())
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  const activeFilter = groupModalities.some((modality) => modality.id === filter) ? filter : null;
-  const suggestedModalityIds = [...new Set([...groupModalities.map((m) => m.id), ...students.flatMap((aluno) => aluno.modalidades.map((m) => m.id))])];
-
-  const term = normalize(search.trim());
-  const visible = groups
-    .filter((group) => normalize(group.nome).includes(term) && (activeFilter === null || group.modalidadeId === activeFilter))
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-
-  function openCreate() {
-    setNotice("");
-    // US-07 - Cenário 2: sem alunos não há como montar a turma.
-    if (studentsLoaded && students.length === 0) {
-      toast.error("Precisa ter pelo menos um aluno vinculado para conseguir criar uma turma");
-      return;
-    }
-    setForm({ mode: "create" });
+    let active = true; setLoading(true); setError(""); setModalityError("");
+    turmaService.listar().then(data => { if(active) setGroups(data); }).catch(() => { if(active) setError("Não foi possível carregar as turmas."); }).finally(() => { if(active) setLoading(false); });
+    modalidadeService.listarTodas().then(data => { if(active) setModalities(data); }).catch(() => { if(active) setModalityError("Não foi possível carregar as modalidades."); });
+    return () => { active = false; };
+  }, [attempt]);
+  useEffect(() => { if (!notice) return; const timer = window.setTimeout(() => setNotice(null), 6000); return () => clearTimeout(timer); }, [notice]);
+  const options = Array.from(new Map(groups.map(group => [group.modalidadeId, group.nomeModalidade])));
+  const visible = filterGroups(groups, search, filter);
+  function updateFilter(key: string, value: string) { setParams(previous => { const next = new URLSearchParams(previous); if(value) next.set(key,value); else next.delete(key); return next; }, { replace: true }); }
+  function create() {
+    if(students.loading) return;
+    if(students.error || modalityError) { setNotice({ tone: "error", title: "Não foi possível criar a turma", message: students.error || modalityError }); return; }
+    if(!students.data.some(student => student.status === "ATIVO")) { setNotice({ tone: "error", title: "Não foi possível criar a turma", message: "É necessário pelo menos um aluno ativo vinculado para criar uma turma." }); return; }
+    if(!modalities.length) { setNotice({ tone: "error", title: "Nenhuma modalidade disponível" }); return; }
+    generation.current += 1; setCreating(true);
   }
-
-  function handleSaved(message: string) {
-    setForm(null);
-    setAdding(null);
-    setNotice(message);
-    loadGroups();
-  }
-
-  // US-09 - Cenários 5 e 6: sempre confirma; se era o último aluno, o backend apaga a turma.
-  async function confirmRemoval() {
-    if (!removal) return;
-    const { group, studentId } = removal;
-    setRemoving(true);
-    try {
-      const { mensagem } = await turmaService.removerAluno(group.id, studentId);
-      const lastStudent = group.alunos.length === 1;
-      setGroups((previous) => lastStudent
-        ? previous.filter((item) => item.id !== group.id)
-        : previous.map((item) => item.id === group.id ? { ...item, alunos: item.alunos.filter((aluno) => aluno.id !== studentId), quantidadeAlunos: item.quantidadeAlunos - 1 } : item));
-      setRemoval(null);
-      setNotice(mensagem || "Aluno removido com sucesso!");
-    } catch (err) {
-      handleApiError(err, "Erro ao remover o aluno da turma.");
-    } finally {
-      setRemoving(false);
-    }
-  }
-
-  const removalStudent = removal?.group.alunos.find((aluno) => aluno.id === removal.studentId);
-
-  return (
-    <>
-      <PlatformHeader activePage="groups" />
-      <main className="groups" aria-label="Grupos">
-        <h1 className="groups__sr-only">Grupos</h1>
-        <GroupToolbar search={search} onSearch={setSearch} modalities={groupModalities} filter={activeFilter} onFilter={setFilter} onRegister={openCreate} />
-        {loaded && !loadFailed && visible.length === 0 && <GroupsEmptyState search={search.trim()} filtered={activeFilter !== null} onRegister={openCreate} />}
-        {visible.length > 0 && (
-          <section className="groups__grid" aria-label="Turmas cadastradas">
-            {visible.map((group) => (
-              <GroupCard
-                key={group.id}
-                group={group}
-                activeStudents={students.length}
-                removingId={removing ? removal?.studentId ?? null : null}
-                onEdit={(selected) => { setNotice(""); setForm({ mode: "edit", group: selected }); }}
-                onAddStudent={(selected) => { setNotice(""); setAdding(selected); }}
-                onRemoveStudent={(selected, studentId) => { setNotice(""); setRemoval({ group: selected, studentId }); }}
-              />
-            ))}
-          </section>
-        )}
-      </main>
-      {form && (
-        <GroupFormModal
-          group={form.mode === "edit" ? form.group : undefined}
-          modalities={modalities}
-          suggestedModalityIds={suggestedModalityIds}
-          students={students}
-          onClose={() => setForm(null)}
-          onSaved={handleSaved}
-        />
-      )}
-      {adding && <GroupAddStudentModal group={adding} students={students} onClose={() => setAdding(null)} onAdded={handleSaved} />}
-      {removal && (
-        <GroupConfirmModal
-          title="Remover aluno?"
-          description={`Clique para confirmar a remoção do aluno ${removalStudent?.nome ?? ""} da turma "${removal.group.nome}".${removal.group.alunos.length === 1 ? " Por ser o único aluno, a turma também será apagada." : ""}`}
-          confirmLabel="Confirmar remoção"
-          loading={removing}
-          onClose={() => setRemoval(null)}
-          onConfirm={confirmRemoval}
-        />
-      )}
-      {notice && <StudentToast message={notice} onClose={closeNotice} />}
-    </>
-  );
+  return <section className="groups-page" aria-label="Turmas">
+    <div className="groups-page__toolbar">
+      <div className="groups-page__filters" aria-label="Filtrar por modalidade"><button aria-pressed={!filter} onClick={() => updateFilter("modalidade","")}>Todas · {groups.length}</button>{options.map(([id,name]) => <button key={id} aria-pressed={filter === String(id)} onClick={() => updateFilter("modalidade",String(id))}>{name} · {groups.filter(group => group.modalidadeId === id).length}</button>)}</div>
+      <div className="groups-page__tools"><input type="search" aria-label="Buscar turma" placeholder="Buscar turma…" value={search} onChange={event => updateFilter("busca",event.target.value)} /><Button disabled={students.loading || loading} onClick={create}>+ Nova turma</Button></div>
+    </div>
+    {(error || modalityError) && <div className="workspace-error" role="alert">{error || modalityError}<Button variant="ghost" onClick={() => setAttempt(value => value+1)}>Tentar novamente</Button></div>}
+    {loading ? <p role="status" className="workspace-empty">Carregando turmas…</p> : !error && (visible.length ? <div className="groups-page__grid">{visible.map(group => <GroupCard key={group.id} group={group} />)}<button className="groups-page__create" onClick={create}><span><img src="/groups/imgIconPlus.svg" alt="" /></span><strong>Criar nova turma</strong><small>Agrupe alunos por modalidade ou horário</small></button></div> : <div className="groups-page__empty workspace-card">
+      <span><img src="/groups/imgIconLayers1.svg" alt="" /></span><h2>{groups.length ? "Nenhuma turma encontrada" : "Você ainda não possui turmas criadas"}</h2>
+      <p>{groups.length ? "Tente outro nome ou remova os filtros." : "Organize seus alunos em grupos por modalidade ou horário."}</p>
+      {groups.length ? <Button variant="secondary" onClick={() => setParams({})}>Limpar filtros</Button> : <Button disabled={students.loading} onClick={create}>+ Nova turma</Button>}
+    </div>)}
+    {creating && <WorkspaceDialog className="groups-page__dialog" title="Nova turma" description="Organize os alunos em um novo grupo." icon="/groups/imgIconLayers1.svg" busy={busy} onClose={() => setCreating(false)}><GroupDataForm key={generation.current} modalities={modalities} students={students.data} onBusy={setBusy} onCancel={() => setCreating(false)} onSaved={group => { setGroups(previous => [...previous,group]); setCreating(false); setParams({}); setNotice({ title: "Turma criada com sucesso!" }); void refresh(); }} /></WorkspaceDialog>}
+    {notice && <div className="personal-notice"><Toast {...notice} onClose={() => setNotice(null)} /></div>}
+  </section>;
 }
-
-export default Groups;

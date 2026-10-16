@@ -1,0 +1,25 @@
+.group-data-form { display:flex; flex-direction:column; gap:20px }
+.group-data-form fieldset { border:0; padding:0; min-width:0; margin:0 }
+.group-data-form__fields { display:flex; flex-direction:column; gap:18px }
+.group-data-form__row { display:grid; grid-template-columns:1fr 1fr; gap:16px }
+.group-data-form--edit { flex:1 }
+.group-data-form--edit .group-data-form__row { grid-template-columns:1fr }
+.group-data-form__hint { color:var(--color-ink-500); font-size:12px; display:flex; align-items:center; gap:6px; line-height:1.6 }
+.group-data-form legend { font-size:13px; font-weight:600; margin-bottom:10px; width:100% }
+.group-data-form__modalities>div { display:flex; flex-wrap:wrap; gap:8px }
+.group-data-form__modalities button { border:1px solid var(--color-border); border-radius:8px; background:white; padding:9px 12px; font:inherit; font-size:12px; cursor:pointer; color:var(--color-ink-700) }
+.group-data-form__modalities button[aria-pressed=true] { background:var(--color-primary-50); color:var(--color-primary-600); border-color:var(--color-primary-500) }
+.group-data-form__selection legend span { float:right; color:var(--color-primary-600) }
+.group-data-form__students { border:1px solid var(--color-border); border-radius:12px; max-height:240px; overflow:auto }
+.group-data-form__students label { display:flex; align-items:center; gap:12px; padding:10px 14px; font-size:14px; cursor:pointer; border-bottom:1px solid var(--color-border) }
+.group-data-form__students label:last-child { border:0 }
+.group-data-form__students label.is-selected { background:var(--color-primary-50) }
+.group-data-form__students input { accent-color:var(--color-primary-500); width:16px; height:16px }
+.group-data-form__students .ds-avatar { width:32px; height:32px; font-size:11px }
+.group-data-form__selection .group-data-form__hint { margin-top:10px }
+.group-data-form__actions { display:flex; justify-content:flex-end; gap:12px; margin-top:auto; padding-top:16px }
+.group-data-form__actions .button { min-width:0 }
+@media(max-width:600px) { .group-data-form__row { grid-template-columns:1fr }
+ }
+
+.group-data-form__modalities button { display: inline-flex; align-items: center; gap: 6px; }

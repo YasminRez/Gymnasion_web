@@ -29,6 +29,23 @@ function sessionFixture() {
 const token = exp => `header.${Buffer.from(JSON.stringify({ exp })).toString("base64url")}.signature`;
 const loginResponse = () => ({ token: token(Math.floor(Date.now() / 1000) + 3600), id: "test-personal", role: "PERSONAL_TRAINER" });
 
+test("student login keeps the session and has a separate authenticated destination", async () => {
+  const { session, homeForRole } = sessionFixture();
+  const response = { ...loginResponse(), id: "test-student", role: "ALUNO" };
+  const { authService } = loadModule("services/authService.ts", {}, {
+    "./api": { api: { post: async () => ({ data: response }) } },
+    "./session": { session },
+  });
+  await authService.login({ email: "student@example.test", password: "test" });
+  assert.equal(session.getUser().role, "ALUNO");
+  assert.equal(session.getToken(), response.token);
+  assert.equal(homeForRole("ALUNO"), "/conta");
+  assert.equal(homeForRole("PERSONAL_TRAINER"), "/home");
+  assert.equal(homeForRole("ADMIN"), "/conta");
+  authService.logout();
+  assert.equal(session.getUser(), null);
+});
+
 test("login without remember only survives in session storage", () => {
   const { session, localStorage, sessionStorage } = sessionFixture();
   const response = loginResponse();

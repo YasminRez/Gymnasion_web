@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="icon/tennis" clip-path="url(#clip0_0_164)">
+<path id="Vector" d="M8 14.6667C11.6819 14.6667 14.6667 11.6819 14.6667 8C14.6667 4.3181 11.6819 1.33333 8 1.33333C4.3181 1.33333 1.33333 4.3181 1.33333 8C1.33333 11.6819 4.3181 14.6667 8 14.6667Z" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M4 3.53333C4.62742 4.09606 5.12925 4.78465 5.47279 5.55425C5.81634 6.32385 5.99389 7.1572 5.99389 8C5.99389 8.8428 5.81634 9.67614 5.47279 10.4457C5.12925 11.2153 4.62742 11.9039 4 12.4667M12 3.53333C11.3726 4.09606 10.8708 4.78465 10.5272 5.55425C10.1837 6.32385 10.0061 7.1572 10.0061 8C10.0061 8.8428 10.1837 9.67614 10.5272 10.4457C10.8708 11.2153 11.3726 11.9039 12 12.4667" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_0_164">
+<rect width="16" height="16" fill="white"/>
+</clipPath>
+</defs>
+</svg>

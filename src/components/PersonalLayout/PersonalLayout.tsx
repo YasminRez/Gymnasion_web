@@ -9,7 +9,7 @@ import { studentCounts } from "../../features/personal/studentModel";
 import "./PersonalLayout.css";
 
 export default function PersonalLayout() {
-  const { students, notifications } = usePersonal();
+  const { students, notifications, groups } = usePersonal();
   const [menuOpen, setMenuOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const navigate = useNavigate();
@@ -18,6 +18,9 @@ export default function PersonalLayout() {
   const notificationsList = Array.isArray(notifications?.data) ? notifications.data : [];
   const name = studentsList.find(student => student.nomePersonal)?.nomePersonal || "Personal";
   const isStudents = location.pathname === "/alunos";
+  const isGroups = location.pathname === "/grupos" || location.pathname.startsWith("/grupos/");
+  const isGroupDetail = location.pathname.startsWith("/grupos/");
+  const group = groups.data.find(item => item.id === decodeURIComponent(location.pathname.slice("/grupos/".length)));
   const isProfile = location.pathname.startsWith("/alunos/");
   const isNewRoutine = location.pathname === "/rotinas/nova";
   const isRoutines = location.pathname === "/rotinas";

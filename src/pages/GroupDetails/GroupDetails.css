@@ -1,0 +1,26 @@
+.group-details>.workspace-link { display:inline-block; margin-bottom:16px }
+.group-details__grid { display:grid; grid-template-columns:minmax(280px,400px) minmax(0,1fr); gap:20px; min-height:720px }
+.group-details__data { display:flex; flex-direction:column; gap:8px }
+.group-details__form { border:0; padding:0; margin:12px 0 0; min-width:0; display:flex; flex:1 }
+.group-details__form>.group-data-form { width:100% }
+.group-details__students>header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px }
+.group-details__students>header>span { font-size:12px; color:var(--color-ink-500) }
+.group-details__add { display:flex; gap:12px; margin-bottom:16px }
+.group-details__select { flex:1; min-width:0 }
+.group-details__select select { width:100%; height:44px; border:1px solid var(--color-border); border-radius:10px; padding:0 12px; background:white; font:inherit; font-size:13px; color:var(--color-ink-700) }
+.group-details__duplicate { color:var(--color-danger-700); font-size:12px; margin-bottom:12px }
+.group-details__members { list-style:none; padding:0; display:flex; flex-direction:column; gap:10px; margin:0 }
+.group-details__members li { display:flex; align-items:center; gap:12px; background:var(--color-background); padding:12px 14px; border-radius:12px }
+.group-details__members li>div { min-width:0; flex:1; overflow-wrap:anywhere }
+.group-details__members a { font-size:14px; font-weight:600; color:var(--color-ink-900); text-decoration:none }
+.group-details__members p { font-size:12px; color:var(--color-ink-500); margin-top:3px }
+.group-details__members .button { color:var(--color-danger-700); font-size:12px; padding:8px 10px; min-height:34px }
+.group-details__sr { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden }
+@media(max-width:1150px) { .group-details__grid { grid-template-columns:1fr; min-height:0 }
+.group-details__data { min-height:440px }
+ }
+@media(max-width:520px) { .group-details__add { flex-wrap:wrap }
+.group-details__select { flex-basis:100% }
+.group-details__members li { flex-wrap:wrap }
+.group-details__members li>.button { margin-left:auto }
+ }

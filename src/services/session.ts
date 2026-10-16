@@ -8,6 +8,9 @@ export const SESSION_EXPIRED_EVENT = "gymnasion:session-expired";
 
 // Rota inicial da área autenticada do personal.
 export const PRIVATE_HOME = "/home";
+export function homeForRole(role: UserRole): string {
+  return role === "PERSONAL_TRAINER" ? PRIVATE_HOME : "/conta";
+}
 
 export interface SessionUser {
   id: string;

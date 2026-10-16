@@ -7,7 +7,7 @@ import FormField from "../../components/FormField/FormField";
 import Checkbox from "../../components/Checkbox/Checkbox";
 import Toast from "../../components/Toast/Toast";
 import { authService } from "../../services/authService";
-import { PRIVATE_HOME } from "../../services/session";
+import { homeForRole } from "../../services/session";
 import { authError } from "../../utils/authError";
 import "./SignIn.css";
 
@@ -54,13 +54,8 @@ export default function SignIn() {
     setIsSubmitting(true);
     try {
       const { role } = await authService.login({ email: values.email.trim().toLowerCase(), password: values.password }, remember);
-      if (role !== "PERSONAL_TRAINER") {
-        authService.logout();
-        setError("O acesso pela web é exclusivo para personal trainers.");
-        return;
-      }
       const from = routeState?.from;
-      navigate(from && from.startsWith("/") && !from.startsWith("//") ? from : PRIVATE_HOME, { replace: true });
+      navigate(role === "PERSONAL_TRAINER" && from && from.startsWith("/") && !from.startsWith("//") ? from : homeForRole(role), { replace: true });
     } catch (err) {
       setError(authError(err, "E-mail ou senha inválidos.").message);
     } finally {
@@ -71,7 +66,7 @@ export default function SignIn() {
   return <AuthLayout variant="login">
     {error && <div className="auth-form__toast"><Toast tone="error" title={error} message="Verifique os dados e tente novamente." onClose={() => setError("")} /></div>}
     <form className="auth-form signin-form" onSubmit={handleSubmit} noValidate aria-labelledby="signin-title">
-      <div className="auth-form__heading"><h1 id="signin-title">Bem-vindo de volta</h1><p>Acesse sua conta para gerenciar alunos, turmas e treinos.</p></div>
+      <div className="auth-form__heading"><h1 id="signin-title">Bem-vindo de volta</h1><p>Acesse sua conta Gymnasion.</p></div>
       {routeState?.registered && <p className="auth-form__notice" role="status">Cadastro realizado com sucesso! Entre para continuar.</p>}
       <FormField id="signin-email" name="email" {...fieldProps("email")} label="E-mail" type="email" autoComplete="username" placeholder="seu@email.com" required />
       <FormField id="signin-password" name="password" {...fieldProps("password")} label="Senha" type="password" autoComplete="current-password" placeholder="Digite sua senha" required />
