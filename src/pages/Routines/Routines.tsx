@@ -251,7 +251,11 @@ export default function Routines() {
                 return (
                   <tr key={routine.id}>
                     {/* ROTINA */}
-                    <td className="routines-page__col-routine">
+                    <td
+                      className="routines-page__col-routine routines-page__col-routine--clickable"
+                      onClick={() => navigate(`/rotinas/${routine.id}/planejamento`)}
+                      title="Clique para planejar ou adicionar sessões a esta rotina"
+                    >
                       <h3>{routine.titulo}</h3>
                       {routine.objetivos && <p title={routine.objetivos}>{routine.objetivos}</p>}
                     </td>
@@ -328,9 +332,36 @@ export default function Routines() {
                       )}
                     </td>
 
-                    {/* AÇÕES: Vincular turma/alunos, Reutilizar, Editar, Excluir */}
+                    {/* AÇÕES: Planejar sessões, Vincular turma/alunos, Reutilizar, Editar, Excluir */}
                     <td>
                       <div className="routines-page__actions-cell">
+                        {/* Botão Principal: Planejar / Adicionar sessão */}
+                        <button
+                          type="button"
+                          className="routines-page__action-circle-btn routines-page__action-circle-btn--plan"
+                          title="Planejar semanas / Adicionar sessão à rotina"
+                          aria-label={`Planejar ou adicionar sessão à rotina ${routine.titulo}`}
+                          onClick={() => navigate(`/rotinas/${routine.id}/planejamento`)}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                            <line x1="12" y1="14" x2="12" y2="18" />
+                            <line x1="10" y1="16" x2="14" y2="16" />
+                          </svg>
+                        </button>
+
                         {/* Botão 0: Vincular turma / alunos (apenas rotinas ativas) */}
                         {isRoutineActive(routine) && (
                           <button

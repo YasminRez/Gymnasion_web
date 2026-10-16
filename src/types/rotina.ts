@@ -70,3 +70,11 @@ export interface PlanejamentoRotinaResponseDTO {
   objetivos?: string | null;
   semanas: PlanejamentoSemanaDTO[];
 }
+
+export interface CriarSessaoTreinoPayload {
+  semana: number;
+  dataPlanejada: string; // YYYY-MM-DD
+  duracao?: number | null;
+  atividades?: string | null;
+}
+

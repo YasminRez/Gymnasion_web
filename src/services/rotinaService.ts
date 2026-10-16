@@ -3,9 +3,11 @@ import type { PaginatedOrArray } from "../types/api";
 import { unpackPage } from "../types/api";
 import type {
   CriarRotinaPayload,
+  CriarSessaoTreinoPayload,
   PlanejamentoRotinaResponseDTO,
   ReutilizarRotinaPayload,
   RotinaResponse,
+  SessaoTreinoPlanejadaDTO,
 } from "../types/rotina";
 
 const BASE_URL = "/api/personal-trainers/rotinas";
@@ -69,4 +71,10 @@ export const rotinaService = {
     const { data } = await api.get<PlanejamentoRotinaResponseDTO>(`${BASE_URL}/${id}/planejamento`);
     return data;
   },
+
+  async adicionarSessao(id: string, payload: CriarSessaoTreinoPayload): Promise<SessaoTreinoPlanejadaDTO> {
+    const { data } = await api.post<SessaoTreinoPlanejadaDTO>(`${BASE_URL}/${id}/sessoes`, payload);
+    return data;
+  },
 };
+

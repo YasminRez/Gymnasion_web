@@ -446,10 +446,10 @@ export default function NewRoutine() {
 
     try {
       setSubmitting(true);
-      await rotinaService.criar(payload);
-      toast.success(`Rotina “${titulo}” criada com sucesso!`);
+      const created = await rotinaService.criar(payload);
+      toast.success("Treino criado com sucesso!");
       await refresh();
-      navigate("/rotinas");
+      navigate(created?.id ? `/rotinas/${created.id}/planejamento` : "/rotinas");
     } catch (err: unknown) {
       const msg = extractProblemDetail(
         err,

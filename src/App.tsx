@@ -28,6 +28,7 @@ import PersonalProvider from "./features/personal/PersonalProvider";
 import PersonalLayout from "./components/PersonalLayout/PersonalLayout";
 import StudentSessionDetail from "./pages/StudentSessionDetail/StudentSessionDetail";
 import StudentSessionEdit from "./pages/StudentSessionEdit/StudentSessionEdit";
+import RoutineSessionPlanner from "./pages/RoutineSessionPlanner/RoutineSessionPlanner";
 
 
 function App() {
@@ -82,6 +83,8 @@ function App() {
             <Route path="/home" element={<Dashboard />} />
             <Route path="/rotinas" element={<Routines />} />
             <Route path="/rotinas/nova" element={<NewRoutine />} />
+            <Route path="/rotinas/:routineId/planejamento" element={<RoutineSessionPlanner />} />
+            <Route path="/rotinas/:routineId/sessoes/nova" element={<RoutineSessionPlanner />} />
             <Route path="/metricas" element={<Metrics />} />
             <Route path="/grupos" element={<Groups />} />
             <Route path="/grupos/:groupId" element={<GroupDetails />} />

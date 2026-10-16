@@ -213,6 +213,17 @@ test("rotinaService integration signatures and URLs match API routes", async () 
   await rotinaService.consultarPlanejamento("abc");
   assert.equal(calledUrl, "/api/personal-trainers/rotinas/abc/planejamento");
   assert.equal(calledMethod, "GET");
+
+  await rotinaService.adicionarSessao("abc", {
+    semana: 1,
+    dataPlanejada: "2026-11-10",
+    duracao: 45,
+    atividades: "Recuperação ativa\nAquecimento: 10 min",
+  });
+  assert.equal(calledUrl, "/api/personal-trainers/rotinas/abc/sessoes");
+  assert.equal(calledMethod, "POST");
+  assert.equal(calledBody.semana, 1);
+  assert.equal(calledBody.duracao, 45);
 });
 
 test("eligibleGroupsForRoutine and extractProblemDetail enforce modality match and RFC 7807 detail", () => {
