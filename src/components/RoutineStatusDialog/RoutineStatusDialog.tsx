@@ -37,11 +37,15 @@ export default function RoutineStatusDialog({
     ? `Excluir rotina “${routine.titulo}”?`
     : `Desvincular ${studentToUnlink?.nome || "aluno"}?`;
 
+  const isOnlyStudent = (routine.alunos || []).length <= 1;
+
   const description = isEnd
     ? "Ao encerrar, sessões futuras não executadas serão removidas e os alunos ficarão liberados para iniciar uma nova rotina. O histórico de sessões executadas será integralmente preservado."
     : isDelete
     ? "A rotina será apagada permanentemente do sistema. Rotinas com sessões já realizadas não podem ser excluídas fisicamente (RN-012)."
-    : `O aluno ${studentToUnlink?.nome || ""} será removido desta rotina. Ao menos um aluno deve permanecer vinculado.`;
+    : isOnlyStudent
+    ? `O aluno ${studentToUnlink?.nome || ""} será desvinculado desta rotina. Como é o único aluno vinculado, a rotina será finalizada liberando o aluno para um novo treino.`
+    : `O aluno ${studentToUnlink?.nome || ""} será desvinculado desta rotina. Os demais alunos vinculados continuarão com o treino normalmente.`;
 
   const tone = isEnd ? "primary" : "danger";
   const icon = isEnd
@@ -61,13 +65,44 @@ export default function RoutineStatusDialog({
         await rotinaService.excluir(routine.id);
         onSuccess("Rotina excluída com sucesso!");
       } else if (isUnlink && studentToUnlink) {
-        await rotinaService.desvincularAluno(routine.id, studentToUnlink.id);
-        // Atualiza a rotina localmente removendo o aluno
-        const updated: RotinaResponse = {
-          ...routine,
-          alunos: routine.alunos.filter((a) => a.id !== studentToUnlink.id),
-        };
-        onSuccess(`Aluno ${studentToUnlink.nome || ""} desvinculado com sucesso.`, updated);
+        if (isOnlyStudent) {
+          // Se só há 1 aluno na rotina, RN-012 exige excluir ou encerrar para desvincular o único aluno
+          try {
+            await rotinaService.excluir(routine.id);
+            onSuccess(`Rotina desvinculada e excluída com sucesso!`);
+          } catch {
+            const updated = await rotinaService.encerrar(routine.id);
+            onSuccess(`Rotina desvinculada e encerrada com sucesso! Histórico preservado.`, updated);
+          }
+        } else {
+          try {
+            await rotinaService.desvincularAluno(routine.id, studentToUnlink.id);
+            const updated: RotinaResponse = {
+              ...routine,
+              alunos: routine.alunos.filter((a) => a.id !== studentToUnlink.id),
+            };
+            onSuccess(`Aluno ${studentToUnlink.nome || ""} desvinculado com sucesso.`, updated);
+          } catch (unlinkErr) {
+            const parsedUnlink = authError(unlinkErr, "Erro ao desvincular aluno.");
+            if (
+              parsedUnlink.message.includes("pelo menos um aluno") ||
+              parsedUnlink.message.includes("exclua a rotina")
+            ) {
+              try {
+                await rotinaService.excluir(routine.id);
+                onSuccess(`Rotina desvinculada e excluída com sucesso!`);
+              } catch {
+                const updated = await rotinaService.encerrar(routine.id);
+                onSuccess(
+                  `Rotina desvinculada e encerrada com sucesso! Histórico preservado.`,
+                  updated
+                );
+              }
+            } else {
+              throw unlinkErr;
+            }
+          }
+        }
       }
     } catch (err: unknown) {
       const parsed = authError(err, "Não foi possível concluir a ação.");

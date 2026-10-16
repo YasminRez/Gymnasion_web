@@ -33,8 +33,10 @@ export default function RoutineAssignModal({
   onClose,
   onAssigned,
 }: Props) {
+  const [currentRoutine, setCurrentRoutine] = useState<RotinaResponse>(routine);
+  const [unlinkingStudentId, setUnlinkingStudentId] = useState<string | null>(null);
   const [fetchedGroups, setFetchedGroups] = useState<TurmaResponse[]>([]);
-  const [mode, setMode] = useState<"turma" | "alunos">("turma");
+  const [mode, setMode] = useState<"turma" | "alunos" | "vinculados">("turma");
 
   useEffect(() => {
     if (groups && groups.length > 0) return;
@@ -53,14 +55,14 @@ export default function RoutineAssignModal({
   }, [groups]);
 
   const allGroups = groups && groups.length > 0 ? groups : fetchedGroups;
-  const eligibleGroups = eligibleGroupsForRoutine(allGroups, routine);
+  const eligibleGroups = eligibleGroupsForRoutine(allGroups, currentRoutine);
 
-  const existingIds = new Set((routine.alunos || []).map((a) => a.id));
+  const existingIds = new Set((currentRoutine.alunos || []).map((a) => a.id));
   const candidates = eligibleStudentsForRoutine(
     students,
     routines,
-    routine.id,
-    routine.modalidadeId ?? routine.modalidade?.id
+    currentRoutine.id,
+    currentRoutine.modalidadeId ?? currentRoutine.modalidade?.id
   ).filter((student) => !existingIds.has(student.id));
 
   const [selectedTurmaId, setSelectedTurmaId] = useState<string>("");
@@ -83,6 +85,29 @@ export default function RoutineAssignModal({
       else next.add(id);
       return next;
     });
+  }
+
+  async function handleUnlinkStudent(studentId: string) {
+    if (unlinkingStudentId || busy) return;
+    if ((currentRoutine.alunos || []).length <= 1) {
+      setError("A rotina deve possuir pelo menos 1 aluno vinculado. Para remover todos, utilize a exclusão ou encerramento da rotina.");
+      return;
+    }
+    setUnlinkingStudentId(studentId);
+    setError("");
+    try {
+      await rotinaService.desvincularAluno(currentRoutine.id, studentId);
+      const updated: RotinaResponse = {
+        ...currentRoutine,
+        alunos: currentRoutine.alunos.filter((a) => a.id !== studentId),
+      };
+      setCurrentRoutine(updated);
+      onAssigned(updated);
+    } catch (err: unknown) {
+      setError(authError(err, "Não foi possível desvincular o aluno.").message);
+    } finally {
+      setUnlinkingStudentId(null);
+    }
   }
 
   async function handleAssign() {
@@ -143,20 +168,26 @@ export default function RoutineAssignModal({
       busy={busy}
       onClose={onClose}
       actions={
-        <>
-          <Button variant="secondary" disabled={busy} onClick={onClose}>
-            Cancelar
+        mode === "vinculados" ? (
+          <Button variant="secondary" onClick={onClose}>
+            Fechar
           </Button>
-          <Button
-            disabled={!canConfirm || busy}
-            loading={busy}
-            onClick={handleAssign}
-          >
-            {mode === "turma"
-              ? "Vincular turma"
-              : `Vincular ${selectedIds.size > 0 ? `(${selectedIds.size})` : ""}`}
-          </Button>
-        </>
+        ) : (
+          <>
+            <Button variant="secondary" disabled={busy} onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!canConfirm || busy}
+              loading={busy}
+              onClick={handleAssign}
+            >
+              {mode === "turma"
+                ? "Vincular turma"
+                : `Vincular ${selectedIds.size > 0 ? `(${selectedIds.size})` : ""}`}
+            </Button>
+          </>
+        )
       }
     >
       <div className="routine-assign">
@@ -187,9 +218,72 @@ export default function RoutineAssignModal({
           >
             Alunos individuais ({candidates.length})
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "vinculados"}
+            className={`routine-assign__tab ${mode === "vinculados" ? "is-active" : ""}`}
+            disabled={busy}
+            onClick={() => {
+              setMode("vinculados");
+              setError("");
+            }}
+          >
+            Alunos vinculados ({currentRoutine.alunos?.length || 0})
+          </button>
         </div>
 
-        {mode === "turma" ? (
+        {mode === "vinculados" ? (
+          (currentRoutine.alunos || []).length === 0 ? (
+            <p className="routine-assign__empty">Nenhum aluno vinculado a esta rotina.</p>
+          ) : (
+            <ul className="routine-assign__list" aria-label="Alunos vinculados">
+              {(currentRoutine.alunos || []).map((aluno) => {
+                const isOnly = (currentRoutine.alunos || []).length <= 1;
+                return (
+                  <li
+                    key={aluno.id}
+                    className="routine-assign__item"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "8px 12px",
+                      borderBottom: "1px solid #f1f5f9",
+                    }}
+                  >
+                    <div
+                      className="routine-assign__item-content"
+                      style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                    >
+                      <Avatar name={aluno.nome || "Aluno"} tone="info" />
+                      <div className="routine-assign__info">
+                        <strong>{aluno.nome || "Aluno"}</strong>
+                        <small style={{ color: "#64748b" }}>
+                          {isOnly ? "Único aluno vinculado" : "Aluno ativo na rotina"}
+                        </small>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      style={{ color: "#dc2626", fontSize: "12px", padding: "4px 8px" }}
+                      disabled={busy || unlinkingStudentId === aluno.id}
+                      loading={unlinkingStudentId === aluno.id}
+                      title={
+                        isOnly
+                          ? "Mínimo de 1 aluno vinculado por rotina (RN-012)"
+                          : "Desvincular aluno"
+                      }
+                      onClick={() => handleUnlinkStudent(aluno.id)}
+                    >
+                      Desvincular
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )
+        ) : mode === "turma" ? (
           eligibleGroups.length === 0 ? (
             <p className="routine-assign__empty">
               Nenhuma turma cadastrada para a modalidade <strong>{modalityName}</strong>.

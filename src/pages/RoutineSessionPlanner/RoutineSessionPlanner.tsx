@@ -21,6 +21,7 @@ import FormField from "../../components/FormField/FormField";
 import { rotinaService } from "../../services/rotinaService";
 import { isRoutineActive } from "../../features/routines/routineModel";
 import { authError } from "../../utils/authError";
+import { parseAtividades, serializeAtividades } from "../../utils/activityParser";
 import type {
   PlanejamentoRotinaResponseDTO,
   RotinaResponse,
@@ -51,24 +52,17 @@ function parseSessionPreview(atividades?: string | null): {
   headline: string;
   items: string[];
 } {
-  if (!atividades || !atividades.trim()) {
-    return { headline: "Sessão planejada", items: [] };
+  const parsed = parseAtividades(atividades);
+  const headline =
+    parsed.sessionName ||
+    (parsed.activities.length > 0 ? parsed.activities[0].title : "Sessão planejada");
+  const items = parsed.activities.map((a) =>
+    a.description ? `${a.title}: ${a.description}` : a.title
+  );
+  if (parsed.orientations) {
+    items.push(`Orientações: ${parsed.orientations}`);
   }
-  const lines = atividades
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-  if (lines.length === 0) {
-    return { headline: "Sessão planejada", items: [] };
-  }
-  if (lines.length === 1) {
-    return { headline: lines[0], items: [] };
-  }
-  const firstHasColon = lines[0].includes(":");
-  if (!firstHasColon) {
-    return { headline: lines[0], items: lines.slice(1) };
-  }
-  return { headline: "Sessão estruturada", items: lines };
+  return { headline, items };
 }
 
 export default function RoutineSessionPlanner() {
@@ -91,19 +85,8 @@ export default function RoutineSessionPlanner() {
   const [duration, setDuration] = useState("45 min");
   const [orientations, setOrientations] = useState("");
 
-  // Lista de blocos de atividades da sessão
-  const [activities, setActivities] = useState<ActivityBlock[]>([
-    {
-      id: "act-1",
-      title: "Aquecimento",
-      description: "10 min · mobilidade articular e ativação leve",
-    },
-    {
-      id: "act-2",
-      title: "Série principal",
-      description: "Bloco técnico e específico conforme objetivo da semana",
-    },
-  ]);
+  // Lista de blocos de atividades da sessão (sem valores estáticos)
+  const [activities, setActivities] = useState<ActivityBlock[]>([]);
 
   // Edição inline de um bloco existente
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -239,21 +222,17 @@ export default function RoutineSessionPlanner() {
 
     setSaving(true);
     try {
-      const serializedBlocks = activities
-        .map((a) => (a.description ? `${a.title}: ${a.description}` : a.title))
-        .join("\n");
-
-      const parts = [
-        sessionName.trim(),
-        serializedBlocks,
-        orientations.trim() ? `Orientações: ${orientations.trim()}` : "",
-      ].filter(Boolean);
+      const serialized = serializeAtividades({
+        sessionName,
+        activities,
+        orientations,
+      });
 
       await rotinaService.adicionarSessao(routineId, {
         semana: selectedWeek,
         dataPlanejada: plannedDate,
         duracao: durMin,
-        atividades: parts.join("\n"),
+        atividades: serialized,
       });
 
       toast.success(`Sessão adicionada à Semana ${selectedWeek} com sucesso!`);
@@ -261,6 +240,7 @@ export default function RoutineSessionPlanner() {
       // Prepara o formulário para a próxima sessão da semana
       setSessionName("");
       setOrientations("");
+      setActivities([]);
       const nextDate = new Date(plannedDate + "T12:00:00");
       if (!Number.isNaN(nextDate.getTime())) {
         nextDate.setDate(nextDate.getDate() + 2);

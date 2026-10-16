@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Hourglass,
   Lock,
+  Unlock,
   MessageSquare,
   AlertCircle,
   Timer,
@@ -24,7 +25,9 @@ import ValidateSessionModal from "../../components/ValidateSessionModal/Validate
 import SessionAuditModal from "../../components/SessionAuditModal/SessionAuditModal";
 import SessionCorrectionModal from "../../components/SessionCorrectionModal/SessionCorrectionModal";
 import { sessionDetailService } from "../../services/sessionDetailService";
+import { rotinaService } from "../../services/rotinaService";
 import { authError } from "../../utils/authError";
+import { parseAtividades } from "../../utils/activityParser";
 import type {
   DesempenhoDetalheResponse,
   ObservacaoFeedbackResponse,
@@ -52,10 +55,50 @@ export default function StudentSessionDetail() {
 
   const loadData = useCallback(async () => {
     try {
-      const [desempenhoData, feedbacksData] = await Promise.all([
-        sessionDetailService.obterDesempenho(sessionId),
-        sessionDetailService.consultarFeedbacks(studentId).catch(() => []),
-      ]);
+      let desempenhoData: DesempenhoDetalheResponse | null = null;
+      try {
+        desempenhoData = await sessionDetailService.obterDesempenho(sessionId);
+      } catch {
+        // Se a sessão ainda não possui desempenho registrado (planejada), busca detalhes da sessão do planejamento
+        const sessaoData = await sessionDetailService.obterSessao(sessionId);
+        let rotinaInfo = null;
+        if (sessaoData.rotinaTreinoId) {
+          try {
+            rotinaInfo = await rotinaService.buscarPorId(sessaoData.rotinaTreinoId);
+          } catch {
+            // fallback silencioso
+          }
+        }
+        const alunoNome =
+          rotinaInfo?.alunos?.find((a) => a.id === studentId)?.nome ||
+          rotinaInfo?.alunos?.[0]?.nome ||
+          "Aluno";
+
+        desempenhoData = {
+          sessaoId: sessaoData.id,
+          rotinaTreinoId: sessaoData.rotinaTreinoId,
+          rotinaTitulo: rotinaInfo?.titulo || "Treino",
+          modalidadeNome: rotinaInfo?.nomeModalidade || rotinaInfo?.modalidade?.nome || "",
+          desempenhoId: "",
+          alunoId: studentId,
+          nomeAluno: alunoNome,
+          semana: sessaoData.semana,
+          dataPlanejada: sessaoData.dataPlanejada,
+          dataReal: sessaoData.dataReal,
+          duracao: sessaoData.duracao,
+          atividades: sessaoData.atividades,
+          status: sessaoData.status,
+          concluidaAluno: sessaoData.concluidaAluno,
+          validadaPersonal: sessaoData.validadaPersonal,
+          nivelCansaco: null,
+          registradoPor: "",
+          dataRegistro: null,
+          observacoes: null,
+          metricas: [],
+        };
+      }
+
+      const feedbacksData = await sessionDetailService.consultarFeedbacks(studentId).catch(() => []);
       setSession(desempenhoData);
       setFeedbacks(feedbacksData);
     } catch (err) {
@@ -500,21 +543,80 @@ export default function StudentSessionDetail() {
             </header>
 
             <div className="session-detail__planned-activities">
-              {session.atividades ? (
-                session.atividades.split("\n").map((act, i) => (
-                  <div key={i} className="planned-activity-item">
-                    <CheckCircle2 size={16} color="#10b981" />
-                    <span>{act.trim()}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="no-activities">Nenhuma atividade detalhada para esta sessão.</p>
-              )}
+              {(() => {
+                const parsed = parseAtividades(session.atividades);
+                const hasContent =
+                  parsed.sessionName || parsed.activities.length > 0 || parsed.orientations;
+
+                if (!hasContent) {
+                  return (
+                    <p className="no-activities">Nenhuma atividade detalhada para esta sessão.</p>
+                  );
+                }
+
+                return (
+                  <>
+                    {parsed.sessionName && (
+                      <div
+                        className="planned-session-name"
+                        style={{
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        {parsed.sessionName}
+                      </div>
+                    )}
+
+                    {parsed.activities.map((act) => (
+                      <div key={act.id} className="planned-activity-item">
+                        <CheckCircle2 size={16} color="#10b981" />
+                        <div>
+                          <strong>{act.title}</strong>
+                          {act.description && (
+                            <span
+                              style={{ color: "var(--text-secondary)", marginLeft: "0.25rem" }}
+                            >
+                              · {act.description}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {parsed.orientations && (
+                      <div
+                        className="planned-orientations"
+                        style={{
+                          marginTop: "0.75rem",
+                          padding: "0.6rem 0.8rem",
+                          background: "#f8fafc",
+                          borderRadius: "6px",
+                          fontSize: "0.875rem",
+                          borderLeft: "3px solid #6366f1",
+                        }}
+                      >
+                        <strong>Orientações:</strong> <span>{parsed.orientations}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <footer className="session-detail__planned-footer">
-              <Lock size={14} />
-              <span>Sessão executada · planejamento bloqueado para edição</span>
+              {session.concluidaAluno ? (
+                <>
+                  <Lock size={14} />
+                  <span>Sessão executada · planejamento bloqueado para edição</span>
+                </>
+              ) : (
+                <>
+                  <Unlock size={14} />
+                  <span>Sessão futura · planejamento pode ser editado</span>
+                </>
+              )}
             </footer>
           </section>
         </div>

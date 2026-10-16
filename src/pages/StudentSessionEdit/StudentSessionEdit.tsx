@@ -20,6 +20,7 @@ import Checkbox from "../../components/Checkbox/Checkbox";
 import { sessionDetailService } from "../../services/sessionDetailService";
 import { rotinaService } from "../../services/rotinaService";
 import { authError } from "../../utils/authError";
+import { parseAtividades, serializeAtividades } from "../../utils/activityParser";
 import type { TrainingSession } from "../../types/personalDashboard";
 import type { RotinaResponse } from "../../types/rotina";
 import type { Sport } from "../../components/SportTag/SportTag";
@@ -76,32 +77,11 @@ export default function StudentSessionEdit() {
       setPlannedDate(sessionData.dataPlanejada || "");
       setDuration(sessionData.duracao ? `${sessionData.duracao} min` : "40 min");
 
-      // Parse atividades
-      if (sessionData.atividades) {
-        const lines = sessionData.atividades.split("\n").filter((l) => l.trim().length > 0);
-        const parsed: ActivityItem[] = lines.map((line, idx) => {
-          const parts = line.split("·");
-          const title = parts[0]?.trim() || `Atividade ${idx + 1}`;
-          const description = parts.slice(1).join("·").trim() || line;
-          return {
-            id: `act-${idx}`,
-            title,
-            description,
-          };
-        });
-        setActivities(parsed);
-      } else {
-        setActivities([
-          { id: "1", title: "Aquecimento", description: "300 m · nado livre · ritmo leve" },
-          { id: "2", title: "Educativos", description: "4 × 50 m · pernada com prancha · descanso 20 s" },
-          { id: "3", title: "Nado contínuo", description: "800 m · ritmo confortável · FC até 135 bpm" },
-        ]);
-      }
-
-      setSessionName(`Recuperação ativa`);
-      setOrientations(
-        "Intensidade baixa, foco em técnica e respiração. Se o ombro incomodar, troque a braçada por pernada."
-      );
+      // Parse atividades reais do backend sem valores estáticos
+      const parsedAtividades = parseAtividades(sessionData.atividades);
+      setActivities(parsedAtividades.activities);
+      setSessionName(parsedAtividades.sessionName);
+      setOrientations(parsedAtividades.orientations);
 
       // Carrega rotina para obter métricas da modalidade
       if (sessionData.rotinaTreinoId) {
@@ -193,10 +173,12 @@ export default function StudentSessionEdit() {
 
     setSaving(true);
     try {
-      // Monta string de atividades
-      const serializedActivities = activities
-        .map((act) => `${act.title} · ${act.description}`)
-        .join("\n");
+      // Monta string de atividades completa com orientações e nome
+      const serialized = serializeAtividades({
+        sessionName,
+        activities,
+        orientations,
+      });
 
       const durMin = parseInt(duration.replace(/\D/g, ""), 10) || 40;
 
@@ -204,7 +186,7 @@ export default function StudentSessionEdit() {
         semana: session.semana,
         dataPlanejada: plannedDate,
         duracao: durMin,
-        atividades: `${sessionName ? sessionName + "\n" : ""}${serializedActivities}`,
+        atividades: serialized,
       });
 
       toast.success("Planejamento da sessão futura atualizado com sucesso!");
@@ -352,6 +334,11 @@ export default function StudentSessionEdit() {
 
             {/* Lista de atividades */}
             <div className="session-edit__activities-list">
+              {activities.length === 0 && !isAddingActivity && (
+                <p className="session-edit__empty-activities" style={{ color: "#64748b", padding: "1rem 0" }}>
+                  Nenhum exercício cadastrado. Clique em "+ Adicionar exercício" para incluir atividades nesta sessão.
+                </p>
+              )}
               {activities.map((act, index) => {
                 const isEditing = editingActivityId === act.id;
 

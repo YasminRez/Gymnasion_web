@@ -26,7 +26,7 @@ export interface DesempenhoDetalheResponse {
   dataReal?: string | null;
   duracao?: number | null;
   atividades?: string | null;
-  status: "PLANEJADA" | "CONCLUIDA";
+  status: "PLANEJADA" | "CONCLUIDA" | "CANCELADA";
   concluidaAluno: boolean;
   validadaPersonal: boolean;
   nivelCansaco?: number | null;
