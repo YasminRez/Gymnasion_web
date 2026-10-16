@@ -50,6 +50,11 @@ export const rotinaService = {
     return data;
   },
 
+  async vincularTurma(rotinaId: string, turmaId: string): Promise<RotinaResponse> {
+    const { data } = await api.post<RotinaResponse>(`${BASE_URL}/${rotinaId}/turmas/${turmaId}`);
+    return data;
+  },
+
   async desvincularAluno(id: string, alunoId: string): Promise<{ mensagem?: string }> {
     const { data } = await api.delete<{ mensagem?: string }>(`${BASE_URL}/${id}/alunos/${alunoId}`);
     return data;

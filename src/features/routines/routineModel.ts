@@ -253,3 +253,28 @@ export function routineModalityCounts(
 
   return result;
 }
+
+export function eligibleGroupsForRoutine<T extends { modalidadeId: number; nome?: string }>(
+  groups: T[],
+  routine: RotinaResponse
+): T[] {
+  const routineModalityId = routine.modalidadeId ?? routine.modalidade?.id;
+  if (routineModalityId == null) return [];
+  return groups.filter((group) => group.modalidadeId === routineModalityId);
+}
+
+export function extractProblemDetail(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: { detail?: string; mensagem?: string; message?: string } } })
+    ?.response?.data;
+  if (data?.detail && typeof data.detail === "string" && data.detail.trim()) {
+    return data.detail;
+  }
+  if (data?.mensagem && typeof data.mensagem === "string" && data.mensagem.trim()) {
+    return data.mensagem;
+  }
+  if (data?.message && typeof data.message === "string" && data.message.trim()) {
+    return data.message;
+  }
+  return fallback;
+}
+

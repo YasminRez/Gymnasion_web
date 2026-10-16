@@ -26,10 +26,33 @@ test("removal updates count without mutating source and handles final member",()
   assert.equal(next.quantidadeAlunos,1);assert.equal(next.alunos[0].id,"2");assert.equal(group.alunos.length,2);
   assert.equal(model.removeGroupMember(next,"2").quantidadeAlunos,0);
 });
+test("student search in new group modal filters active students by name ignoring accents",()=>{
+  const students=[
+    {id:"1",status:"ATIVO",usuario:{nome:"João Ângelo"}},
+    {id:"2",status:"ATIVO",usuario:{nome:"Maria Clara"}},
+    {id:"3",status:"INATIVO",usuario:{nome:"João Inativo"}},
+  ];
+  assert.deepEqual(model.filterGroupStudents(students,"").map(s=>s.id),["1","2"]);
+  assert.deepEqual(model.filterGroupStudents(students," joao angelo ").map(s=>s.id),["1"]);
+  assert.deepEqual(model.filterGroupStudents(students,"clara").map(s=>s.id),["2"]);
+  assert.equal(model.filterGroupStudents(students,"inexistente").length,0);
+});
+test("eligibleRoutinesForGroup filters active routines with same modalidadeId and groupRoutine finds linked routine",()=>{
+  const group={id:"g1",nome:"Natação — Manhã",modalidadeId:1,nomeModalidade:"Natação",alunos:[{id:"a1"},{id:"a2"}],quantidadeAlunos:2};
+  const routines=[
+    {id:"r1",titulo:"Treino Natação",modalidadeId:1,ativo:true,status:"ATIVA",alunos:[{id:"a1"},{id:"a2"}]},
+    {id:"r2",titulo:"Treino Tênis",modalidadeId:2,ativo:true,status:"ATIVA",alunos:[{id:"a1"},{id:"a2"}]},
+    {id:"r3",titulo:"Natação Antiga",modalidadeId:1,ativo:false,status:"ENCERRADA",alunos:[{id:"a1"},{id:"a2"}]},
+  ];
+  assert.deepEqual(model.eligibleRoutinesForGroup(routines,group).map(r=>r.id),["r1"]);
+  assert.equal(model.groupRoutine(routines,group)?.id,"r1");
+  assert.equal(model.groupRoutine([],group),undefined);
+});
 test("group service uses backend contract for all mutations and surfaces errors",async()=>{
   const calls=[];
   const api=Object.fromEntries(["get","post","put","delete"].map(method=>[method,async(...args)=>{calls.push([method,...args]);return {data:{id:"g"}};}]));
-  const service=load("services/turmaService.ts",{"./api":{api}}).turmaService;
+  const apiTypes=load("types/api.ts");
+  const service=load("services/turmaService.ts",{"./api":{api},"../types/api":apiTypes}).turmaService;
   const payload={nome:"Turma",modalidadeId:1,horario:null,alunosIds:["a"]};
   await service.listar();await service.buscarPorId("g");await service.criar(payload);await service.atualizar("g",payload);await service.adicionarAluno("g","a");await service.removerAluno("g","a");
   assert.deepEqual(calls.map(c=>c.slice(0,2)),[

@@ -13,6 +13,10 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Groups from "./pages/Groups/Groups";
 import GroupDetails from "./pages/GroupDetails/GroupDetails";
 import AccountHome from "./pages/AccountHome/AccountHome";
+import StudentWorkouts from "./pages/StudentWorkouts/StudentWorkouts";
+import StudentEvolutionPage from "./pages/StudentEvolutionPage/StudentEvolutionPage";
+import StudentLayout from "./components/StudentLayout/StudentLayout";
+import StudentProvider from "./features/studentArea/StudentProvider";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
@@ -56,7 +60,16 @@ function App() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/conta" element={<AccountHome />} />
+          <Route element={<StudentProvider><StudentLayout /></StudentProvider>}>
+            <Route path="/conta" element={<AccountHome />} />
+            <Route path="/conta/treinos" element={<StudentWorkouts />} />
+            <Route path="/conta/evolucao" element={<StudentEvolutionPage />} />
+          </Route>
+          <Route path="/aluno" element={<Navigate to="/conta" replace />} />
+          <Route path="/aluno/treinos" element={<Navigate to="/conta/treinos" replace />} />
+          <Route path="/aluno/evolucao" element={<Navigate to="/conta/evolucao" replace />} />
+          <Route path="/meus-treinos" element={<Navigate to="/conta/treinos" replace />} />
+          <Route path="/minha-evolucao" element={<Navigate to="/conta/evolucao" replace />} />
         </Route>
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
           <Route element={<PersonalProvider><PersonalLayout /></PersonalProvider>}>
@@ -66,8 +79,9 @@ function App() {
             <Route path="/rotinas" element={<Routines />} />
             <Route path="/rotinas/nova" element={<NewRoutine />} />
             <Route path="/metricas" element={<Metrics />} />
+            <Route path="/grupos" element={<Groups />} />
+            <Route path="/grupos/:groupId" element={<GroupDetails />} />
           </Route>
-          <Route path="/grupos" element={<Groups />} />
           <Route path="/home/notificacoes" element={<Navigate to="/home#notificacoes" replace />} />
           <Route path="/home/ultimos-aceitos" element={<Navigate to="/home#recentes" replace />} />
           <Route path="/home/sem-treino" element={<Navigate to="/home#sem-rotina" replace />} />

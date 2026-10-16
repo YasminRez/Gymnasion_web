@@ -1,8 +1,33 @@
 import type { TurmaResponse } from "../../types/turma";
+import type { AlunoResponse } from "../../types/student";
+import type { RotinaResponse } from "../../types/rotina";
 
 export const normalizeGroupText = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
 export function filterGroups(groups: TurmaResponse[], search: string, modality: string) {
   return groups.filter(group => normalizeGroupText(group.nome).includes(normalizeGroupText(search.trim())) && (!modality || String(group.modalidadeId) === modality));
+}
+export function filterGroupStudents(students: AlunoResponse[], search: string) {
+  const term = normalizeGroupText(search.trim());
+  return students.filter(student => student.status === "ATIVO" && (!term || normalizeGroupText(student.usuario.nome).includes(term)));
+}
+export function eligibleRoutinesForGroup(routines: RotinaResponse[], group: TurmaResponse) {
+  return routines.filter(routine => routine.ativo !== false && routine.status !== "ENCERRADA" && (routine.modalidadeId ?? routine.modalidade?.id) === group.modalidadeId);
+}
+export function groupRoutine(routines: RotinaResponse[], group: TurmaResponse): RotinaResponse | undefined {
+  const candidates = eligibleRoutinesForGroup(routines, group);
+  if (!group.alunos?.length || !candidates.length) return undefined;
+  const memberIds = new Set(group.alunos.map(student => student.id));
+  let best: RotinaResponse | undefined;
+  let bestCount = 0;
+  for (const routine of candidates) {
+    const count = (routine.alunos || []).filter(student => memberIds.has(student.id)).length;
+    if (count === memberIds.size) return routine;
+    if (count > bestCount) {
+      bestCount = count;
+      best = routine;
+    }
+  }
+  return best;
 }
 export function groupFormError(name: string, modality: string, schedule: string) {
   if (!name.trim()) return "Informe o nome da turma.";

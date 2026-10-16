@@ -16,11 +16,12 @@ export default function PersonalLayout() {
   const location = useLocation();
   const studentsList = Array.isArray(students?.data) ? students.data : [];
   const notificationsList = Array.isArray(notifications?.data) ? notifications.data : [];
+  const groupsList = Array.isArray(groups?.data) ? groups.data : [];
   const name = studentsList.find(student => student.nomePersonal)?.nomePersonal || "Personal";
   const isStudents = location.pathname === "/alunos";
   const isGroups = location.pathname === "/grupos" || location.pathname.startsWith("/grupos/");
   const isGroupDetail = location.pathname.startsWith("/grupos/");
-  const group = groups.data.find(item => item.id === decodeURIComponent(location.pathname.slice("/grupos/".length)));
+  const group = groupsList.find(item => item.id === decodeURIComponent(location.pathname.slice("/grupos/".length)));
   const isProfile = location.pathname.startsWith("/alunos/");
   const isNewRoutine = location.pathname === "/rotinas/nova";
   const isRoutines = location.pathname === "/rotinas";
@@ -48,12 +49,56 @@ export default function PersonalLayout() {
     </div>
     <div className="personal-layout__body">
       <AppTopbar
-        title={isMetrics ? "Minhas métricas" : isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : isNewRoutine ? "Nova rotina" : isRoutines ? "Rotinas de treino" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
-        subtitle={isMetrics ? "Crie campos personalizados de desempenho por modalidade" : isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : isNewRoutine ? "Rotinas de treino / Nova rotina" : isRoutines ? "Planeje sessões com métricas personalizadas por modalidade" : `${date} · Aqui está o resumo dos seus alunos`}
+        title={
+          isGroups
+            ? isGroupDetail
+              ? group?.nome || "Gerenciar turma"
+              : "Turmas"
+            : isMetrics
+            ? "Minhas métricas"
+            : isProfile
+            ? "Perfil do aluno"
+            : isStudents
+            ? "Meus alunos"
+            : isNewRoutine
+            ? "Nova rotina"
+            : isRoutines
+            ? "Rotinas de treino"
+            : name === "Personal"
+            ? "Olá, personal!"
+            : `Olá, ${name.split(" ")[0]}`
+        }
+        subtitle={
+          isGroups
+            ? isGroupDetail
+              ? "Turmas / Gerenciar turma"
+              : "Organize alunos em grupos por modalidade ou horário"
+            : isMetrics
+            ? "Crie campos personalizados de desempenho por modalidade"
+            : isProfile
+            ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil")
+            : isStudents
+            ? "Gerencie cadastros, status e vínculos dos seus alunos"
+            : isNewRoutine
+            ? "Rotinas de treino / Nova rotina"
+            : isRoutines
+            ? "Planeje sessões com métricas personalizadas por modalidade"
+            : `${date} · Aqui está o resumo dos seus alunos`
+        }
         notificationCount={notificationsList.filter(item=>!item.lida).length}
         userName={name}
-        searchLabel="Buscar alunos, turmas..."
-        onSearch={query => navigate(isRoutines ? `/rotinas?busca=${encodeURIComponent(query)}` : isMetrics ? `/metricas?busca=${encodeURIComponent(query)}` : `/alunos?busca=${encodeURIComponent(query)}`)}
+        searchLabel={isGroups ? "Buscar turmas..." : "Buscar alunos, turmas..."}
+        onSearch={query =>
+          navigate(
+            isGroups
+              ? `/grupos?busca=${encodeURIComponent(query)}`
+              : isRoutines
+              ? `/rotinas?busca=${encodeURIComponent(query)}`
+              : isMetrics
+              ? `/metricas?busca=${encodeURIComponent(query)}`
+              : `/alunos?busca=${encodeURIComponent(query)}`
+          )
+        }
         onNotifications={() => navigate("/home#notificacoes")}
       />
       <main id="personal-content"><Outlet /></main>

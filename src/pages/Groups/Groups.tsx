@@ -2,18 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import GroupCard from "../../components/GroupCard/GroupCard";
 import GroupDataForm from "../../components/GroupDataForm/GroupDataForm";
+import GroupRoutineModal from "../../components/GroupRoutineModal/GroupRoutineModal";
 import WorkspaceDialog from "../../components/WorkspaceDialog/WorkspaceDialog";
 import Button from "../../components/Button/Button";
 import Toast, { type ToastProps } from "../../components/Toast/Toast";
 import { usePersonal } from "../../features/personal/PersonalContext";
-import { filterGroups } from "../../features/groups/groupModel";
+import { filterGroups, groupRoutine } from "../../features/groups/groupModel";
 import { turmaService } from "../../services/turmaService";
 import { modalidadeService } from "../../services/modalidadeService";
 import type { TurmaResponse } from "../../types/turma";
 import type { Modalidade } from "../../types/modalidade";
 import "./Groups.css";
 export default function Groups() {
-  const { students, refresh } = usePersonal();
+  const { students, routines, syncRoutine, refresh } = usePersonal();
   const [groups, setGroups] = useState<TurmaResponse[]>([]);
   const [modalities, setModalities] = useState<Modalidade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,7 @@ export default function Groups() {
   const [modalityError, setModalityError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [creating, setCreating] = useState(false);
+  const [linkingGroup, setLinkingGroup] = useState<TurmaResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<ToastProps | null>(null);
   const [params, setParams] = useSearchParams();
@@ -50,12 +52,13 @@ export default function Groups() {
       <div className="groups-page__tools"><input type="search" aria-label="Buscar turma" placeholder="Buscar turma…" value={search} onChange={event => updateFilter("busca",event.target.value)} /><Button disabled={students.loading || loading} onClick={create}>+ Nova turma</Button></div>
     </div>
     {(error || modalityError) && <div className="workspace-error" role="alert">{error || modalityError}<Button variant="ghost" onClick={() => setAttempt(value => value+1)}>Tentar novamente</Button></div>}
-    {loading ? <p role="status" className="workspace-empty">Carregando turmas…</p> : !error && (visible.length ? <div className="groups-page__grid">{visible.map(group => <GroupCard key={group.id} group={group} />)}<button className="groups-page__create" onClick={create}><span><img src="/groups/imgIconPlus.svg" alt="" /></span><strong>Criar nova turma</strong><small>Agrupe alunos por modalidade ou horário</small></button></div> : <div className="groups-page__empty workspace-card">
+    {loading ? <p role="status" className="workspace-empty">Carregando turmas…</p> : !error && (visible.length ? <div className="groups-page__grid">{visible.map(group => <GroupCard key={group.id} group={group} linkedRoutine={groupRoutine(routines.data, group)} onLinkRoutine={setLinkingGroup} />)}<button className="groups-page__create" onClick={create}><span><img src="/groups/imgIconPlus.svg" alt="" /></span><strong>Criar nova turma</strong><small>Agrupe alunos por modalidade ou horário</small></button></div> : <div className="groups-page__empty workspace-card">
       <span><img src="/groups/imgIconLayers1.svg" alt="" /></span><h2>{groups.length ? "Nenhuma turma encontrada" : "Você ainda não possui turmas criadas"}</h2>
       <p>{groups.length ? "Tente outro nome ou remova os filtros." : "Organize seus alunos em grupos por modalidade ou horário."}</p>
       {groups.length ? <Button variant="secondary" onClick={() => setParams({})}>Limpar filtros</Button> : <Button disabled={students.loading} onClick={create}>+ Nova turma</Button>}
     </div>)}
     {creating && <WorkspaceDialog className="groups-page__dialog" title="Nova turma" description="Organize os alunos em um novo grupo." icon="/groups/imgIconLayers1.svg" busy={busy} onClose={() => setCreating(false)}><GroupDataForm key={generation.current} modalities={modalities} students={students.data} onBusy={setBusy} onCancel={() => setCreating(false)} onSaved={group => { setGroups(previous => [...previous,group]); setCreating(false); setParams({}); setNotice({ title: "Turma criada com sucesso!" }); void refresh(); }} /></WorkspaceDialog>}
+    {linkingGroup && <GroupRoutineModal group={linkingGroup} routines={routines.data} onClose={() => setLinkingGroup(null)} onLinked={updatedRoutine => { syncRoutine(updatedRoutine); setLinkingGroup(null); setNotice({ title: "Rotina vinculada com sucesso!", message: `A rotina “${updatedRoutine.titulo}” foi enviada para a turma “${linkingGroup.nome}”.` }); void refresh(); }} />}
     {notice && <div className="personal-notice"><Toast {...notice} onClose={() => setNotice(null)} /></div>}
   </section>;
 }
