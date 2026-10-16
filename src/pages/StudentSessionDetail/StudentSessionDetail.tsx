@@ -1,6 +1,6 @@
 // src/pages/StudentSessionDetail/StudentSessionDetail.tsx
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   Calendar,
@@ -33,6 +33,7 @@ import type { Sport } from "../../components/SportTag/SportTag";
 import "./StudentSessionDetail.css";
 
 export default function StudentSessionDetail() {
+  const navigate = useNavigate();
   const { studentId = "", sessionId = "" } = useParams();
 
   const [session, setSession] = useState<DesempenhoDetalheResponse | null>(null);
@@ -211,36 +212,54 @@ export default function StudentSessionDetail() {
               <span className="session-detail__student-name">{session.nomeAluno}</span>
             </div>
 
-            <Badge tone="success">● Concluída</Badge>
+            {session.concluidaAluno ? (
+              <Badge tone="success">● Concluída pelo aluno</Badge>
+            ) : (
+              <Badge tone="neutral">● Planejada</Badge>
+            )}
 
             {session.validadaPersonal ? (
               <Badge tone="success">● Validada por você</Badge>
-            ) : (
+            ) : session.concluidaAluno ? (
               <Badge tone="warning">● Aguardando sua validação</Badge>
+            ) : (
+              <Badge tone="neutral">● Sessão futura</Badge>
             )}
 
             <SportTag sport={sportName} />
 
             <span className="session-detail__dates-label">
-              Planejada {formatDate(session.dataPlanejada)} · Executada {formatDate(session.dataReal)}
+              Planejada {formatDate(session.dataPlanejada)}
+              {session.dataReal ? ` · Executada ${formatDate(session.dataReal)}` : ""}
             </span>
           </div>
         </div>
 
         <div className="session-detail__actions">
-          {session.validadaPersonal && (
-            <Button variant="ghost" onClick={() => setShowAuditModal(true)}>
-              Histórico de alterações
-            </Button>
-          )}
+          {session.concluidaAluno ? (
+            <>
+              {session.validadaPersonal && (
+                <Button variant="ghost" onClick={() => setShowAuditModal(true)}>
+                  Histórico de alterações
+                </Button>
+              )}
 
-          <Button variant="secondary" onClick={() => setShowCorrectionModal(true)}>
-            Corrigir registro
-          </Button>
+              <Button variant="secondary" onClick={() => setShowCorrectionModal(true)}>
+                Corrigir registro
+              </Button>
 
-          {!session.validadaPersonal && (
-            <Button variant="primary" onClick={() => setShowValidateModal(true)}>
-              Validar execução
+              {!session.validadaPersonal && (
+                <Button variant="primary" onClick={() => setShowValidateModal(true)}>
+                  Validar execução
+                </Button>
+              )}
+            </>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={() => navigate(`/alunos/${studentId}/sessoes/${sessionId}/editar`)}
+            >
+              Editar planejamento
             </Button>
           )}
         </div>
