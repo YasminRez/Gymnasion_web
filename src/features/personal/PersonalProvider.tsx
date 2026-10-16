@@ -13,9 +13,11 @@ import type { RotinaResponse } from "../../types/rotina";
 import type { TurmaResponse } from "../../types/turma";
 import type { PersonalNotification, StudentHistory } from "../../types/personalDashboard";
 
+import { unpackPage, type PageResponse } from "../../types/api";
+
 const empty = <T,>(): Resource<T> => ({data:[],loading:true,error:""});
-function resultState<T>(result: PromiseSettledResult<T[]>, previous: Resource<T>, fallback: string): Resource<T> {
-  return result.status === "fulfilled" ? {data:result.value,loading:false,error:""} : {...previous,loading:false,error:authError(result.reason,fallback).message};
+function resultState<T>(result: PromiseSettledResult<T[] | PageResponse<T>>, previous: Resource<T>, fallback: string): Resource<T> {
+  return result.status === "fulfilled" ? {data:unpackPage(result.value),loading:false,error:""} : {...previous,loading:false,error:authError(result.reason,fallback).message};
 }
 export default function PersonalProvider({ children }: { children: ReactNode }) {
   const [students, setStudents] = useState<Resource<AlunoResponse>>(empty);
@@ -52,7 +54,8 @@ export default function PersonalProvider({ children }: { children: ReactNode }) 
       setNotifications(previous => resultState(alerts,previous,"Não foi possível carregar as notificações."));
       if (alunos.status === "fulfilled") {
         try {
-          const data = await personalDashboardService.histories(alunos.value.filter(item => item.status !== "PENDENTE").map(item=>item.id));
+          const alunoList = unpackPage(alunos.value);
+          const data = await personalDashboardService.histories(alunoList.filter(item => item.status !== "PENDENTE").map(item=>item.id));
           if (mounted.current && version === revision.current) setHistories({data,loading:false,error:""});
         } catch (error) {
           if (mounted.current && version === revision.current) setHistories(previous=>({...previous,loading:false,error:authError(error,"Não foi possível consultar o histórico de sessões.").message}));

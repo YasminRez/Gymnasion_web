@@ -1,0 +1,326 @@
+.routines-page {
+  padding: 0 0 48px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+/* Toolbar: Modality Tabs & Search / Create Button */
+.routines-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.routines-page__tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.routines-page__tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #667085;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.routines-page__tab-btn:hover {
+  background: #f2f4f7;
+  color: #344054;
+}
+
+.routines-page__tab-btn.is-active {
+  background: #ffffff;
+  border-color: #d0d5dd;
+  color: #101828;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.routines-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.routines-page__search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.routines-page__search-wrap svg {
+  position: absolute;
+  left: 12px;
+  color: #667085;
+  pointer-events: none;
+}
+
+.routines-page__search-input {
+  height: 40px;
+  width: 240px;
+  padding: 0 14px 0 38px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #101828;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.routines-page__search-input:focus {
+  border-color: #f05a28;
+  box-shadow: 0 0 0 3px rgba(240, 90, 40, 0.12);
+  width: 280px;
+}
+
+.routines-page__btn-create {
+  height: 40px;
+  padding: 0 18px;
+  background-color: #f05a28;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.routines-page__btn-create:hover {
+  background-color: #d84517;
+}
+
+/* Table Card */
+.routines-page__card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+  overflow: hidden;
+}
+
+.routines-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.routines-page__table thead {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.routines-page__table th {
+  padding: 12px 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475467;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.routines-page__table tbody tr {
+  border-bottom: 1px solid #eaecf0;
+  transition: background-color 0.15s ease;
+}
+
+.routines-page__table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.routines-page__table tbody tr:hover {
+  background-color: #fcfcfd;
+}
+
+.routines-page__table td {
+  padding: 16px 24px;
+  vertical-align: middle;
+}
+
+/* Coluna Rotina */
+.routines-page__col-routine h3 {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #101828;
+}
+
+.routines-page__col-routine p {
+  margin: 0;
+  font-size: 13px;
+  color: #667085;
+  line-height: 1.4;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Coluna Modalidade Badge */
+.routines-page__modality-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.routines-page__modality-badge img,
+.routines-page__modality-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Coluna Frequência Pill */
+.routines-page__freq-badge {
+  display: inline-block;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 16px;
+  white-space: nowrap;
+}
+
+/* Coluna Métricas */
+.routines-page__metrics-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475467;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.routines-page__metrics-cell svg {
+  color: #64748b;
+}
+
+/* Coluna Alunos (Stacked Circle Initials) */
+.routines-page__students-stack {
+  display: inline-flex;
+  align-items: center;
+}
+
+.routines-page__student-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: -6px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  cursor: default;
+}
+
+.routines-page__student-avatar:first-child {
+  margin-left: 0;
+}
+
+.routines-page__student-avatar--empty {
+  color: #98a2b3;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Coluna Ações (3 Circular Buttons) */
+.routines-page__actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.routines-page__action-circle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #eaecf0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #667085;
+  transition: all 0.15s ease;
+}
+
+.routines-page__action-circle-btn:hover {
+  background: #f8fafc;
+  border-color: #d0d5dd;
+  color: #101828;
+}
+
+.routines-page__action-circle-btn--delete {
+  color: #f04438;
+}
+
+.routines-page__action-circle-btn--delete:hover {
+  background: #fee4e2;
+  border-color: #fecdca;
+  color: #d92d20;
+}
+
+/* Empty State / Loading */
+.routines-page__empty-box {
+  padding: 64px 24px;
+  text-align: center;
+  color: #475467;
+}
+
+.routines-page__empty-box h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #101828;
+}
+
+.routines-page__empty-box p {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: #667085;
+}
+
+@media (max-width: 900px) {
+  .routines-page__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .routines-page__actions {
+    flex-direction: column;
+  }
+  .routines-page__search-input {
+    width: 100%;
+  }
+  .routines-page__card {
+    overflow-x: auto;
+  }
+}

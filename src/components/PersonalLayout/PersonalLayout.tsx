@@ -14,13 +14,18 @@ export default function PersonalLayout() {
   const [termsOpen, setTermsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const name = students.data.find(student => student.nomePersonal)?.nomePersonal || "Personal";
+  const studentsList = Array.isArray(students?.data) ? students.data : [];
+  const notificationsList = Array.isArray(notifications?.data) ? notifications.data : [];
+  const name = studentsList.find(student => student.nomePersonal)?.nomePersonal || "Personal";
   const isStudents = location.pathname === "/alunos";
   const isGroups = location.pathname === "/grupos" || location.pathname.startsWith("/grupos/");
   const isGroupDetail = location.pathname.startsWith("/grupos/");
   const group = groups.data.find(item => item.id === decodeURIComponent(location.pathname.slice("/grupos/".length)));
   const isProfile = location.pathname.startsWith("/alunos/");
-  const profileStudent = isProfile ? students.data.find(student => student.id === decodeURIComponent(location.pathname.slice("/alunos/".length))) : undefined;
+  const isNewRoutine = location.pathname === "/rotinas/nova";
+  const isRoutines = location.pathname === "/rotinas";
+  const isMetrics = location.pathname === "/metricas";
+  const profileStudent = isProfile ? studentsList.find(student => student.id === decodeURIComponent(location.pathname.slice("/alunos/".length))) : undefined;
   const date = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" }).format(new Date());
   useEffect(() => { setMenuOpen(false); }, [location.pathname, location.search]);
   return <div className="personal-layout">
@@ -30,7 +35,7 @@ export default function PersonalLayout() {
       <AppSidebar user={{ name, subtitle: "Personal Trainer" }} onLogout={() => { authService.logout(); navigate("/login", { replace: true }); }}
         menu={[
           { id: "home", label: "Início", icon: "imgIconHome", to: "/home" },
-          { id: "students", label: "Alunos", icon: "imgIconUsers", to: "/alunos", count: studentCounts(students.data).pending },
+          { id: "students", label: "Alunos", icon: "imgIconUsers", to: "/alunos", count: studentCounts(studentsList).pending },
           { id: "groups", label: "Turmas", icon: "imgIconLayers", to: "/grupos" },
           { id: "routines", label: "Rotinas de treino", icon: "imgIconDumbbell", to: "/rotinas" },
           { id: "metrics", label: "Métricas", icon: "imgIconActivity", to: "/metricas" },
@@ -42,9 +47,15 @@ export default function PersonalLayout() {
         footer={<div className="personal-layout__strava"><img src="/design-system/imgIconZap1.svg" alt="" /><strong>Sincronize com o Strava</strong><p>Integração disponível em breve.</p><button disabled>Conectar →</button></div>} />
     </div>
     <div className="personal-layout__body">
-      <AppTopbar title={isGroups ? isGroupDetail ? group?.nome || "Gerenciar turma" : "Turmas" : isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
-        subtitle={isGroups ? isGroupDetail ? "Turmas / Gerenciar turma" : "Organize alunos em grupos por modalidade ou horário" : isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : `${date} · Aqui está o resumo dos seus alunos`}
-        notificationCount={notifications.data.filter(item=>!item.lida).length} userName={name} searchLabel={isGroups ? "Buscar turmas" : "Buscar alunos"} onSearch={query => navigate(`${isGroups ? "/grupos" : "/alunos"}?busca=${encodeURIComponent(query)}`)} onNotifications={() => navigate("/home#notificacoes")} />
+      <AppTopbar
+        title={isMetrics ? "Minhas métricas" : isProfile ? "Perfil do aluno" : isStudents ? "Meus alunos" : isNewRoutine ? "Nova rotina" : isRoutines ? "Rotinas de treino" : name === "Personal" ? "Olá, personal!" : `Olá, ${name.split(" ")[0]}`}
+        subtitle={isMetrics ? "Crie campos personalizados de desempenho por modalidade" : isProfile ? "Alunos / " + (profileStudent?.usuario.nome || "Perfil") : isStudents ? "Gerencie cadastros, status e vínculos dos seus alunos" : isNewRoutine ? "Rotinas de treino / Nova rotina" : isRoutines ? "Planeje sessões com métricas personalizadas por modalidade" : `${date} · Aqui está o resumo dos seus alunos`}
+        notificationCount={notificationsList.filter(item=>!item.lida).length}
+        userName={name}
+        searchLabel="Buscar alunos, turmas..."
+        onSearch={query => navigate(isRoutines ? `/rotinas?busca=${encodeURIComponent(query)}` : isMetrics ? `/metricas?busca=${encodeURIComponent(query)}` : `/alunos?busca=${encodeURIComponent(query)}`)}
+        onNotifications={() => navigate("/home#notificacoes")}
+      />
       <main id="personal-content"><Outlet /></main>
     </div>
     {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}

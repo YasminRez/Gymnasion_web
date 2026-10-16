@@ -1,5 +1,6 @@
 import { api } from "./api";
-import type { MensagemResponse } from "../types/api";
+import type { MensagemResponse, PaginatedOrArray } from "../types/api";
+import { unpackPage } from "../types/api";
 import type {
   AlunoResponse,
   ConviteAlunoPayload,
@@ -16,18 +17,28 @@ export const personalTrainerService = {
     return data;
   },
 
-  async listarPendentes(): Promise<AlunoResponse[]> {
-    const { data } = await api.get<AlunoResponse[]>(
-      "/api/personal-trainers/alunos/pendentes"
+  async listarPendentes(params?: { page?: number; size?: number }): Promise<AlunoResponse[]> {
+    const { data } = await api.get<PaginatedOrArray<AlunoResponse>>(
+      "/api/personal-trainers/alunos/pendentes",
+      { params: { size: 100, ...params } }
     );
-    return data;
+    return unpackPage(data);
   },
 
-  async listarTodos(): Promise<AlunoResponse[]> {
-    const { data } = await api.get<AlunoResponse[]>(
-      "/api/personal-trainers/alunos"
+  async listarTodos(params?: { page?: number; size?: number }): Promise<AlunoResponse[]> {
+    const { data } = await api.get<PaginatedOrArray<AlunoResponse>>(
+      "/api/personal-trainers/alunos",
+      { params: { size: 100, ...params } }
     );
-    return data;
+    return unpackPage(data);
+  },
+
+  async listarInativos(params?: { page?: number; size?: number }): Promise<AlunoResponse[]> {
+    const { data } = await api.get<PaginatedOrArray<AlunoResponse>>(
+      "/api/personal-trainers/alunos/inativos",
+      { params: { size: 100, ...params } }
+    );
+    return unpackPage(data);
   }, 
 
   async aprovarAtleta(alunoId: string): Promise<void> {

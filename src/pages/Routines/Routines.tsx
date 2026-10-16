@@ -1,113 +1,438 @@
-import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import PlatformHeader from "../../components/PlatformHeader/PlatformHeader";
-import GroupToolbar from "../../components/GroupToolbar/GroupToolbar";
-import RoutineCard from "../../components/RoutineCard/RoutineCard";
-import RoutineFormModal from "../../components/RoutineFormModal/RoutineFormModal";
-import RoutinesEmptyState from "../../components/RoutinesEmptyState/RoutinesEmptyState";
-import StudentToast from "../../components/StudentToast/StudentToast";
-import { rotinaService } from "../../services/rotinaService";
+import { usePersonal } from "../../features/personal/PersonalContext";
+import {
+  getAvatarColor,
+  getModalityBadgeStyle,
+  getStudentInitials,
+  normalize,
+  routineModalityCounts,
+} from "../../features/routines/routineModel";
 import { modalidadeService } from "../../services/modalidadeService";
-import { personalTrainerService } from "../../services/personalTrainerService";
-import { handleApiError } from "../../utils/handleApiError";
-import { normalize } from "../Groups/groupData";
+import { rotinaService } from "../../services/rotinaService";
+import RoutineDeleteModal from "../../components/RoutineDeleteModal/RoutineDeleteModal";
+import RoutineReuseModal from "../../components/RoutineReuseModal/RoutineReuseModal";
 import type { Modalidade } from "../../types/modalidade";
-import type { AlunoResponse } from "../../types/student";
 import type { RotinaResponse } from "../../types/rotina";
-import "../Groups/Groups.css";
+import "./Routines.css";
 
-function Routines() {
+export default function Routines() {
+  const navigate = useNavigate();
+  const { routines, students, refresh } = usePersonal();
   const [params, setParams] = useSearchParams();
-  const requestedStudent = params.get("aluno") || undefined;
-  const [routines, setRoutines] = useState<RotinaResponse[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [loadFailed, setLoadFailed] = useState(false);
+
+  // Modalidades disponíveis
   const [modalities, setModalities] = useState<Modalidade[]>([]);
-  const [students, setStudents] = useState<AlunoResponse[]>([]);
-  const [studentsLoaded, setStudentsLoaded] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<number | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [notice, setNotice] = useState("");
 
+  // Filtros
+  const [selectedModalityId, setSelectedModalityId] = useState<number | null>(() => {
+    const p = params.get("modalidade");
+    return p ? Number(p) : null;
+  });
+
+  const [search, setSearch] = useState(() => params.get("busca") || "");
+
+  // Modais
+  const [deletingRoutine, setDeletingRoutine] = useState<RotinaResponse | null>(null);
+  const [reusingRoutine, setReusingRoutine] = useState<RotinaResponse | null>(null);
+
+  // Carrega catálogo de modalidades
   useEffect(() => {
-    if (requestedStudent && studentsLoaded && students.some(student => student.id === requestedStudent)) setCreating(true);
-  }, [requestedStudent, studentsLoaded, students]);
-
-  function closeCreate() { setCreating(false); if (requestedStudent) setParams({}, { replace: true }); }
-
-  const closeNotice = useCallback(() => setNotice(""), []);
-
-  const loadRoutines = useCallback(async () => {
-    try {
-      setRoutines(await rotinaService.listar());
-      setLoadFailed(false);
-    } catch (err) {
-      handleApiError(err, "Não foi possível carregar as rotinas.");
-      setLoadFailed(true);
-    } finally {
-      setLoaded(true);
-    }
+    modalidadeService
+      .listarTodas()
+      .then((data) => {
+        setModalities(data);
+      })
+      .catch(() => {
+        // Fallback para modalidades encontradas nas rotinas
+      });
   }, []);
 
-  useEffect(() => {
-    loadRoutines();
-    modalidadeService.listarTodas().then(setModalities).catch((err) => handleApiError(err, "Erro ao carregar as modalidades."));
-    // Alunos inativos não podem receber rotina.
-    personalTrainerService.listarTodos()
-      .then((data) => { setStudents(data.filter((aluno) => aluno.status === "ATIVO")); setStudentsLoaded(true); })
-      .catch((err) => handleApiError(err, "Não foi possível carregar a lista de alunos."));
-  }, [loadRoutines]);
+  const routinesList = useMemo(() => {
+    return Array.isArray(routines?.data) ? routines.data : [];
+  }, [routines?.data]);
 
-  // Filtros: apenas as modalidades que já possuem rotina.
-  const routineModalities = Array.from(new Map(routines.map((routine) => [routine.modalidadeId, { id: routine.modalidadeId, nome: routine.nomeModalidade }])).values())
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  const activeFilter = routineModalities.some((modality) => modality.id === filter) ? filter : null;
-  const suggestedModalityIds = [...new Set([...routineModalities.map((m) => m.id), ...students.flatMap((aluno) => aluno.modalidades.map((m) => m.id))])];
-
-  const term = normalize(search.trim());
-  const visible = routines
-    .filter((routine) => normalize(routine.titulo).includes(term) && (activeFilter === null || routine.modalidadeId === activeFilter))
-    .sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
-
-  function openCreate() {
-    setNotice("");
-    // US-10 - Cenário 4: sem alunos não há para quem montar a rotina.
-    if (studentsLoaded && students.length === 0) {
-      toast.error("É preciso pelo menos 1 (um) aluno cadastrado");
-      return;
+  // Modalidades consolidadas
+  const allModalities = useMemo(() => {
+    const map = new Map<number, { id: number; nome: string }>();
+    for (const m of modalities) map.set(m.id, { id: m.id, nome: m.nome });
+    for (const r of routinesList) {
+      const id = r.modalidadeId ?? r.modalidade?.id;
+      const nome = r.nomeModalidade || r.modalidade?.nome;
+      if (id && nome && !map.has(id)) map.set(id, { id, nome });
     }
-    setCreating(true);
+    return Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [modalities, routinesList]);
+
+  // Contadores para as tabs de modalidades (Apenas esportes com rotinas cadastradas)
+  const modalityTabs = useMemo(() => {
+    return routineModalityCounts(routinesList, allModalities, {
+      activeModalityId: selectedModalityId,
+    });
+  }, [routinesList, allModalities, selectedModalityId]);
+
+  // Atualiza query params
+  function handleSelectModality(id: number | null) {
+    setSelectedModalityId(id);
+    const next = new URLSearchParams(params);
+    if (id !== null) next.set("modalidade", String(id));
+    else next.delete("modalidade");
+    setParams(next, { replace: true });
+  }
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
+    const next = new URLSearchParams(params);
+    if (value) next.set("busca", value);
+    else next.delete("busca");
+    setParams(next, { replace: true });
+  }
+
+  // Filtragem das rotinas
+  const filteredRoutines = useMemo(() => {
+    const query = normalize(search.trim());
+
+    return routinesList.filter((r) => {
+      // Filtro de modalidade
+      if (selectedModalityId !== null) {
+        const rModId = r.modalidadeId ?? r.modalidade?.id;
+        if (rModId !== selectedModalityId) return false;
+      }
+
+      // Filtro de busca
+      if (query) {
+        const titleMatch = normalize(r.titulo).includes(query);
+        const goalMatch = r.objetivos ? normalize(r.objetivos).includes(query) : false;
+        const studentMatch = (r.alunos || []).some(
+          (a) => a.nome && normalize(a.nome).includes(query)
+        );
+        const modalityMatch = normalize(
+          r.nomeModalidade || r.modalidade?.nome || ""
+        ).includes(query);
+        if (!titleMatch && !goalMatch && !studentMatch && !modalityMatch) return false;
+      }
+
+      return true;
+    });
+  }, [routinesList, selectedModalityId, search]);
+
+  // Confirmação de exclusão
+  async function handleConfirmDelete() {
+    if (!deletingRoutine) return;
+    try {
+      await rotinaService.excluir(deletingRoutine.id);
+      toast.success(`Rotina “${deletingRoutine.titulo}” excluída com sucesso!`);
+      setDeletingRoutine(null);
+      await refresh();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { mensagem?: string; message?: string } } })
+          ?.response?.data?.mensagem ||
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ||
+        "Não foi possível excluir a rotina.";
+      toast.error(msg);
+    }
   }
 
   return (
-    <>
-      <PlatformHeader activePage="routines" />
-      <main className="groups" aria-label="Rotinas">
-        <h1 className="groups__sr-only">Rotinas</h1>
-        <GroupToolbar search={search} onSearch={setSearch} modalities={routineModalities} filter={activeFilter} onFilter={setFilter} onRegister={openCreate} item="rotina" registerLabel="Criar rotina" />
-        {loaded && !loadFailed && visible.length === 0 && <RoutinesEmptyState search={search.trim()} filtered={activeFilter !== null} onRegister={openCreate} />}
-        {visible.length > 0 && (
-          <section className="groups__grid" aria-label="Rotinas cadastradas">
-            {visible.map((routine) => <RoutineCard key={routine.id} routine={routine} />)}
-          </section>
+    <div className="routines-page">
+      {/* Barra de Ferramentas / Toolbar do Figma */}
+      <div className="routines-page__toolbar">
+        {/* Pills de Modalidades: Todas · 6, Natação · 2, Tênis · 2, Academia · 2 */}
+        <div className="routines-page__tabs" role="tablist" aria-label="Filtrar por modalidade">
+          {modalityTabs.map((tab) => {
+            const isActive = selectedModalityId === tab.id;
+            return (
+              <button
+                key={tab.id ?? "all"}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`routines-page__tab-btn ${isActive ? "is-active" : ""}`}
+                onClick={() => handleSelectModality(tab.id)}
+              >
+                {tab.nome} · {tab.count}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Busca e Botão Nova Rotina */}
+        <div className="routines-page__actions">
+          <div className="routines-page__search-wrap">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="search"
+              className="routines-page__search-input"
+              placeholder="Buscar rotina..."
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              aria-label="Buscar rotina por título ou aluno"
+            />
+          </div>
+
+          <button
+            type="button"
+            className="routines-page__btn-create"
+            onClick={() => navigate("/rotinas/nova")}
+          >
+            + Nova rotina
+          </button>
+        </div>
+      </div>
+
+      {/* Tabela de Rotinas no Card Branco */}
+      <div className="routines-page__card">
+        {routines.loading ? (
+          <div className="routines-page__empty-box">
+            <p>Carregando rotinas de treino...</p>
+          </div>
+        ) : filteredRoutines.length === 0 ? (
+          <div className="routines-page__empty-box">
+            <h3>Nenhuma rotina encontrada</h3>
+            <p>
+              {search || selectedModalityId !== null
+                ? "Nenhum resultado corresponde aos filtros aplicados."
+                : "Você ainda não possui rotinas cadastradas."}
+            </p>
+            <button
+              type="button"
+              className="routines-page__btn-create"
+              onClick={() => navigate("/rotinas/nova")}
+            >
+              + Criar primeira rotina
+            </button>
+          </div>
+        ) : (
+          <table className="routines-page__table">
+            <thead>
+              <tr>
+                <th scope="col" style={{ width: "32%" }}>
+                  ROTINA
+                </th>
+                <th scope="col" style={{ width: "16%" }}>
+                  MODALIDADE
+                </th>
+                <th scope="col" style={{ width: "16%" }}>
+                  FREQUÊNCIA
+                </th>
+                <th scope="col" style={{ width: "16%" }}>
+                  MÉTRICAS
+                </th>
+                <th scope="col" style={{ width: "12%" }}>
+                  ALUNOS
+                </th>
+                <th scope="col" style={{ width: "8%", textAlign: "right" }}>
+                  AÇÕES
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRoutines.map((routine) => {
+                const modName =
+                  routine.nomeModalidade || routine.modalidade?.nome || "Geral";
+                const badgeStyle = getModalityBadgeStyle(modName);
+                const studentsList = routine.alunos || [];
+                const metricsCount = routine.metricas?.length || 0;
+
+                return (
+                  <tr key={routine.id}>
+                    {/* ROTINA */}
+                    <td className="routines-page__col-routine">
+                      <h3>{routine.titulo}</h3>
+                      {routine.objetivos && <p title={routine.objetivos}>{routine.objetivos}</p>}
+                    </td>
+
+                    {/* MODALIDADE */}
+                    <td>
+                      <span
+                        className="routines-page__modality-badge"
+                        style={{
+                          backgroundColor: badgeStyle.bg,
+                          color: badgeStyle.color,
+                        }}
+                      >
+                        <img src={badgeStyle.icon} alt="" aria-hidden="true" />
+                        {modName}
+                      </span>
+                    </td>
+
+                    {/* FREQUÊNCIA */}
+                    <td>
+                      <span className="routines-page__freq-badge">
+                        {routine.frequenciaSemanal}x / semana
+                      </span>
+                    </td>
+
+                    {/* MÉTRICAS */}
+                    <td>
+                      <div className="routines-page__metrics-cell">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        <span>
+                          {metricsCount} {metricsCount === 1 ? "métrica" : "métricas"}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* ALUNOS */}
+                    <td>
+                      {studentsList.length === 0 ? (
+                        <span className="routines-page__student-avatar--empty">—</span>
+                      ) : (
+                        <div
+                          className="routines-page__students-stack"
+                          title={studentsList.map((s) => s.nome || "Aluno").join(", ")}
+                        >
+                          {studentsList.map((aluno, index) => {
+                            const color = getAvatarColor(index);
+                            return (
+                              <div
+                                key={aluno.id}
+                                className="routines-page__student-avatar"
+                                style={{
+                                  backgroundColor: color.bg,
+                                  color: color.text,
+                                }}
+                                title={aluno.nome || "Aluno"}
+                              >
+                                {getStudentInitials(aluno.nome || "Aluno")}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* AÇÕES: Reutilizar, Editar, Excluir */}
+                    <td>
+                      <div className="routines-page__actions-cell">
+                        {/* Botão 1: Reutilizar */}
+                        <button
+                          type="button"
+                          className="routines-page__action-circle-btn"
+                          title="Reutilizar rotina como modelo"
+                          aria-label={`Reutilizar rotina ${routine.titulo}`}
+                          onClick={() => setReusingRoutine(routine)}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="23 4 23 10 17 10" />
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                          </svg>
+                        </button>
+
+                        {/* Botão 2: Editar */}
+                        <button
+                          type="button"
+                          className="routines-page__action-circle-btn"
+                          title="Editar rotina"
+                          aria-label={`Editar rotina ${routine.titulo}`}
+                          onClick={() => navigate(`/rotinas/nova?modelo=${routine.id}`)}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+
+                        {/* Botão 3: Excluir */}
+                        <button
+                          type="button"
+                          className="routines-page__action-circle-btn routines-page__action-circle-btn--delete"
+                          title="Excluir rotina"
+                          aria-label={`Excluir rotina ${routine.titulo}`}
+                          onClick={() => setDeletingRoutine(routine)}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
-      </main>
-      {creating && (
-        <RoutineFormModal
-          modalities={modalities}
-          suggestedModalityIds={suggestedModalityIds}
-          students={students}
-          initialStudentId={requestedStudent}
-          onClose={closeCreate}
-          // US-10 - Cenário 1: fecha o modal e volta para a lista de rotinas.
-          onSaved={(message) => { closeCreate(); setNotice(message); loadRoutines(); }}
+      </div>
+
+      {/* Modal de Exclusão (Figma Screenshot 2) */}
+      {deletingRoutine && (
+        <RoutineDeleteModal
+          routine={deletingRoutine}
+          onClose={() => setDeletingRoutine(null)}
+          onConfirm={handleConfirmDelete}
         />
       )}
-      {notice && <StudentToast message={notice} onClose={closeNotice} />}
-    </>
+
+      {/* Modal de Reutilizar como Modelo */}
+      {reusingRoutine && (
+        <RoutineReuseModal
+          routine={reusingRoutine}
+          students={students.data}
+          routines={routines.data}
+          onClose={() => setReusingRoutine(null)}
+          onReused={(created) => {
+            setReusingRoutine(null);
+            toast.success(`Nova rotina “${created.titulo}” criada a partir do modelo!`);
+            void refresh();
+          }}
+        />
+      )}
+    </div>
   );
 }
-
-export default Routines;

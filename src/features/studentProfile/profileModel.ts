@@ -6,8 +6,22 @@ import { localDateKey } from "../personal/dashboardModel";
 
 export type RoutineMetric = RotinaResponse["metricas"][number];
 export type MetricSeries = { id: string; title: string; type: TipoMetrica | "RPE"; points: { date: string; value: number }[] };
-export const metricLabels: Record<TipoMetrica, string> = { TEMPO: "Tempo", NUMERICO: "Numérico", FREQUENCIA_CARDIACA: "Freq. cardíaca", TEXTO: "Texto" };
-export const metricIcons: Record<TipoMetrica, string> = { TEMPO: "imgIconClock", NUMERICO: "imgIconHash", FREQUENCIA_CARDIACA: "imgIconHeart", TEXTO: "imgIconText" };
+export const metricLabels: Record<TipoMetrica, string> = {
+  TEMPO: "Tempo",
+  TEMPO_CRONOMETRO: "Tempo",
+  NUMERICO: "Numérico",
+  FREQUENCIA_CARDIACA: "Freq. cardíaca",
+  TEXTO: "Texto",
+  TEXTO_OBSERVACAO: "Texto",
+};
+export const metricIcons: Record<TipoMetrica, string> = {
+  TEMPO: "imgIconClock",
+  TEMPO_CRONOMETRO: "imgIconClock",
+  NUMERICO: "imgIconHash",
+  FREQUENCIA_CARDIACA: "imgIconHeart",
+  TEXTO: "imgIconText",
+  TEXTO_OBSERVACAO: "imgIconText",
+};
 
 export function metricError(type: TipoMetrica, value: string): string | undefined {
   const text = value.trim();
