@@ -11,3 +11,4 @@
 .ds-topbar__notifications { border: 0; padding: 0; background: transparent; flex: none; cursor: pointer; border-radius: var(--radius-control); }
 @media (max-width: 850px) { .ds-topbar { flex-wrap: wrap; } .ds-topbar__actions { width: 100%; } .ds-topbar__search { flex: 1; width: auto; min-width: 0; } }
 .ds-topbar__notifications { position: relative; } .ds-topbar__notification-count { position: absolute; top: -5px; right: -5px; min-width: 17px; padding: 1px 4px; border-radius: var(--radius-pill); background: var(--color-primary-500); color: white; font-size: 10px; font-weight: 700; }
+.ds-topbar__notification-dot { position: absolute; top: 9px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--color-primary-500); border: 1.5px solid var(--color-surface); }

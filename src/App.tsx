@@ -13,6 +13,10 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Groups from "./pages/Groups/Groups";
 import GroupDetails from "./pages/GroupDetails/GroupDetails";
 import AccountHome from "./pages/AccountHome/AccountHome";
+import StudentWorkouts from "./pages/StudentWorkouts/StudentWorkouts";
+import StudentEvolutionPage from "./pages/StudentEvolutionPage/StudentEvolutionPage";
+import StudentLayout from "./components/StudentLayout/StudentLayout";
+import StudentProvider from "./features/studentArea/StudentProvider";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
@@ -22,6 +26,9 @@ import NewRoutine from "./pages/Routines/NewRoutine";
 import DesignSystem from "./pages/DesignSystem/DesignSystem";
 import PersonalProvider from "./features/personal/PersonalProvider";
 import PersonalLayout from "./components/PersonalLayout/PersonalLayout";
+import StudentSessionDetail from "./pages/StudentSessionDetail/StudentSessionDetail";
+import StudentSessionEdit from "./pages/StudentSessionEdit/StudentSessionEdit";
+import RoutineSessionPlanner from "./pages/RoutineSessionPlanner/RoutineSessionPlanner";
 
 
 function App() {
@@ -56,18 +63,32 @@ function App() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/conta" element={<AccountHome />} />
+          <Route element={<StudentProvider><StudentLayout /></StudentProvider>}>
+            <Route path="/conta" element={<AccountHome />} />
+            <Route path="/conta/treinos" element={<StudentWorkouts />} />
+            <Route path="/conta/evolucao" element={<StudentEvolutionPage />} />
+          </Route>
+          <Route path="/aluno" element={<Navigate to="/conta" replace />} />
+          <Route path="/aluno/treinos" element={<Navigate to="/conta/treinos" replace />} />
+          <Route path="/aluno/evolucao" element={<Navigate to="/conta/evolucao" replace />} />
+          <Route path="/meus-treinos" element={<Navigate to="/conta/treinos" replace />} />
+          <Route path="/minha-evolucao" element={<Navigate to="/conta/evolucao" replace />} />
         </Route>
         <Route element={<ProtectedRoute roles={["PERSONAL_TRAINER"]} />}>
           <Route element={<PersonalProvider><PersonalLayout /></PersonalProvider>}>
             <Route path="/alunos" element={<Students />} />
             <Route path="/alunos/:studentId" element={<StudentProfile />} />
+            <Route path="/alunos/:studentId/sessoes/:sessionId" element={<StudentSessionDetail />} />
+            <Route path="/alunos/:studentId/sessoes/:sessionId/editar" element={<StudentSessionEdit />} />
             <Route path="/home" element={<Dashboard />} />
             <Route path="/rotinas" element={<Routines />} />
             <Route path="/rotinas/nova" element={<NewRoutine />} />
+            <Route path="/rotinas/:routineId/planejamento" element={<RoutineSessionPlanner />} />
+            <Route path="/rotinas/:routineId/sessoes/nova" element={<RoutineSessionPlanner />} />
             <Route path="/metricas" element={<Metrics />} />
+            <Route path="/grupos" element={<Groups />} />
+            <Route path="/grupos/:groupId" element={<GroupDetails />} />
           </Route>
-          <Route path="/grupos" element={<Groups />} />
           <Route path="/home/notificacoes" element={<Navigate to="/home#notificacoes" replace />} />
           <Route path="/home/ultimos-aceitos" element={<Navigate to="/home#recentes" replace />} />
           <Route path="/home/sem-treino" element={<Navigate to="/home#sem-rotina" replace />} />

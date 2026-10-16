@@ -279,6 +279,27 @@
   color: #101828;
 }
 
+.routines-page__col-routine--clickable {
+  cursor: pointer;
+}
+
+.routines-page__col-routine--clickable:hover h3 {
+  color: #ea580c;
+  text-decoration: underline;
+}
+
+.routines-page__action-circle-btn--plan {
+  color: #ea580c;
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.routines-page__action-circle-btn--plan:hover {
+  background: #ffedd5;
+  border-color: #fb923c;
+  color: #c2410c;
+}
+
 .routines-page__action-circle-btn--delete {
   color: #f04438;
 }

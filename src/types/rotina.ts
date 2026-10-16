@@ -34,20 +34,47 @@ export interface ReutilizarRotinaPayload {
 
 export interface SessaoTreinoPlanejadaDTO {
   id: string;
+  rotinaTreinoId?: string;
   semana: number;
   dataPlanejada: string;
-  duracao: number;
+  dataReal?: string | null;
+  duracao?: number | null;
   atividades: string;
   status: string;
+  concluidaAluno?: boolean;
+  validadaPersonal?: boolean;
+  desempenho?: {
+    id: string;
+    nivelCansaco: number | null;
+    registradoPor?: string;
+    metricas?: {
+      metricaId: string;
+      titulo: string;
+      tipo: string;
+      valor: string;
+    }[];
+  } | null;
 }
 
 export interface PlanejamentoSemanaDTO {
-  numero: number;
+  numeroSemana: number;
   sessoes: SessaoTreinoPlanejadaDTO[];
 }
 
 export interface PlanejamentoRotinaResponseDTO {
   rotinaId: string;
   tituloRotina: string;
+  modalidadeId?: number;
+  nomeModalidade?: string;
+  frequenciaSemanal?: number;
+  objetivos?: string | null;
   semanas: PlanejamentoSemanaDTO[];
 }
+
+export interface CriarSessaoTreinoPayload {
+  semana: number;
+  dataPlanejada: string; // YYYY-MM-DD
+  duracao?: number | null;
+  atividades?: string | null;
+}
+

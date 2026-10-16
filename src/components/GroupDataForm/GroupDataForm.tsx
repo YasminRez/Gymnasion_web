@@ -3,7 +3,7 @@ import Button from "../Button/Button";
 import FormField from "../FormField/FormField";
 import Avatar from "../Avatar/Avatar";
 import { turmaService } from "../../services/turmaService";
-import { groupFormError, normalizeGroupText } from "../../features/groups/groupModel";
+import { filterGroupStudents, groupFormError, normalizeGroupText } from "../../features/groups/groupModel";
 import { toDateTimeLocal } from "../../pages/Groups/groupData";
 import type { Modalidade } from "../../types/modalidade";
 import type { AlunoResponse } from "../../types/student";
@@ -16,10 +16,12 @@ export default function GroupDataForm({ group, modalities, students = [], onSave
   const [modality, setModality] = useState(String(group?.modalidadeId || ""));
   const [schedule, setSchedule] = useState(toDateTimeLocal(group?.horario || null));
   const [selected, setSelected] = useState<string[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
+  const filteredStudents = filterGroupStudents(students, studentSearch);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (lock.current) return;
@@ -48,10 +50,13 @@ export default function GroupDataForm({ group, modalities, students = [], onSave
         {modalities.length > 4 && <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Mostrar menos" : "+ " + (modalities.length - 4) + " outras"}</button>}</div>
       </fieldset>}
       {!group && <fieldset className="group-data-form__selection"><legend>Alunos <span>{selected.length} selecionados</span></legend>
-        <div className="group-data-form__students">{students.filter(item => item.status === "ATIVO").map(student => <label key={student.id} className={selected.includes(student.id) ? "is-selected" : ""}>
+        <div className="group-data-form__search">
+          <input type="search" aria-label="Pesquisar aluno pelo nome" placeholder="Pesquisar aluno pelo nome…" value={studentSearch} onChange={(event: ChangeEvent<HTMLInputElement>) => setStudentSearch(event.target.value)} />
+        </div>
+        <div className="group-data-form__students">{filteredStudents.length ? filteredStudents.map(student => <label key={student.id} className={selected.includes(student.id) ? "is-selected" : ""}>
           <input type="checkbox" checked={selected.includes(student.id)} onChange={event => setSelected(previous => event.target.checked ? [...previous, student.id] : previous.filter(id => id !== student.id))} />
           <Avatar name={student.usuario.nome} /><span>{student.usuario.nome}</span>
-        </label>)}</div>
+        </label>) : <p className="group-data-form__empty">Nenhum aluno encontrado para a pesquisa.</p>}</div>
         <p className="group-data-form__hint"><img src="/groups/imgIconInfo.svg" alt="" /> Alunos inativos não aparecem nesta lista.</p>
       </fieldset>}
     </fieldset>

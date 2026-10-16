@@ -1,0 +1,211 @@
+.student-rpe-modal {
+  width: min(512px, calc(100vw - 32px));
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+}
+
+.student-rpe-modal::backdrop {
+  background: rgb(15 23 42 / 52%);
+  backdrop-filter: blur(2px);
+}
+
+.student-rpe-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.student-rpe-modal__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--color-warning-50);
+}
+
+.student-rpe-modal__icon img {
+  width: 20px;
+  height: 20px;
+}
+
+.student-rpe-modal__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-rpe-modal__titles h2 {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-900);
+}
+
+.student-rpe-modal__titles p {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--color-ink-500);
+}
+
+.student-rpe-modal__close {
+  border: 0;
+  padding: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-ink-400);
+  border-radius: 8px;
+}
+
+.student-rpe-modal__close:hover {
+  background: var(--color-background);
+}
+
+.student-rpe-modal__scale-buttons {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.student-rpe-modal__btn {
+  --btn-accent: #12b76a;
+  --btn-ring: rgb(18 183 106 / 20%);
+  height: 44px;
+  border: 1.5px solid var(--btn-accent);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-ink-900);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+}
+
+.student-rpe-modal__btn--green {
+  --btn-accent: #22c55e;
+  --btn-ring: rgb(34 197 94 / 22%);
+}
+
+.student-rpe-modal__btn--amber {
+  --btn-accent: #eab308;
+  --btn-ring: rgb(234 179 8 / 22%);
+}
+
+.student-rpe-modal__btn--orange {
+  --btn-accent: #f5821f;
+  --btn-ring: rgb(245 130 31 / 25%);
+}
+
+.student-rpe-modal__btn--red {
+  --btn-accent: #f04438;
+  --btn-ring: rgb(240 68 56 / 22%);
+}
+
+.student-rpe-modal__btn:hover:not(:disabled):not(.is-selected) {
+  background: var(--color-background);
+}
+
+.student-rpe-modal__btn.is-selected {
+  background: var(--btn-accent);
+  color: var(--color-surface);
+  box-shadow: 0 0 0 4px var(--btn-ring);
+}
+
+.student-rpe-modal__scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0 16px;
+  font-size: 12px;
+  color: var(--color-ink-500);
+}
+
+.student-rpe-modal__callout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff9eb;
+  margin-bottom: 20px;
+}
+
+.student-rpe-modal__callout-badge {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 8px;
+  background: #f5821f;
+  color: var(--color-surface);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.student-rpe-modal__callout-badge--green {
+  background: #22c55e;
+}
+
+.student-rpe-modal__callout-badge--amber {
+  background: #eab308;
+}
+
+.student-rpe-modal__callout-badge--orange {
+  background: #f5821f;
+}
+
+.student-rpe-modal__callout-badge--red {
+  background: #f04438;
+}
+
+.student-rpe-modal__callout-badge--neutral {
+  background: var(--color-ink-400);
+}
+
+.student-rpe-modal__callout-text strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-900);
+}
+
+.student-rpe-modal__callout-text p {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-ink-500);
+}
+
+.student-rpe-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+}
+
+.student-rpe-modal__skip {
+  border: 0;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--color-ink-700);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.student-rpe-modal__skip:hover:not(:disabled) {
+  background: var(--color-background);
+}
+
+@media (max-width: 520px) {
+  .student-rpe-modal__scale-buttons {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

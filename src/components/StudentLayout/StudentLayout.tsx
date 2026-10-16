@@ -1,0 +1,324 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import AppSidebar from "../AppSidebar/AppSidebar";
+import AppTopbar from "../AppTopbar/AppTopbar";
+import SidebarCallout from "../SidebarCallout/SidebarCallout";
+import TermsModal from "../TermsModal/TermsModal";
+import WorkspaceDialog from "../WorkspaceDialog/WorkspaceDialog";
+import Badge from "../Badge/Badge";
+import Button from "../Button/Button";
+import StudentRpeModal from "../StudentRpeModal/StudentRpeModal";
+import { useStudentArea } from "../../features/studentArea/StudentContext";
+import { authService } from "../../services/authService";
+import { session } from "../../services/session";
+import "./StudentLayout.css";
+
+export default function StudentLayout() {
+  const user = session.getUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    student,
+    unreadNotifications,
+    setSearchQuery,
+    rpeModalSessionId,
+    rpeBusy,
+    openRpeModal,
+    closeRpeModal,
+    confirmRpeExecution,
+    inspectedSession,
+    setInspectedSession,
+    inspectedRoutine,
+    setInspectedRoutine,
+    messageModalOpen,
+    setMessageModalOpen,
+    sendObservationToPersonal,
+    markFeedbacksRead,
+  } = useStudentArea();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [messageText, setMessageText] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname, location.search]);
+
+  if (user?.role === "PERSONAL_TRAINER") {
+    return <Navigate to="/home" replace />;
+  }
+
+  const isWorkouts = location.pathname.startsWith("/conta/treinos");
+  const isEvolution = location.pathname.startsWith("/conta/evolucao");
+
+  const title = isWorkouts
+    ? "Meus treinos"
+    : isEvolution
+    ? "Minha evolução"
+    : `Olá, ${student.firstName}`;
+
+  const subtitle = isWorkouts
+    ? "Sua rotina ativa, organizada por semanas"
+    : isEvolution
+    ? "Os mesmos gráficos que seu personal acompanha"
+    : "Quarta-feira, 07 de outubro · Bora treinar?";
+
+  async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!messageText.trim() || sendingMessage) return;
+    setSendingMessage(true);
+    try {
+      await sendObservationToPersonal(messageText);
+      setMessageText("");
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
+  return (
+    <div className="student-layout">
+      <a className="student-layout__skip" href="#student-content">
+        Ir para o conteúdo
+      </a>
+      <button
+        type="button"
+        className="student-layout__menu-toggle"
+        aria-expanded={menuOpen}
+        aria-controls="student-sidebar"
+        onClick={() => setMenuOpen((prev) => !prev)}
+      >
+        {menuOpen ? "Fechar menu" : "Abrir menu"}
+      </button>
+
+      <div
+        id="student-sidebar"
+        className={`student-layout__sidebar${menuOpen ? " student-layout__sidebar--open" : ""}`}
+      >
+        <AppSidebar
+          role="student"
+          user={{
+            name: student.name,
+            subtitle: student.roleLabel,
+            initials: student.initials,
+          }}
+          menu={[
+            { id: "panel", label: "Meu painel", icon: "imgIconHome", to: "/conta" },
+            { id: "workouts", label: "Meus treinos", icon: "imgIconDumbbell", to: "/conta/treinos" },
+            { id: "evolution", label: "Minha evolução", icon: "imgIconChart", to: "/conta/evolucao" },
+            { id: "reports", label: "Meus relatórios", icon: "imgIconFile" },
+          ]}
+          general={[
+            { id: "integrations", label: "Integrações", icon: "imgIconZap" },
+            { id: "settings", label: "Configurações", icon: "imgIconSliders" },
+            {
+              id: "terms",
+              label: "Termos e privacidade",
+              icon: "imgIconShield",
+              onClick: () => setTermsOpen(true),
+            },
+          ]}
+          footer={
+            <SidebarCallout
+              variant="personal"
+              name={student.personal.name}
+              registration={student.personal.cref}
+              onAction={() => setMessageModalOpen(true)}
+            />
+          }
+          onLogout={() => {
+            authService.logout();
+            navigate("/login", { replace: true });
+          }}
+        />
+      </div>
+
+      <div className="student-layout__body">
+        <AppTopbar
+          title={title}
+          subtitle={subtitle}
+          userName={student.name}
+          userInitials={student.initials}
+          avatarTone="info"
+          searchLabel="Buscar treinos e sessões"
+          notificationDot={unreadNotifications > 0}
+          onSearch={(query) => {
+            setSearchQuery(query);
+            if (!isWorkouts) {
+              navigate(
+                query
+                  ? `/conta/treinos?busca=${encodeURIComponent(query)}`
+                  : "/conta/treinos"
+              );
+            }
+          }}
+          onNotifications={() => {
+            markFeedbacksRead();
+            if (location.pathname !== "/conta") {
+              navigate("/conta#feedbacks");
+            } else {
+              document.getElementById("feedbacks")?.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+        />
+
+        <main id="student-content" className="student-layout__main">
+          <Outlet />
+        </main>
+      </div>
+
+      {rpeModalSessionId && (
+        <StudentRpeModal
+          initialRpe={7}
+          busy={rpeBusy}
+          onClose={closeRpeModal}
+          onConfirm={(rpe) => void confirmRpeExecution(rpe)}
+        />
+      )}
+
+      {inspectedSession && (
+        <WorkspaceDialog
+          title={inspectedSession.titulo}
+          description={`${inspectedSession.diaSemana}, ${inspectedSession.dataPlanejada}${
+            inspectedSession.horario ? ` às ${inspectedSession.horario}` : ""
+          } · ${inspectedSession.local || "Piscina semiolímpica"}`}
+          icon="/student-profile/imgIconActivity2.svg"
+          onClose={() => setInspectedSession(null)}
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setInspectedSession(null)}>
+                Fechar
+              </Button>
+              {inspectedSession.status === "PLANEJADA" && (
+                <Button
+                  onClick={() => {
+                    const id = inspectedSession.id;
+                    setInspectedSession(null);
+                    openRpeModal(id);
+                  }}
+                >
+                  Registrar execução
+                </Button>
+              )}
+            </>
+          }
+        >
+          <div className="student-session-dialog">
+            <div className="student-session-dialog__badges">
+              <Badge
+                tone={
+                  inspectedSession.status === "CONCLUIDA"
+                    ? "success"
+                    : inspectedSession.status === "VALIDADA"
+                    ? "info"
+                    : "neutral"
+                }
+              >
+                {inspectedSession.status === "CONCLUIDA"
+                  ? "Concluída"
+                  : inspectedSession.status === "VALIDADA"
+                  ? "Validada"
+                  : "Planejada"}
+              </Badge>
+              {inspectedSession.duracaoPlanejada && (
+                <span className="student-session-dialog__meta">
+                  Duração planejada: {inspectedSession.duracaoPlanejada} min
+                </span>
+              )}
+              {typeof inspectedSession.rpe === "number" && (
+                <span className="student-session-dialog__meta">
+                  RPE (Borg): {inspectedSession.rpe}/10
+                </span>
+              )}
+            </div>
+
+            <div className="student-session-dialog__block">
+              <h3>Descrição da sessão</h3>
+              <p>{inspectedSession.descricao}</p>
+            </div>
+
+            {inspectedSession.resultados && inspectedSession.resultados.length > 0 && (
+              <div className="student-session-dialog__block">
+                <h3>Resultados registrados</h3>
+                <div className="student-session-dialog__results">
+                  {inspectedSession.resultados.map((res) => (
+                    <div key={res.metricaId} className="student-session-dialog__result-card">
+                      <span>{res.titulo}</span>
+                      <strong>{res.valor}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </WorkspaceDialog>
+      )}
+
+      {inspectedRoutine && (
+        <WorkspaceDialog
+          title={inspectedRoutine.titulo}
+          description={inspectedRoutine.periodo}
+          icon="/design-system/imgIconDumbbell.svg"
+          onClose={() => setInspectedRoutine(null)}
+          actions={
+            <Button variant="secondary" onClick={() => setInspectedRoutine(null)}>
+              Fechar
+            </Button>
+          }
+        >
+          <div className="student-session-dialog">
+            <div className="student-session-dialog__badges">
+              <Badge tone="neutral">Encerrada</Badge>
+              <span className="student-session-dialog__meta">
+                {inspectedRoutine.sessoesConcluidas} sessões concluídas
+              </span>
+            </div>
+            <div className="student-session-dialog__block">
+              <h3>Objetivo do ciclo</h3>
+              <p>{inspectedRoutine.objetivo}</p>
+            </div>
+          </div>
+        </WorkspaceDialog>
+      )}
+
+      {messageModalOpen && (
+        <WorkspaceDialog
+          title={`Enviar mensagem para ${student.personal.name}`}
+          description="Registre uma observação ou dúvida sobre sua rotina de treinos (US-26)."
+          icon="/design-system/imgIconMsg.svg"
+          busy={sendingMessage}
+          onClose={() => setMessageModalOpen(false)}
+        >
+          <form className="student-message-dialog" onSubmit={handleSendMessage}>
+            <label htmlFor="student-observation-input">Sua mensagem ou observação</label>
+            <textarea
+              id="student-observation-input"
+              rows={4}
+              maxLength={2000}
+              placeholder="Ex.: Senti ótima evolução nas viradas hoje, mas tive leve fadiga nos últimos 200m..."
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              disabled={sendingMessage}
+              required
+            />
+            <footer className="workspace-dialog__actions">
+              <Button
+                variant="secondary"
+                type="button"
+                disabled={sendingMessage}
+                onClick={() => setMessageModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" loading={sendingMessage} disabled={!messageText.trim()}>
+                Enviar mensagem
+              </Button>
+            </footer>
+          </form>
+        </WorkspaceDialog>
+      )}
+
+      {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}
+    </div>
+  );
+}

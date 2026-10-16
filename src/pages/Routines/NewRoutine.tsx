@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { usePersonal } from "../../features/personal/PersonalContext";
 import {
   eligibleStudentsForRoutine,
+  extractProblemDetail,
   getAvatarColor,
   getStudentInitials,
   metricLabels,
@@ -445,17 +446,15 @@ export default function NewRoutine() {
 
     try {
       setSubmitting(true);
-      await rotinaService.criar(payload);
-      toast.success(`Rotina “${titulo}” criada com sucesso!`);
+      const created = await rotinaService.criar(payload);
+      toast.success("Treino criado com sucesso!");
       await refresh();
-      navigate("/rotinas");
+      navigate(created?.id ? `/rotinas/${created.id}/planejamento` : "/rotinas");
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { mensagem?: string; message?: string } } })
-          ?.response?.data?.mensagem ||
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ||
-        "Não foi possível criar a rotina. Tente novamente.";
+      const msg = extractProblemDetail(
+        err,
+        "Não foi possível criar a rotina. Tente novamente."
+      );
       toast.error(msg);
     } finally {
       setSubmitting(false);

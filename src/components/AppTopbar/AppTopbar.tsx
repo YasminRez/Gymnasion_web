@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Avatar from "../Avatar/Avatar";
 import "./AppTopbar.css";
-type Props = { title: string; subtitle?: string; userName: string; avatar?: string; searchLabel?: string; notificationCount?: number; onSearch: (query: string) => void; onNotifications: () => void };
-export default function AppTopbar({ title, subtitle, userName, avatar, searchLabel = "Buscar alunos e turmas", notificationCount, onSearch, onNotifications }: Props) {
+type Props = { title: string; subtitle?: string; userName: string; userInitials?: string; avatar?: string; avatarTone?: "primary" | "info"; searchLabel?: string; notificationCount?: number; notificationDot?: boolean; onSearch: (query: string) => void; onNotifications: () => void };
+export default function AppTopbar({ title, subtitle, userName, userInitials, avatar, avatarTone = "primary", searchLabel = "Buscar alunos e turmas", notificationCount, notificationDot, onSearch, onNotifications }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   useEffect(() => {
@@ -20,8 +20,8 @@ export default function AppTopbar({ title, subtitle, userName, avatar, searchLab
         <input ref={searchRef} type="search" aria-label={searchLabel} placeholder={`${searchLabel}…`} value={query} onChange={event => setQuery(event.target.value)} />
         <kbd title="Control ou Command + K">⌘K</kbd>
       </form>
-      <button type="button" className="ds-topbar__notifications" aria-label={notificationCount ? "Abrir notificações: "+notificationCount+" não lidas" : "Abrir notificações"} onClick={onNotifications}><img src="/design-system/imgBell.svg" alt="" />{Boolean(notificationCount) && <span className="ds-topbar__notification-count">{notificationCount}</span>}</button>
-      <Avatar name={userName} src={avatar} />
+      <button type="button" className="ds-topbar__notifications" aria-label={notificationCount ? "Abrir notificações: "+notificationCount+" não lidas" : "Abrir notificações"} onClick={onNotifications}><img src="/design-system/imgBell.svg" alt="" />{notificationDot ? <span className="ds-topbar__notification-dot" /> : Boolean(notificationCount) && <span className="ds-topbar__notification-count">{notificationCount}</span>}</button>
+      <Avatar name={userName} initials={userInitials} src={avatar} tone={avatarTone} />
     </div>
   </header>;
 }

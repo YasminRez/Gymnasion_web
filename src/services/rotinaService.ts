@@ -3,9 +3,11 @@ import type { PaginatedOrArray } from "../types/api";
 import { unpackPage } from "../types/api";
 import type {
   CriarRotinaPayload,
+  CriarSessaoTreinoPayload,
   PlanejamentoRotinaResponseDTO,
   ReutilizarRotinaPayload,
   RotinaResponse,
+  SessaoTreinoPlanejadaDTO,
 } from "../types/rotina";
 
 const BASE_URL = "/api/personal-trainers/rotinas";
@@ -50,6 +52,11 @@ export const rotinaService = {
     return data;
   },
 
+  async vincularTurma(rotinaId: string, turmaId: string): Promise<RotinaResponse> {
+    const { data } = await api.post<RotinaResponse>(`${BASE_URL}/${rotinaId}/turmas/${turmaId}`);
+    return data;
+  },
+
   async desvincularAluno(id: string, alunoId: string): Promise<{ mensagem?: string }> {
     const { data } = await api.delete<{ mensagem?: string }>(`${BASE_URL}/${id}/alunos/${alunoId}`);
     return data;
@@ -64,4 +71,10 @@ export const rotinaService = {
     const { data } = await api.get<PlanejamentoRotinaResponseDTO>(`${BASE_URL}/${id}/planejamento`);
     return data;
   },
+
+  async adicionarSessao(id: string, payload: CriarSessaoTreinoPayload): Promise<SessaoTreinoPlanejadaDTO> {
+    const { data } = await api.post<SessaoTreinoPlanejadaDTO>(`${BASE_URL}/${id}/sessoes`, payload);
+    return data;
+  },
 };
+

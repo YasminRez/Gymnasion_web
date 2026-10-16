@@ -205,9 +205,55 @@ test("rotinaService integration signatures and URLs match API routes", async () 
   assert.equal(calledUrl, "/api/personal-trainers/rotinas/abc/alunos/s1");
   assert.equal(calledMethod, "DELETE");
 
+  await rotinaService.vincularTurma("rot-1", "turma-9");
+  assert.equal(calledUrl, "/api/personal-trainers/rotinas/rot-1/turmas/turma-9");
+  assert.equal(calledMethod, "POST");
+  assert.equal(calledBody, undefined);
+
   await rotinaService.consultarPlanejamento("abc");
   assert.equal(calledUrl, "/api/personal-trainers/rotinas/abc/planejamento");
   assert.equal(calledMethod, "GET");
+
+  await rotinaService.adicionarSessao("abc", {
+    semana: 1,
+    dataPlanejada: "2026-11-10",
+    duracao: 45,
+    atividades: "Recuperação ativa\nAquecimento: 10 min",
+  });
+  assert.equal(calledUrl, "/api/personal-trainers/rotinas/abc/sessoes");
+  assert.equal(calledMethod, "POST");
+  assert.equal(calledBody.semana, 1);
+  assert.equal(calledBody.duracao, 45);
+});
+
+test("eligibleGroupsForRoutine and extractProblemDetail enforce modality match and RFC 7807 detail", () => {
+  const routine = makeRoutine("r1", "Treino Natação", 1, 3, true, "ATIVA");
+  const groups = [
+    { id: "g1", nome: "Natação Manhã", modalidadeId: 1 },
+    { id: "g2", nome: "Tênis Tarde", modalidadeId: 2 },
+    { id: "g3", nome: "Natação Noite", modalidadeId: 1 },
+  ];
+  assert.deepEqual(
+    model.eligibleGroupsForRoutine(groups, routine).map((g) => g.id),
+    ["g1", "g3"]
+  );
+
+  const err422 = {
+    response: {
+      status: 422,
+      data: {
+        type: "https://api.gymnasion.com/errors/regra-de-negocio",
+        title: "Violação de Regra de Negócio",
+        status: 422,
+        detail: "O aluno Lucas já possui uma rotina de treino ativa. A rotina atual precisa ser encerrada antes.",
+      },
+    },
+  };
+  assert.equal(
+    model.extractProblemDetail(err422, "Erro genérico"),
+    "O aluno Lucas já possui uma rotina de treino ativa. A rotina atual precisa ser encerrada antes."
+  );
+  assert.equal(model.extractProblemDetail({}, "Erro genérico"), "Erro genérico");
 });
 
 test("routineModalityCounts, getStudentInitials, and getModalityBadgeStyle match Figma specs", () => {

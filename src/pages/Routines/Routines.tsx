@@ -3,14 +3,17 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { usePersonal } from "../../features/personal/PersonalContext";
 import {
+  extractProblemDetail,
   getAvatarColor,
   getModalityBadgeStyle,
   getStudentInitials,
+  isRoutineActive,
   normalize,
   routineModalityCounts,
 } from "../../features/routines/routineModel";
 import { modalidadeService } from "../../services/modalidadeService";
 import { rotinaService } from "../../services/rotinaService";
+import RoutineAssignModal from "../../components/RoutineAssignModal/RoutineAssignModal";
 import RoutineDeleteModal from "../../components/RoutineDeleteModal/RoutineDeleteModal";
 import RoutineReuseModal from "../../components/RoutineReuseModal/RoutineReuseModal";
 import type { Modalidade } from "../../types/modalidade";
@@ -19,7 +22,7 @@ import "./Routines.css";
 
 export default function Routines() {
   const navigate = useNavigate();
-  const { routines, students, refresh } = usePersonal();
+  const { routines, students, groups, syncRoutine, refresh } = usePersonal();
   const [params, setParams] = useSearchParams();
 
   // Modalidades disponíveis
@@ -34,6 +37,7 @@ export default function Routines() {
   const [search, setSearch] = useState(() => params.get("busca") || "");
 
   // Modais
+  const [assigningRoutine, setAssigningRoutine] = useState<RotinaResponse | null>(null);
   const [deletingRoutine, setDeletingRoutine] = useState<RotinaResponse | null>(null);
   const [reusingRoutine, setReusingRoutine] = useState<RotinaResponse | null>(null);
 
@@ -126,12 +130,7 @@ export default function Routines() {
       setDeletingRoutine(null);
       await refresh();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { mensagem?: string; message?: string } } })
-          ?.response?.data?.mensagem ||
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ||
-        "Não foi possível excluir a rotina.";
+      const msg = extractProblemDetail(err, "Não foi possível excluir a rotina.");
       toast.error(msg);
     }
   }
@@ -252,7 +251,11 @@ export default function Routines() {
                 return (
                   <tr key={routine.id}>
                     {/* ROTINA */}
-                    <td className="routines-page__col-routine">
+                    <td
+                      className="routines-page__col-routine routines-page__col-routine--clickable"
+                      onClick={() => navigate(`/rotinas/${routine.id}/planejamento`)}
+                      title="Clique para planejar ou adicionar sessões a esta rotina"
+                    >
                       <h3>{routine.titulo}</h3>
                       {routine.objetivos && <p title={routine.objetivos}>{routine.objetivos}</p>}
                     </td>
@@ -329,9 +332,63 @@ export default function Routines() {
                       )}
                     </td>
 
-                    {/* AÇÕES: Reutilizar, Editar, Excluir */}
+                    {/* AÇÕES: Planejar sessões, Vincular turma/alunos, Reutilizar, Editar, Excluir */}
                     <td>
                       <div className="routines-page__actions-cell">
+                        {/* Botão Principal: Planejar / Adicionar sessão */}
+                        <button
+                          type="button"
+                          className="routines-page__action-circle-btn routines-page__action-circle-btn--plan"
+                          title="Planejar semanas / Adicionar sessão à rotina"
+                          aria-label={`Planejar ou adicionar sessão à rotina ${routine.titulo}`}
+                          onClick={() => navigate(`/rotinas/${routine.id}/planejamento`)}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                            <line x1="12" y1="14" x2="12" y2="18" />
+                            <line x1="10" y1="16" x2="14" y2="16" />
+                          </svg>
+                        </button>
+
+                        {/* Botão 0: Vincular turma / alunos (apenas rotinas ativas) */}
+                        {isRoutineActive(routine) && (
+                          <button
+                            type="button"
+                            className="routines-page__action-circle-btn"
+                            title="Vincular turma ou alunos à rotina"
+                            aria-label={`Vincular turma ou alunos à rotina ${routine.titulo}`}
+                            onClick={() => setAssigningRoutine(routine)}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                              <circle cx="8.5" cy="7" r="4" />
+                              <line x1="20" y1="8" x2="20" y2="14" />
+                              <line x1="23" y1="11" x2="17" y2="11" />
+                            </svg>
+                          </button>
+                        )}
+
                         {/* Botão 1: Reutilizar */}
                         <button
                           type="button"
@@ -409,6 +466,25 @@ export default function Routines() {
           </table>
         )}
       </div>
+
+      {/* Modal de Vincular Turma / Alunos */}
+      {assigningRoutine && (
+        <RoutineAssignModal
+          routine={assigningRoutine}
+          students={students.data}
+          routines={routines.data}
+          groups={groups.data}
+          onClose={() => setAssigningRoutine(null)}
+          onAssigned={(updated) => {
+            syncRoutine(updated);
+            setAssigningRoutine(null);
+            toast.success(`Vínculo atualizado na rotina “${updated.titulo}”!`, {
+              id: "routine-assigned",
+            });
+            void refresh();
+          }}
+        />
+      )}
 
       {/* Modal de Exclusão (Figma Screenshot 2) */}
       {deletingRoutine && (

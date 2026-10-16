@@ -1,0 +1,434 @@
+/* src/pages/StudentSessionEdit/StudentSessionEdit.css */
+.session-edit-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+}
+
+.session-edit-loading,
+.session-edit-error {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+.session-edit__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.session-edit__breadcrumb a {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.session-edit__breadcrumb a:hover {
+  color: #0f172a;
+}
+
+.session-edit__breadcrumb span {
+  color: #94a3b8;
+}
+
+.session-edit__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.session-edit__title-section h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.session-edit__meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.session-edit__student-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+}
+
+.session-edit__student-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.session-edit__date-status {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.session-edit__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-edit__grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+.session-edit__left-col,
+.session-edit__right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.session-edit__card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.session-edit__card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 16px;
+}
+
+.session-edit__form-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 16px;
+}
+
+.session-edit__activities-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.session-edit__activities-header h2 {
+  margin: 0 0 4px;
+}
+
+.session-edit__activities-header p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Nova Atividade Box */
+.session-edit__add-activity-box {
+  background: #fff7ed;
+  border: 1px dashed #ea580c;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-edit__add-activity-box h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #9a3412;
+  margin: 0;
+}
+
+.activity-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.act-input-title,
+.act-input-desc {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.act-input-title:focus,
+.act-input-desc:focus {
+  border-color: #ea580c;
+}
+
+.activity-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Lista de Atividades */
+.session-edit__activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-edit__activity-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.session-edit__activity-item.is-altered {
+  border-color: #fdba74;
+  background: #fffaf5;
+}
+
+.activity-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffedd5;
+  color: #c2410c;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activity-title-line strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.activity-desc {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.activity-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.act-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.act-action-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.act-action-btn.delete:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.activity-edit-inline {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-act-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.inline-btn {
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inline-btn.save {
+  background: #10b981;
+  color: white;
+}
+
+.inline-btn.cancel {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+/* Orientações */
+.session-edit__orientations-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-edit__orientations-box textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border, #cbd5e1);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+.session-edit__orientations-box textarea:focus {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+
+.char-count {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Coluna Direita: Métricas */
+.session-edit__metrics-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metric-check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+}
+
+.metric-check-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-check-text strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.metric-type-hint {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.no-metrics-msg p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.session-edit__info-box {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  color: #1e40af;
+}
+
+.info-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #2563eb;
+}
+
+.session-edit__info-box strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.session-edit__info-box p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  color: #1d4ed8;
+}
+
+.session-edit__footer-compliance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.session-edit__footer-compliance svg {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+@media (max-width: 960px) {
+  .session-edit__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-edit__form-row {
+    grid-template-columns: 1fr;
+  }
+}

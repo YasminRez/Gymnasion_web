@@ -1,0 +1,235 @@
+/* src/components/ValidateSessionModal/ValidateSessionModal.css */
+.validate-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.validate-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.validate-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+
+.validate-modal__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #fff7ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.validate-modal__title-group {
+  flex: 1;
+}
+
+.validate-modal__title-group h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text, #0f172a);
+  margin: 0 0 4px;
+}
+
+.validate-modal__title-group p {
+  font-size: 13px;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0;
+}
+
+.validate-modal__close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 4px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.validate-modal__close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.validate-modal__body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.validate-modal__summary-table {
+  background: #f8fafc;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.validate-modal__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  font-size: 14px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.validate-modal__row:last-child {
+  border-bottom: none;
+}
+
+.validate-modal__label {
+  color: #475569;
+}
+
+.validate-modal__value {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.validate-modal__alert {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 12px;
+  color: #b45309;
+}
+
+.validate-modal__alert-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.validate-modal__alert p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  color: #92400e;
+}
+
+.validate-modal__feedback-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.validate-modal__feedback-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.validate-modal__feedback-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border, #cbd5e1);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.validate-modal__feedback-group textarea:focus {
+  border-color: var(--color-primary-500, #ea580c);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+
+.validate-modal__hint {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.validate-modal__notify {
+  padding-top: 4px;
+}
+
+.validate-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  background: #f8fafc;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  gap: 16px;
+}
+
+.validate-modal__footer-compliance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 290px;
+}
+
+.validate-modal__footer-compliance svg {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.validate-modal__footer-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 640px) {
+  .validate-modal__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .validate-modal__footer-compliance {
+    max-width: 100%;
+  }
+  .validate-modal__footer-actions {
+    justify-content: flex-end;
+  }
+}

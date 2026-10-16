@@ -8,6 +8,14 @@
 .group-card-v2__sport--tenis { background:#ecfdf5 }
 .group-card-v2__sport--academia { background:#f5f3ff }
 .group-card-v2__more { width:34px; height:34px; border:1px solid var(--color-border); border-radius:10px; display:grid; place-items:center; flex:none }
+.group-card-v2__routine { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px dashed var(--color-border); border-radius:10px; background:#f8fafc }
+.group-card-v2__routine--linked { border-style:solid; border-color:var(--color-primary-200, #bfdbfe); background:var(--color-primary-50) }
+.group-card-v2__routine>img { width:16px; height:16px; flex:none }
+.group-card-v2__routine>div { display:flex; flex-direction:column; gap:2px; min-width:0 }
+.group-card-v2__routine span { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-ink-500) }
+.group-card-v2__routine--linked span { color:var(--color-primary-600) }
+.group-card-v2__routine strong { font-size:13px; font-weight:600; color:var(--color-ink-700); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.group-card-v2__routine--linked strong { color:var(--color-ink-900) }
 .group-card-v2__members { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; color:var(--color-ink-500) }
 .group-card-v2__members>div { display:flex; padding-left:8px }
 .group-card-v2__members .ds-avatar,.group-card-v2__remaining { width:32px; height:32px; font-size:10px; border:2px solid white; margin-left:-8px }
