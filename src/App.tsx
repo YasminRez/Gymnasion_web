@@ -26,6 +26,8 @@ import NewRoutine from "./pages/Routines/NewRoutine";
 import DesignSystem from "./pages/DesignSystem/DesignSystem";
 import PersonalProvider from "./features/personal/PersonalProvider";
 import PersonalLayout from "./components/PersonalLayout/PersonalLayout";
+import StudentSessionDetail from "./pages/StudentSessionDetail/StudentSessionDetail";
+import StudentSessionEdit from "./pages/StudentSessionEdit/StudentSessionEdit";
 
 
 function App() {
@@ -75,6 +77,8 @@ function App() {
           <Route element={<PersonalProvider><PersonalLayout /></PersonalProvider>}>
             <Route path="/alunos" element={<Students />} />
             <Route path="/alunos/:studentId" element={<StudentProfile />} />
+            <Route path="/alunos/:studentId/sessoes/:sessionId" element={<StudentSessionDetail />} />
+            <Route path="/alunos/:studentId/sessoes/:sessionId/editar" element={<StudentSessionEdit />} />
             <Route path="/home" element={<Dashboard />} />
             <Route path="/rotinas" element={<Routines />} />
             <Route path="/rotinas/nova" element={<NewRoutine />} />

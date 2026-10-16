@@ -9,3 +9,6 @@
 .profile-sessions__rpe { padding: 3px 8px; border-radius: 6px; background: var(--color-background); }
 .profile-sessions__empty { padding: 20px; color: var(--color-ink-500); }
 .profile-sessions footer { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 16px; }
+.profile-sessions tr.is-clickable { cursor: pointer; transition: background 0.15s; }
+.profile-sessions tr.is-clickable:hover { background: #f8fafc; }
+
