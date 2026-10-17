@@ -8,8 +8,10 @@ import WorkspaceDialog from "../WorkspaceDialog/WorkspaceDialog";
 import Badge from "../Badge/Badge";
 import Button from "../Button/Button";
 import StudentRpeModal from "../StudentRpeModal/StudentRpeModal";
+import ReportDialog from "../ReportDialog/ReportDialog";
 import { useStudentArea } from "../../features/studentArea/StudentContext";
 import { authService } from "../../services/authService";
+import { relatorioService } from "../../services/relatorioService";
 import { session } from "../../services/session";
 import "./StudentLayout.css";
 
@@ -38,6 +40,7 @@ export default function StudentLayout() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
 
@@ -106,7 +109,7 @@ export default function StudentLayout() {
             { id: "panel", label: "Meu painel", icon: "imgIconHome", to: "/conta" },
             { id: "workouts", label: "Meus treinos", icon: "imgIconDumbbell", to: "/conta/treinos" },
             { id: "evolution", label: "Minha evolução", icon: "imgIconChart", to: "/conta/evolucao" },
-            { id: "reports", label: "Meus relatórios", icon: "imgIconFile" },
+            { id: "reports", label: "Meus relatórios", icon: "imgIconFile", onClick: () => setReportOpen(true) },
           ]}
           general={[
             { id: "integrations", label: "Integrações", icon: "imgIconZap" },
@@ -166,6 +169,14 @@ export default function StudentLayout() {
           <Outlet />
         </main>
       </div>
+
+      {reportOpen && (
+        <ReportDialog
+          studentName={student.name}
+          onClose={() => setReportOpen(false)}
+          generate={(filter, signal) => relatorioService.gerarPeloAluno(filter, signal)}
+        />
+      )}
 
       {rpeModalSessionId && (
         <StudentRpeModal

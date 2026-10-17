@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
 import Badge from "../../components/Badge/Badge";
 import StudentSmoothChart from "../../components/StudentSmoothChart/StudentSmoothChart";
+import ReportDialog from "../../components/ReportDialog/ReportDialog";
+import { useStudentArea } from "../../features/studentArea/StudentContext";
+import { reportPeriodFromDays } from "../../features/report/reportModel";
 import { alunoService } from "../../services/alunoService";
-import type { EvolutionPeriodKey } from "../../types/studentArea";
+import { relatorioService } from "../../services/relatorioService";
+import type { EvolutionPeriodKey, StudentEvolutionResponseDTO } from "../../types/studentArea";
 import "./StudentEvolutionPage.css";
 
 const PERIOD_OPTIONS: { key: EvolutionPeriodKey; label: string; days: number }[] = [
@@ -15,7 +18,10 @@ const PERIOD_OPTIONS: { key: EvolutionPeriodKey; label: string; days: number }[]
 export default function StudentEvolutionPage() {
   const [period, setPeriod] = useState<EvolutionPeriodKey>("3m");
   const [loading, setLoading] = useState<boolean>(true);
-  const [evoData, setEvoData] = useState<any>(null);
+  const [evoData, setEvoData] = useState<StudentEvolutionResponseDTO | null>(null);
+  const [report, setReport] = useState(false);
+  const { student } = useStudentArea();
+  const selectedPeriod = PERIOD_OPTIONS.find((p) => p.key === period) || PERIOD_OPTIONS[1];
 
   useEffect(() => {
     let active = true;
@@ -50,13 +56,6 @@ export default function StudentEvolutionPage() {
     };
   }, [period]);
 
-  function handleExportPdf() {
-    toast.success("Preparando exportação em PDF da sua evolução...");
-    if (typeof window !== "undefined" && typeof window.print === "function") {
-      window.print();
-    }
-  }
-
   return (
     <div className="student-evo-page">
       <div className="student-evo-page__toolbar">
@@ -84,9 +83,9 @@ export default function StudentEvolutionPage() {
         <button
           type="button"
           className="student-evo-page__export-btn"
-          onClick={handleExportPdf}
+          onClick={() => setReport(true)}
         >
-          Exportar PDF
+          Gerar relatório
         </button>
       </div>
 
@@ -94,7 +93,7 @@ export default function StudentEvolutionPage() {
         <div style={{ textAlign: "center", padding: "3rem", color: "var(--color-neutral-500, #64748b)" }}>
           Carregando dados de evolução...
         </div>
-      ) : evoData && evoData.possuiDadosSuficientes && (evoData.metricas?.length > 0 || evoData.evolucaoRpe?.pontos?.length > 0) ? (
+      ) : evoData && evoData.possuiDadosSuficientes && (evoData.metricas?.length > 0 || (evoData.evolucaoRpe?.pontos?.length ?? 0) > 0) ? (
         <>
           <div className="student-evo-page__banner" role="status">
             <img src="/student-profile/imgIconTrend.svg" alt="" aria-hidden="true" />
@@ -103,7 +102,7 @@ export default function StudentEvolutionPage() {
 
           <div className="student-evo-page__grid">
             {/* Gráfico de RPE (US-20 C3) */}
-            {evoData.evolucaoRpe?.pontos?.length > 0 && (
+            {evoData.evolucaoRpe && evoData.evolucaoRpe.pontos?.length > 0 && (
               <section className="student-evo-page__card" aria-label="Evolução do Esforço Percebido">
                 <header className="student-evo-page__card-header">
                   <div>
@@ -120,8 +119,8 @@ export default function StudentEvolutionPage() {
 
                 <div className="student-evo-page__card-chart">
                   <StudentSmoothChart
-                    values={evoData.evolucaoRpe.pontos.map((p: any) => p.nivelCansaco)}
-                    labels={evoData.evolucaoRpe.pontos.map((p: any) => p.data?.slice(5) || "")}
+                    values={evoData.evolucaoRpe.pontos.map((p) => p.nivelCansaco)}
+                    labels={evoData.evolucaoRpe.pontos.map((p) => p.data?.slice(5) || "")}
                     color="orange"
                     ariaLabel="Gráfico de esforço percebido ao longo do período"
                   />
@@ -130,8 +129,8 @@ export default function StudentEvolutionPage() {
             )}
 
             {/* Gráficos das métricas da modalidade (US-15 C1/C3) */}
-            {(evoData.metricas || []).map((m: any) => {
-              const numericPoints = (m.pontos || []).filter((p: any) => typeof p.valorNumerico === "number");
+            {(evoData.metricas || []).map((m) => {
+              const numericPoints = (m.pontos || []).filter((p): p is typeof p & { valorNumerico: number } => typeof p.valorNumerico === "number");
               if (numericPoints.length === 0) return null;
               const lastPoint = numericPoints[numericPoints.length - 1];
               return (
@@ -153,8 +152,8 @@ export default function StudentEvolutionPage() {
 
                   <div className="student-evo-page__card-chart">
                     <StudentSmoothChart
-                      values={numericPoints.map((p: any) => p.valorNumerico)}
-                      labels={numericPoints.map((p: any) => p.data?.slice(5) || "")}
+                      values={numericPoints.map((p) => p.valorNumerico)}
+                      labels={numericPoints.map((p) => p.data?.slice(5) || "")}
                       color="blue"
                       ariaLabel={`Gráfico de evolução da métrica ${m.titulo}`}
                     />
@@ -174,6 +173,16 @@ export default function StudentEvolutionPage() {
             Conforme os requisitos da plataforma (US-15 C1), são necessárias ao menos <strong>3 sessões de treino concluídas</strong> com métricas ou RPE registrados para traçar as curvas de evolução.
           </p>
         </div>
+      )}
+
+      {report && (
+        <ReportDialog
+          studentName={evoData?.aluno?.nome || student.name}
+          modalidades={evoData?.modalidadesDisponiveis}
+          initialPeriod={reportPeriodFromDays(selectedPeriod.days)}
+          onClose={() => setReport(false)}
+          generate={(filter, signal) => relatorioService.gerarPeloAluno(filter, signal)}
+        />
       )}
     </div>
   );

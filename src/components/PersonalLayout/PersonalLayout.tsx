@@ -3,8 +3,10 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppSidebar from "../AppSidebar/AppSidebar";
 import AppTopbar from "../AppTopbar/AppTopbar";
 import TermsModal from "../TermsModal/TermsModal";
+import ReportDialog from "../ReportDialog/ReportDialog";
 import { usePersonal } from "../../features/personal/PersonalContext";
 import { authService } from "../../services/authService";
+import { relatorioService } from "../../services/relatorioService";
 import { studentCounts } from "../../features/personal/studentModel";
 import "./PersonalLayout.css";
 
@@ -12,6 +14,7 @@ export default function PersonalLayout() {
   const { students, notifications, groups } = usePersonal();
   const [menuOpen, setMenuOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const studentsList = Array.isArray(students?.data) ? students.data : [];
@@ -42,7 +45,7 @@ export default function PersonalLayout() {
           { id: "metrics", label: "Métricas", icon: "imgIconActivity", to: "/metricas" },
           { id: "modalities", label: "Modalidades", icon: "imgIconGrid" },
           { id: "evolution", label: "Evolução", icon: "imgIconChart" },
-          { id: "reports", label: "Relatórios", icon: "imgIconFile" },
+          { id: "reports", label: "Relatórios", icon: "imgIconFile", onClick: () => setReportOpen(true) },
         ]}
         general={[{ id: "settings", label: "Configurações", icon: "imgIconSliders" }, { id: "terms", label: "Termos e privacidade", icon: "imgIconShield", onClick: () => setTermsOpen(true) }]}
         footer={<div className="personal-layout__strava"><img src="/design-system/imgIconZap1.svg" alt="" /><strong>Sincronize com o Strava</strong><p>Integração disponível em breve.</p><button disabled>Conectar →</button></div>} />
@@ -104,6 +107,10 @@ export default function PersonalLayout() {
       <main id="personal-content"><Outlet /></main>
     </div>
     {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}
+    {/* US-16: pelo menu o personal escolhe o aluno; inativos mantêm o histórico (RN-014). */}
+    {reportOpen && <ReportDialog onClose={() => setReportOpen(false)}
+      students={studentsList.filter(student => student.status === "ATIVO" || student.status === "INATIVO").map(student => ({ id: student.id, nome: student.usuario.nome, modalidades: student.modalidades }))}
+      generate={(filter, signal, studentId) => relatorioService.gerarPeloPersonal(studentId ?? "", filter, signal)} />}
   </div>;
 }
 
