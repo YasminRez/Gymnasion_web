@@ -87,19 +87,53 @@ export interface StudentEvolutionPeriodData {
   graficos: StudentEvolutionChart[];
 }
 
+// Espelha DashboardEvolucaoResponseDTO do back-end (GET /api/alunos/evolucao).
+export interface StudentEvolutionMetricPoint {
+  sessaoId: string;
+  data: string;
+  valor: string;
+  valorNumerico: number | null;
+  formatado?: string;
+}
+
+export interface StudentEvolutionMetricSeries {
+  metricaId: string;
+  titulo: string;
+  tipo: TipoMetrica | string;
+  descontinuada: boolean;
+  statusMetrica?: string;
+  tendencia?: {
+    direcao?: string;
+    indicadorVisual?: string;
+    resumo?: string;
+  } | null;
+  pontos: StudentEvolutionMetricPoint[];
+}
+
+export interface StudentEvolutionRpePoint {
+  sessaoId: string;
+  data: string;
+  nivelCansaco: number;
+  descricao?: string;
+}
+
 export interface StudentEvolutionResponseDTO {
-  alunoId: string;
-  modalidadeId: number;
-  modalidadeNome: string;
-  totalSessoesAnalisadas: number;
-  seriesRpe: { data: string; valor: number }[];
-  seriesMetricas: {
-    metricaId: string;
-    metricaTitulo: string;
-    tipo: string;
-    pontos: { data: string; valor: string; valorNumerico: number }[];
-    tendencia?: string;
-  }[];
+  aluno?: { id: string; nome: string; email: string } | null;
+  modalidade?: { id: number; nome: string } | null;
+  modalidadesDisponiveis?: { id: number; nome: string }[];
+  periodo?: { dataInicio: string; dataFim: string } | null;
+  possuiDadosSuficientes: boolean;
+  mensagem?: string;
+  metricas: StudentEvolutionMetricSeries[];
+  evolucaoRpe?: {
+    totalSessoesComRpe: number;
+    possuiDadosSuficientes: boolean;
+    mensagem?: string;
+    mediaRpe: number | null;
+    ultimoRpe: number | null;
+    direcaoTendencia?: string;
+    pontos: StudentEvolutionRpePoint[];
+  } | null;
 }
 
 export interface StudentExecutionFormDTO {
