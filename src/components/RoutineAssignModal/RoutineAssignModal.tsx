@@ -69,6 +69,7 @@ export default function RoutineAssignModal({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [conflictPrompt, setConflictPrompt] = useState(false);
   const lock = useRef(false);
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function RoutineAssignModal({
 
   function toggleStudent(id: string) {
     setError("");
+    setConflictPrompt(false);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -95,6 +97,7 @@ export default function RoutineAssignModal({
     }
     setUnlinkingStudentId(studentId);
     setError("");
+    setConflictPrompt(false);
     try {
       await rotinaService.desvincularAluno(currentRoutine.id, studentId);
       const updated: RotinaResponse = {
@@ -118,6 +121,7 @@ export default function RoutineAssignModal({
       lock.current = true;
       setBusy(true);
       setError("");
+      setConflictPrompt(false);
       try {
         const updated = await rotinaService.vincularTurma(routine.id, selectedTurmaId);
         onAssigned(updated);
@@ -126,7 +130,14 @@ export default function RoutineAssignModal({
           err,
           "Não foi possível vincular a turma selecionada."
         ).message;
-        setError(extractProblemDetail(err, fallback));
+        const msg = extractProblemDetail(err, fallback);
+        setError(msg);
+        if (
+          msg.toLowerCase().includes("já possui uma rotina") ||
+          msg.toLowerCase().includes("rotina atual precisa ser encerrada")
+        ) {
+          setConflictPrompt(true);
+        }
       } finally {
         lock.current = false;
         setBusy(false);
@@ -146,6 +157,26 @@ export default function RoutineAssignModal({
       const fallback = authError(
         err,
         "Não foi possível vincular os alunos selecionados."
+      ).message;
+      setError(extractProblemDetail(err, fallback));
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function handleAssignWithReplace() {
+    if (lock.current || busy || !selectedTurmaId) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const updated = await rotinaService.vincularTurma(routine.id, selectedTurmaId, true);
+      onAssigned(updated);
+    } catch (err: unknown) {
+      const fallback = authError(
+        err,
+        "Não foi possível vincular a turma selecionada."
       ).message;
       setError(extractProblemDetail(err, fallback));
     } finally {
@@ -353,9 +384,21 @@ export default function RoutineAssignModal({
         )}
 
         {error && (
-          <p className="workspace-dialog__error" role="alert">
-            {error}
-          </p>
+          <div style={{ marginTop: "12px" }}>
+            <p className="workspace-dialog__error" role="alert" style={{ margin: "0 0 8px 0" }}>
+              {error}
+            </p>
+            {conflictPrompt && (
+              <Button
+                variant="primary"
+                disabled={busy}
+                loading={busy}
+                onClick={handleAssignWithReplace}
+              >
+                Encerrar rotina anterior e vincular
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </WorkspaceDialog>

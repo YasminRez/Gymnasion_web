@@ -418,7 +418,7 @@ export default function Routines() {
                           className="routines-page__action-circle-btn"
                           title="Editar rotina"
                           aria-label={`Editar rotina ${routine.titulo}`}
-                          onClick={() => navigate(`/rotinas/nova?modelo=${routine.id}`)}
+                          onClick={() => navigate(`/rotinas/${routine.id}/editar`)}
                         >
                           <svg
                             width="16"

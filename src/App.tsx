@@ -83,6 +83,7 @@ function App() {
             <Route path="/home" element={<Dashboard />} />
             <Route path="/rotinas" element={<Routines />} />
             <Route path="/rotinas/nova" element={<NewRoutine />} />
+            <Route path="/rotinas/:routineId/editar" element={<NewRoutine />} />
             <Route path="/rotinas/:routineId/planejamento" element={<RoutineSessionPlanner />} />
             <Route path="/rotinas/:routineId/sessoes/nova" element={<RoutineSessionPlanner />} />
             <Route path="/metricas" element={<Metrics />} />
