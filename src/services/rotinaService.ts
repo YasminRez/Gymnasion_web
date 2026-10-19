@@ -37,6 +37,11 @@ export const rotinaService = {
     return data;
   },
 
+  async atualizar(id: string, payload: Omit<CriarRotinaPayload, "modalidadeId">): Promise<RotinaResponse> {
+    const { data } = await api.put<RotinaResponse>(`${BASE_URL}/${id}`, payload);
+    return data;
+  },
+
   async excluir(id: string): Promise<{ mensagem?: string }> {
     const { data } = await api.delete<{ mensagem?: string }>(`${BASE_URL}/${id}`);
     return data;
@@ -52,8 +57,13 @@ export const rotinaService = {
     return data;
   },
 
-  async vincularTurma(rotinaId: string, turmaId: string): Promise<RotinaResponse> {
-    const { data } = await api.post<RotinaResponse>(`${BASE_URL}/${rotinaId}/turmas/${turmaId}`);
+  async vincularTurma(rotinaId: string, turmaId: string, substituirConflitos?: boolean): Promise<RotinaResponse> {
+    const config = substituirConflitos ? { params: { substituirConflitos: true } } : undefined;
+    const { data } = await api.post<RotinaResponse>(
+      `${BASE_URL}/${rotinaId}/turmas/${turmaId}`,
+      undefined,
+      config
+    );
     return data;
   },
 

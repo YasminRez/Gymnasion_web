@@ -30,15 +30,16 @@ export default function GroupRoutineModal({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [conflictPrompt, setConflictPrompt] = useState(false);
   const lock = useRef(false);
 
-  async function handleConfirm() {
+  async function handleConfirm(substituir?: boolean) {
     if (!selectedRoutineId || lock.current || busy) return;
     lock.current = true;
     setBusy(true);
     setError("");
     try {
-      const updated = await rotinaService.vincularTurma(selectedRoutineId, group.id);
+      const updated = await rotinaService.vincularTurma(selectedRoutineId, group.id, Boolean(substituir));
       onLinked(updated);
     } catch (err: unknown) {
       const fallback = authError(
@@ -47,6 +48,12 @@ export default function GroupRoutineModal({
       ).message;
       const message = extractProblemDetail(err, fallback);
       setError(message);
+      if (
+        message.toLowerCase().includes("já possui uma rotina") ||
+        message.toLowerCase().includes("rotina atual precisa ser encerrada")
+      ) {
+        setConflictPrompt(true);
+      }
     } finally {
       lock.current = false;
       setBusy(false);
@@ -70,7 +77,7 @@ export default function GroupRoutineModal({
           <Button
             disabled={!selectedRoutineId || busy || eligibleRoutines.length === 0}
             loading={busy}
-            onClick={handleConfirm}
+            onClick={() => handleConfirm(false)}
           >
             Vincular rotina
           </Button>
@@ -116,6 +123,7 @@ export default function GroupRoutineModal({
                     onChange={() => {
                       setSelectedRoutineId(routine.id);
                       if (error) setError("");
+                      setConflictPrompt(false);
                     }}
                   />
                   <div className="group-routine-modal__info">
@@ -147,9 +155,21 @@ export default function GroupRoutineModal({
         </p>
 
         {error && (
-          <p className="workspace-error" role="alert">
-            {error}
-          </p>
+          <div style={{ marginTop: "12px" }}>
+            <p className="workspace-error" role="alert" style={{ margin: "0 0 8px 0" }}>
+              {error}
+            </p>
+            {conflictPrompt && (
+              <Button
+                variant="primary"
+                disabled={busy}
+                loading={busy}
+                onClick={() => handleConfirm(true)}
+              >
+                Encerrar rotina anterior e vincular
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </WorkspaceDialog>

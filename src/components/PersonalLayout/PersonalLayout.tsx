@@ -11,7 +11,7 @@ import { studentCounts } from "../../features/personal/studentModel";
 import "./PersonalLayout.css";
 
 export default function PersonalLayout() {
-  const { students, notifications, groups } = usePersonal();
+  const { students, notifications, groups, readNotification, notificationBusy, refresh } = usePersonal();
   const [menuOpen, setMenuOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -27,6 +27,7 @@ export default function PersonalLayout() {
   const group = groupsList.find(item => item.id === decodeURIComponent(location.pathname.slice("/grupos/".length)));
   const isProfile = location.pathname.startsWith("/alunos/");
   const isNewRoutine = location.pathname === "/rotinas/nova";
+  const isEditRoutine = location.pathname.startsWith("/rotinas/") && location.pathname.endsWith("/editar");
   const isRoutines = location.pathname === "/rotinas";
   const isMetrics = location.pathname === "/metricas";
   const profileStudent = isProfile ? studentsList.find(student => student.id === decodeURIComponent(location.pathname.slice("/alunos/".length))) : undefined;
@@ -65,6 +66,8 @@ export default function PersonalLayout() {
             ? "Meus alunos"
             : isNewRoutine
             ? "Nova rotina"
+            : isEditRoutine
+            ? "Editar rotina"
             : isRoutines
             ? "Rotinas de treino"
             : name === "Personal"
@@ -84,6 +87,8 @@ export default function PersonalLayout() {
             ? "Gerencie cadastros, status e vínculos dos seus alunos"
             : isNewRoutine
             ? "Rotinas de treino / Nova rotina"
+            : isEditRoutine
+            ? "Rotinas de treino / Editar rotina"
             : isRoutines
             ? "Planeje sessões com métricas personalizadas por modalidade"
             : `${date} · Aqui está o resumo dos seus alunos`
@@ -102,7 +107,10 @@ export default function PersonalLayout() {
               : `/alunos?busca=${encodeURIComponent(query)}`
           )
         }
-        onNotifications={() => navigate("/home#notificacoes")}
+        notifications={notifications}
+        onReadNotification={readNotification}
+        notificationBusy={notificationBusy}
+        onRefreshNotifications={() => void refresh()}
       />
       <main id="personal-content"><Outlet /></main>
     </div>

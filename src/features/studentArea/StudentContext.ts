@@ -69,6 +69,13 @@ export interface StudentContextValue {
   setMessageModalOpen: (open: boolean) => void;
   sendObservationToPersonal: (text: string) => Promise<void>;
   markFeedbacksRead: () => void;
+  notifications?: {
+    data: import("../../types/personalDashboard").PersonalNotification[];
+    loading?: boolean;
+    error?: string;
+  };
+  readNotification?: (id?: string) => Promise<void>;
+  refreshData?: () => Promise<void>;
 }
 
 export const StudentContext = createContext<StudentContextValue | null>(null);

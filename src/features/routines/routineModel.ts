@@ -80,22 +80,26 @@ export function eligibleStudentsForRoutine(
   currentRoutineId?: string,
   modalityId?: number | string | null
 ): AlunoResponse[] {
-  const activeStudentIdsWithOtherRoutine = new Set<string>();
+  const modId = modalityId ? Number(modalityId) : null;
+  const activeStudentIdsWithOtherRoutineInSameModality = new Set<string>();
 
   for (const routine of routines) {
     if (routine.id === currentRoutineId) continue;
+    const routineModId = routine.modalidadeId ?? routine.modalidade?.id;
+    // Se a modalidade foi informada, rotina ativa de outra modalidade não bloqueia o aluno
+    if (modId !== null && routineModId && Number(routineModId) !== modId) {
+      continue;
+    }
     if (isRoutineActive(routine)) {
-      for (const aluno of routine.alunos) {
-        activeStudentIdsWithOtherRoutine.add(aluno.id);
+      for (const aluno of routine.alunos || []) {
+        activeStudentIdsWithOtherRoutineInSameModality.add(aluno.id);
       }
     }
   }
 
-  const modId = modalityId ? Number(modalityId) : null;
-
   return students.filter((student) => {
     if (student.status !== "ATIVO") return false;
-    if (activeStudentIdsWithOtherRoutine.has(student.id)) return false;
+    if (activeStudentIdsWithOtherRoutineInSameModality.has(student.id)) return false;
     if (modId !== null && Array.isArray(student.modalidades)) {
       const enrolled = student.modalidades.some((m) => m.id === modId);
       if (!enrolled) return false;

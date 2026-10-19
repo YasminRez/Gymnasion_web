@@ -117,6 +117,12 @@ test("eligibleStudentsForRoutine enforces 1 active routine per student limit", (
   // Se estivermos editando r1, s1 deve permanecer elegível para a própria r1
   const eligibleForR1 = model.eligibleStudentsForRoutine([s1, s2, s3, s4, s5], routines, "r1");
   assert.deepEqual(eligibleForR1.map((s) => s.id), ["s1", "s2", "s5"]);
+
+  // Aluno s1 possui rotina ativa na modalidade 1, mas está elegível para rotina na modalidade 2 (1 rotina ativa por modalidade)
+  const s1Multi = { ...s1, modalidades: [{ id: 1, nome: "Natação" }, { id: 2, nome: "Academia" }] };
+  const s2Multi = { ...s2, modalidades: [{ id: 1, nome: "Natação" }, { id: 2, nome: "Academia" }] };
+  const eligibleForMod2 = model.eligibleStudentsForRoutine([s1Multi, s2Multi], routines, undefined, 2);
+  assert.deepEqual(eligibleForMod2.map((s) => s.id), ["s1", "s2"]);
 });
 
 test("validateCreateRoutinePayload enforces title, modality, frequency 1..7, goals, student, and metric", () => {
@@ -167,6 +173,7 @@ test("rotinaService integration signatures and URLs match API routes", async () 
   const mockApi = {
     get: async (url) => { calledUrl = url; calledMethod = "GET"; return { data: [{ id: "r1" }] }; },
     post: async (url, body) => { calledUrl = url; calledMethod = "POST"; calledBody = body; return { data: { id: "r1" } }; },
+    put: async (url, body) => { calledUrl = url; calledMethod = "PUT"; calledBody = body; return { data: { id: "r1" } }; },
     patch: async (url) => { calledUrl = url; calledMethod = "PATCH"; return { data: { id: "r1", status: "ENCERRADA" } }; },
     delete: async (url) => { calledUrl = url; calledMethod = "DELETE"; return { data: { mensagem: "Sucesso" } }; },
   };
@@ -205,7 +212,23 @@ test("rotinaService integration signatures and URLs match API routes", async () 
   assert.equal(calledUrl, "/api/personal-trainers/rotinas/abc/alunos/s1");
   assert.equal(calledMethod, "DELETE");
 
+  await rotinaService.atualizar("abc", {
+    titulo: "Treino Atualizado",
+    frequenciaSemanal: 5,
+    objetivos: "Novos objetivos",
+    alunosIds: ["s1"],
+    metricasIds: ["m1"],
+  });
+  assert.equal(calledUrl, "/api/personal-trainers/rotinas/abc");
+  assert.equal(calledMethod, "PUT");
+  assert.equal(calledBody.titulo, "Treino Atualizado");
+
   await rotinaService.vincularTurma("rot-1", "turma-9");
+  assert.equal(calledUrl, "/api/personal-trainers/rotinas/rot-1/turmas/turma-9");
+  assert.equal(calledMethod, "POST");
+  assert.equal(calledBody, undefined);
+
+  await rotinaService.vincularTurma("rot-1", "turma-9", true);
   assert.equal(calledUrl, "/api/personal-trainers/rotinas/rot-1/turmas/turma-9");
   assert.equal(calledMethod, "POST");
   assert.equal(calledBody, undefined);

@@ -18,6 +18,7 @@ import type {
   StudentRoutineWeek,
   StudentWorkoutSession,
 } from "../../types/studentArea";
+import type { PersonalNotification } from "../../types/personalDashboard";
 
 export default function StudentProvider({ children }: { children: ReactNode }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,6 +29,11 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
   const [historicalRoutines, setHistoricalRoutines] = useState<StudentHistoricalRoutine[]>([]);
   const [feedbacks, setFeedbacks] = useState<StudentFeedbackItem[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
+  const [notifications, setNotifications] = useState<{
+    data: PersonalNotification[];
+    loading: boolean;
+    error: string;
+  }>({ data: [], loading: false, error: "" });
   const [searchQuery, setSearchQuery] = useState<string>(() => searchParams.get("busca") || "");
   const [rpeModalSessionId, setRpeModalSessionId] = useState<string | null>(() =>
     searchParams.get("modal") === "rpe" ? "w3-s3" : null
@@ -89,25 +95,76 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
 
       // 2. Carrega notificações e feedbacks
       alunoService.contagemNaoLidas().then((c) => setUnreadNotifications(c)).catch(() => {});
-      alunoService.listarFeedbacks().then((items) => {
-        if (Array.isArray(items)) {
-          const mapped: StudentFeedbackItem[] = items.slice(0, 5).map((item, idx) => {
-            const words = (item.autorNome || "Personal").trim().split(/\s+/);
-            const inits = [words[0]?.[0], words.length > 1 ? words[words.length - 1]?.[0] : ""]
-              .join("")
-              .toUpperCase();
-            return {
-              id: item.id,
-              autorNome: item.autorNome || "Personal",
-              autorIniciais: inits || "PT",
-              tempoRelativo: idx === 0 ? "recente" : "anterior",
-              conteudo: item.conteudo,
-              novo: idx < 2,
-            };
-          });
-          setFeedbacks(mapped);
-        }
-      }).catch(() => {});
+      alunoService
+        .listarNotificacoes()
+        .then((items) => {
+          if (Array.isArray(items) && items.length > 0) {
+            setNotifications({ data: items, loading: false, error: "" });
+            setUnreadNotifications(items.filter((i) => !i.lida).length);
+          } else {
+            alunoService
+              .listarFeedbacks()
+              .then((fbs) => {
+                if (Array.isArray(fbs) && fbs.length > 0) {
+                  const synched: PersonalNotification[] = fbs.map((fb, idx) => ({
+                    id: fb.id,
+                    titulo: `Feedback de ${fb.autorNome || "Personal"}`,
+                    mensagem: fb.conteudo,
+                    tipo: "FEEDBACK",
+                    lida: idx >= 2,
+                    referenciaId: null,
+                    dataCriacao: new Date().toISOString(),
+                  }));
+                  setNotifications({ data: synched, loading: false, error: "" });
+                  setUnreadNotifications(synched.filter((i) => !i.lida).length);
+                }
+              })
+              .catch(() => {});
+          }
+        })
+        .catch(() => {
+          alunoService
+            .listarFeedbacks()
+            .then((fbs) => {
+              if (Array.isArray(fbs) && fbs.length > 0) {
+                const synched: PersonalNotification[] = fbs.map((fb, idx) => ({
+                  id: fb.id,
+                  titulo: `Feedback de ${fb.autorNome || "Personal"}`,
+                  mensagem: fb.conteudo,
+                  tipo: "FEEDBACK",
+                  lida: idx >= 2,
+                  referenciaId: null,
+                  dataCriacao: new Date().toISOString(),
+                }));
+                setNotifications({ data: synched, loading: false, error: "" });
+                setUnreadNotifications(synched.filter((i) => !i.lida).length);
+              }
+            })
+            .catch(() => {});
+        });
+
+      alunoService
+        .listarFeedbacks()
+        .then((items) => {
+          if (Array.isArray(items)) {
+            const mapped: StudentFeedbackItem[] = items.slice(0, 5).map((item, idx) => {
+              const words = (item.autorNome || "Personal").trim().split(/\s+/);
+              const inits = [words[0]?.[0], words.length > 1 ? words[words.length - 1]?.[0] : ""]
+                .join("")
+                .toUpperCase();
+              return {
+                id: item.id,
+                autorNome: item.autorNome || "Personal",
+                autorIniciais: inits || "PT",
+                tempoRelativo: idx === 0 ? "recente" : "anterior",
+                conteudo: item.conteudo,
+                novo: idx < 2,
+              };
+            });
+            setFeedbacks(mapped);
+          }
+        })
+        .catch(() => {});
 
       // 3. Carrega rotinas reais do aluno
       const rotinas = await alunoService.listarRotinas();
@@ -352,7 +409,45 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
   const markFeedbacksRead = useCallback(() => {
     setUnreadNotifications(0);
     setFeedbacks((prev) => prev.map((f) => ({ ...f, novo: false })));
+    setNotifications((prev) => ({
+      ...prev,
+      data: prev.data.map((item) => ({ ...item, lida: true })),
+    }));
     alunoService.lerTodasNotificacoes().catch(() => {});
+  }, []);
+
+  const readNotification = useCallback(async (id?: string) => {
+    try {
+      if (id) {
+        await alunoService.lerNotificacao(id);
+        setNotifications((prev) => ({
+          ...prev,
+          data: prev.data.map((item) => (item.id === id ? { ...item, lida: true } : item)),
+        }));
+        setUnreadNotifications((prev) => Math.max(0, prev - 1));
+      } else {
+        await alunoService.lerTodasNotificacoes();
+        setNotifications((prev) => ({
+          ...prev,
+          data: prev.data.map((item) => ({ ...item, lida: true })),
+        }));
+        setUnreadNotifications(0);
+      }
+    } catch {
+      if (id) {
+        setNotifications((prev) => ({
+          ...prev,
+          data: prev.data.map((item) => (item.id === id ? { ...item, lida: true } : item)),
+        }));
+        setUnreadNotifications((prev) => Math.max(0, prev - 1));
+      } else {
+        setNotifications((prev) => ({
+          ...prev,
+          data: prev.data.map((item) => ({ ...item, lida: true })),
+        }));
+        setUnreadNotifications(0);
+      }
+    }
   }, []);
 
   const completedCount = useMemo(() => countCompletedSessions(weeks, 0), [weeks]);
@@ -404,6 +499,9 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
         setMessageModalOpen,
         sendObservationToPersonal,
         markFeedbacksRead,
+        notifications,
+        readNotification,
+        refreshData: loadData,
       }}
     >
       {children}

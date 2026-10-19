@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { usePersonal } from "../../features/personal/PersonalContext";
 import {
@@ -24,11 +24,14 @@ import "./NewRoutine.css";
 export default function NewRoutine() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { routineId } = useParams<{ routineId?: string }>();
+  const isEditMode = Boolean(routineId);
   const { students, routines, refresh } = usePersonal();
 
   // URL params para pré-preenchimento
   const initialStudentId = params.get("aluno") || "";
   const modelRoutineId = params.get("modelo") || "";
+  const [loadingEdit, setLoadingEdit] = useState(false);
 
   // Catálogo de modalidades e turmas
   const [modalities, setModalities] = useState<Modalidade[]>([]);
@@ -71,7 +74,7 @@ export default function NewRoutine() {
       .listarTodas()
       .then((data) => {
         setModalities(data);
-        if (data.length > 0) {
+        if (data.length > 0 && !routineId) {
           const natacao = data.find((m) =>
             m.nome.toLowerCase().includes("nata")
           );
@@ -92,11 +95,11 @@ export default function NewRoutine() {
           descricao: "",
         }));
         setModalities(fallback);
-        if (fallback.length > 0) {
+        if (fallback.length > 0 && !routineId) {
           setModalidadeId((prev) => prev ?? fallback[0].id);
         }
       });
-  }, [routines.data]);
+  }, [routines.data, routineId]);
 
   // Carrega turmas
   useEffect(() => {
@@ -106,9 +109,52 @@ export default function NewRoutine() {
       .catch(() => setTurmas([]));
   }, []);
 
+  // Carrega dados da rotina para edição quando routineId está presente
+  useEffect(() => {
+    if (!routineId) return;
+    let active = true;
+    setLoadingEdit(true);
+
+    rotinaService
+      .buscarPorId(routineId)
+      .then((routine) => {
+        if (!active) return;
+        setTitulo(routine.titulo || "");
+        const modId = routine.modalidadeId ?? routine.modalidade?.id;
+        if (modId) {
+          setModalidadeId(Number(modId));
+        }
+        if (routine.frequenciaSemanal) {
+          setFrequenciaSemanal(routine.frequenciaSemanal);
+        }
+        if (routine.objetivos) {
+          setObjetivos(routine.objetivos);
+        }
+        if (routine.alunos && routine.alunos.length > 0) {
+          setSelectedStudentIds(routine.alunos.map((a) => a.id));
+        }
+        if (routine.metricas && routine.metricas.length > 0) {
+          setSelectedMetricIds(new Set(routine.metricas.map((m) => m.id)));
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        const msg = extractProblemDetail(err, "Não foi possível carregar os dados da rotina para edição.");
+        toast.error(msg);
+        navigate("/rotinas");
+      })
+      .finally(() => {
+        if (active) setLoadingEdit(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [routineId, navigate]);
+
   // Pré-seleciona aluno vindo por query param (?aluno=...)
   useEffect(() => {
-    if (initialStudentId) {
+    if (initialStudentId && !routineId) {
       const student = students.data.find(
         (s) => s.id === initialStudentId && s.status === "ATIVO"
       );
@@ -121,17 +167,17 @@ export default function NewRoutine() {
         }
       }
     }
-  }, [initialStudentId, students.data]);
+  }, [initialStudentId, students.data, routineId]);
 
   // Pré-preenche a partir de uma rotina modelo (?modelo=...)
   useEffect(() => {
-    if (modelRoutineId && routines.data.length > 0) {
+    if (modelRoutineId && routines.data.length > 0 && !routineId) {
       const model = routines.data.find((r) => r.id === modelRoutineId);
       if (model) {
         applyRoutineAsModel(model);
       }
     }
-  }, [modelRoutineId, routines.data]);
+  }, [modelRoutineId, routines.data, routineId]);
 
   // Carrega métricas sempre que a modalidade muda
   useEffect(() => {
@@ -149,17 +195,19 @@ export default function NewRoutine() {
         if (!isCurrent) return;
         const active = (data || []).filter((m) => m.ativo);
         setMetrics(active);
-        // Pré-seleciona as métricas encontradas (até 4)
-        if (active.length > 0) {
-          setSelectedMetricIds(new Set(active.slice(0, 4).map((m) => m.id)));
-        } else {
-          setSelectedMetricIds(new Set());
+        // Pré-seleciona as métricas encontradas (até 4) apenas se for criação
+        if (!routineId) {
+          if (active.length > 0) {
+            setSelectedMetricIds(new Set(active.slice(0, 4).map((m) => m.id)));
+          } else {
+            setSelectedMetricIds(new Set());
+          }
         }
       })
       .catch(() => {
         if (!isCurrent) return;
         setMetrics([]);
-        setSelectedMetricIds(new Set());
+        if (!routineId) setSelectedMetricIds(new Set());
       })
       .finally(() => {
         if (isCurrent) setLoadingMetrics(false);
@@ -168,7 +216,7 @@ export default function NewRoutine() {
     return () => {
       isCurrent = false;
     };
-  }, [modalidadeId]);
+  }, [modalidadeId, routineId]);
 
   // Fecha dropdown de alunos ao clicar fora
   useEffect(() => {
@@ -198,10 +246,10 @@ export default function NewRoutine() {
     return eligibleStudentsForRoutine(
       studentsList,
       routinesList,
-      undefined,
+      routineId || undefined,
       modalidadeId
     );
-  }, [students?.data, routines?.data, modalidadeId]);
+  }, [students?.data, routines?.data, routineId, modalidadeId]);
 
   // Alunos elegíveis que ainda não foram selecionados
   const candidateStudents = useMemo(() => {
@@ -446,19 +494,42 @@ export default function NewRoutine() {
 
     try {
       setSubmitting(true);
-      const created = await rotinaService.criar(payload);
-      toast.success("Treino criado com sucesso!");
-      await refresh();
-      navigate(created?.id ? `/rotinas/${created.id}/planejamento` : "/rotinas");
+      if (isEditMode && routineId) {
+        await rotinaService.atualizar(routineId, {
+          titulo,
+          frequenciaSemanal,
+          objetivos,
+          alunosIds: selectedStudentIds,
+          metricasIds: Array.from(selectedMetricIds),
+        });
+        toast.success("Rotina de treino atualizada com sucesso!");
+        await refresh();
+        navigate(`/rotinas/${routineId}/planejamento`);
+      } else {
+        const created = await rotinaService.criar(payload);
+        toast.success("Treino criado com sucesso!");
+        await refresh();
+        navigate(created?.id ? `/rotinas/${created.id}/planejamento` : "/rotinas");
+      }
     } catch (err: unknown) {
       const msg = extractProblemDetail(
         err,
-        "Não foi possível criar a rotina. Tente novamente."
+        isEditMode
+          ? "Não foi possível atualizar a rotina. Tente novamente."
+          : "Não foi possível criar a rotina. Tente novamente."
       );
       toast.error(msg);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (loadingEdit) {
+    return (
+      <div className="new-routine-page" style={{ padding: "4rem 2rem", textAlign: "center", color: "var(--color-text-secondary, #666)" }}>
+        Carregando dados da rotina...
+      </div>
+    );
   }
 
   return (
@@ -506,9 +577,13 @@ export default function NewRoutine() {
               <div className="new-routine-card__header">
                 <div className="new-routine-card__titles">
                   <h2>1 · Informações da rotina</h2>
-                  <p>Defina título, modalidade, frequência e objetivo</p>
+                  <p>
+                    {isEditMode
+                      ? "Defina título, frequência e objetivo"
+                      : "Defina título, modalidade, frequência e objetivo"}
+                  </p>
                 </div>
-                {routines.data.length > 0 && (
+                {!isEditMode && routines.data.length > 0 && (
                   <button
                     type="button"
                     className="new-routine-card__link-action"
@@ -571,6 +646,7 @@ export default function NewRoutine() {
                   <select
                     id="routine-modality"
                     value={modalidadeId ?? ""}
+                    disabled={isEditMode}
                     onChange={(e) => {
                       const id = Number(e.target.value);
                       setModalidadeId(id || null);
@@ -594,6 +670,11 @@ export default function NewRoutine() {
                       </option>
                     ))}
                   </select>
+                  {isEditMode && (
+                    <small style={{ display: "block", marginTop: "4px", color: "var(--color-text-secondary, #666)", fontSize: "12px" }}>
+                      A modalidade não pode ser alterada na edição.
+                    </small>
+                  )}
                   {errors.modalidadeId && (
                     <span className="new-routine-field__error">
                       {errors.modalidadeId}
@@ -900,7 +981,13 @@ export default function NewRoutine() {
             className="new-routine-footer__btn-submit"
             disabled={submitting}
           >
-            {submitting ? "Criando..." : "Criar e planejar semanas"}
+            {submitting
+              ? isEditMode
+                ? "Salvando..."
+                : "Criando..."
+              : isEditMode
+              ? "Salvar alterações"
+              : "Criar e planejar semanas"}
           </button>
         </div>
       </form>

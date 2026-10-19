@@ -38,7 +38,9 @@ export default function StudentLayout() {
     messageModalOpen,
     setMessageModalOpen,
     sendObservationToPersonal,
-    markFeedbacksRead,
+    notifications,
+    readNotification,
+    refreshData,
   } = useStudentArea();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -147,6 +149,7 @@ export default function StudentLayout() {
           userInitials={student.initials}
           avatarTone="info"
           searchLabel="Buscar treinos e sessões"
+          notificationCount={unreadNotifications}
           notificationDot={unreadNotifications > 0}
           onSearch={(query) => {
             setSearchQuery(query);
@@ -158,13 +161,10 @@ export default function StudentLayout() {
               );
             }
           }}
-          onNotifications={() => {
-            markFeedbacksRead();
-            if (location.pathname !== "/conta") {
-              navigate("/conta#feedbacks");
-            } else {
-              document.getElementById("feedbacks")?.scrollIntoView({ behavior: "smooth" });
-            }
+          notifications={notifications}
+          onReadNotification={readNotification}
+          onRefreshNotifications={() => {
+            if (refreshData) void refreshData();
           }}
         />
 
