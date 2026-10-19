@@ -428,6 +428,16 @@
   background-color: #f05a28;
 }
 
+.new-routine-toggle input:disabled + .new-routine-toggle__slider {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.new-routine-toggle input:focus-visible + .new-routine-toggle__slider {
+  outline: 2px solid #f05a28;
+  outline-offset: 3px;
+}
+
 .new-routine-toggle input:checked + .new-routine-toggle__slider:before {
   transform: translateX(20px);
 }

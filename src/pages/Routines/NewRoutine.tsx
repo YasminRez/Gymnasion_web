@@ -14,10 +14,8 @@ import {
 import { modalidadeService } from "../../services/modalidadeService";
 import { metricaService } from "../../services/metricaService";
 import { rotinaService } from "../../services/rotinaService";
-import { turmaService } from "../../services/turmaService";
 import type { Modalidade } from "../../types/modalidade";
 import type { MetricaResponseDTO, TipoMetrica } from "../../types/metric";
-import type { TurmaResponse } from "../../types/turma";
 import type { RotinaResponse } from "../../types/rotina";
 import "./NewRoutine.css";
 
@@ -35,7 +33,7 @@ export default function NewRoutine() {
 
   // Catálogo de modalidades e turmas
   const [modalities, setModalities] = useState<Modalidade[]>([]);
-  const [turmas, setTurmas] = useState<TurmaResponse[]>([]);
+  const turmas = groups.data;
 
   // Estados do formulário
   const [titulo, setTitulo] = useState("");
@@ -271,20 +269,17 @@ export default function NewRoutine() {
     return (
       turmas.find(
         (t) =>
-          t.modalidadeId === modalidadeId ||
-          t.nomeModalidade?.toLowerCase() ===
-            selectedModalidadeNome.toLowerCase()
+          t.modalidadeId === modalidadeId
       ) || null
     );
-  }, [turmas, modalidadeId, selectedModalidadeNome]);
+  }, [turmas, modalidadeId]);
 
-  const turmaName = modalityTurma
-    ? modalityTurma.nome
-    : `${selectedModalidadeNome} Intermediário`;
-  const turmaCount = modalityTurma?.alunos?.length ?? 6;
+  const turmaName = modalityTurma?.nome;
+  const turmaCount = modalityTurma?.alunos?.length ?? 0;
 
   // Toggle do envio para turma
   function handleToggleTurma() {
+    if (!modalityTurma || groups.loading || groups.error) return;
     const nextState = !sendToTurma;
     setSendToTurma(nextState);
 
@@ -296,9 +291,6 @@ export default function NewRoutine() {
           .map((a) => a.id)
           .filter((id) => eligibleStudents.some((es) => es.id === id));
         studentIdsToAdd = eligibleTurmaStudents;
-      } else {
-        // Se a turma mock/backend não tem lista de alunos, adiciona alunos elegíveis da modalidade
-        studentIdsToAdd = eligibleStudents.map((s) => s.id);
       }
 
       setSelectedStudentIds((prev) => {
@@ -864,13 +856,16 @@ export default function NewRoutine() {
                 <div className="new-routine-turma-box__info">
                   <h3>Enviar também para uma turma</h3>
                   <p>
-                    {turmaName} · {turmaCount} alunos
+                    {groups.loading ? "Carregando turmas…" : groups.error ? "Não foi possível carregar as turmas." : modalityTurma ? `${turmaName} · ${turmaCount} ${turmaCount === 1 ? "aluno" : "alunos"}` : "Nenhuma turma cadastrada para esta modalidade."}
                   </p>
+                  {groups.error && <button type="button" className="new-routine-card__manage-link" onClick={() => void refresh()}>Tentar novamente</button>}
                 </div>
                 <label className="new-routine-toggle">
                   <input
                     type="checkbox"
-                    checked={sendToTurma}
+                    aria-label="Enviar também para uma turma"
+                    disabled={groups.loading || Boolean(groups.error) || !modalityTurma}
+                    checked={sendToTurma && Boolean(modalityTurma) && !groups.error}
                     onChange={handleToggleTurma}
                   />
                   <span className="new-routine-toggle__slider" />

@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { modalidadeService } from "./modalidadeService";
 import type { PaginatedOrArray } from "../types/api";
 import { unpackPage } from "../types/api";
 import {
@@ -17,10 +18,10 @@ function sanitizeBackendTipo(tipo: string): 'FREQUENCIA_CARDIACA' | 'TEXTO' | 'T
 
 export const metricaService = {
   async listarTodas(params?: { page?: number; size?: number }): Promise<MetricaResponseDTO[]> {
-    const response = await api.get<PaginatedOrArray<MetricaResponseDTO>>('/api/personal-trainers/metricas', {
-      params: { size: 100, ...params },
-    });
-    return unpackPage(response.data);
+    // O endpoint exige modalidadeId, inclusive para a visão de todas as métricas.
+    const modalities = await modalidadeService.listarTodas();
+    const lists = await Promise.all(modalities.map(modality => metricaService.listarPorModalidade(modality.id, params)));
+    return Array.from(new Map(lists.flat().map(metric => [metric.id, metric])).values());
   },
 
   async listarPorModalidade(modalidadeId: number, params?: { page?: number; size?: number }): Promise<MetricaResponseDTO[]> {
