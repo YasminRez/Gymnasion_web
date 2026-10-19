@@ -26,6 +26,8 @@ import SessionAuditModal from "../../components/SessionAuditModal/SessionAuditMo
 import SessionCorrectionModal from "../../components/SessionCorrectionModal/SessionCorrectionModal";
 import { sessionDetailService } from "../../services/sessionDetailService";
 import { rotinaService } from "../../services/rotinaService";
+import { metricLabels } from "../../features/routines/routineModel";
+import { getPreenchimentoLabel } from "../../features/metrics/metricModel";
 import { authError } from "../../utils/authError";
 import { parseAtividades } from "../../utils/activityParser";
 import type {
@@ -49,8 +51,8 @@ export default function StudentSessionDetail() {
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
 
-  // Métrica pendente inline
-  const [pendingMetricValue, setPendingMetricValue] = useState("");
+  // Métricas pendentes inline
+  const [pendingMetricValues, setPendingMetricValues] = useState<Record<string, string>>({});
   const [savingPendingMetric, setSavingPendingMetric] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -74,6 +76,18 @@ export default function StudentSessionDetail() {
           rotinaInfo?.alunos?.[0]?.nome ||
           "Aluno";
 
+        const plannedMetrics = (rotinaInfo?.metricas || []).map((m) => ({
+          metricaId: m.id,
+          titulo: m.titulo,
+          tipo: m.tipo,
+          obrigatoria: m.obrigatoria !== false,
+          quemPreenche: m.quemPreenche || "ALUNO",
+          ativa: true,
+          valor: null,
+          correcaoPermitida: false,
+          inclusaoPermitida: false,
+        }));
+
         desempenhoData = {
           sessaoId: sessaoData.id,
           rotinaTreinoId: sessaoData.rotinaTreinoId,
@@ -94,7 +108,7 @@ export default function StudentSessionDetail() {
           registradoPor: "",
           dataRegistro: null,
           observacoes: null,
-          metricas: [],
+          metricas: plannedMetrics,
         };
       }
 
@@ -132,27 +146,31 @@ export default function StudentSessionDetail() {
     );
   }
 
-  // Verifica se há métricas pendentes para o personal preencher
-  const pendingPersonalMetric = session.metricas.find((m) => m.inclusaoPermitida && !m.valor);
+  // Verifica se há métricas pendentes para o personal preencher (exclusivas do personal ou obrigatórias de ambos)
+  const pendingPersonalMetrics = session.metricas.filter(
+    (m) => m.inclusaoPermitida && !m.valor && (m.quemPreenche === "PERSONAL" || m.obrigatoria)
+  );
 
   const handleSavePendingMetric = async () => {
-    if (!pendingPersonalMetric || !pendingMetricValue.trim()) {
-      toast.error("Por favor, preencha o valor da métrica.");
+    const filledPayload = pendingPersonalMetrics
+      .map((m) => ({
+        metricaId: m.metricaId,
+        valor: (pendingMetricValues[m.metricaId] || "").trim(),
+      }))
+      .filter((item) => item.valor.length > 0);
+
+    if (filledPayload.length === 0) {
+      toast.error("Por favor, preencha ao menos uma métrica pendente antes de salvar.");
       return;
     }
 
     setSavingPendingMetric(true);
     try {
       await sessionDetailService.corrigirDesempenho(session.sessaoId, {
-        metricas: [
-          {
-            metricaId: pendingPersonalMetric.metricaId,
-            valor: pendingMetricValue.trim(),
-          },
-        ],
+        metricas: filledPayload,
       });
-      toast.success("Métrica preenchida e salva com sucesso!");
-      setPendingMetricValue("");
+      toast.success("Métrica(s) preenchida(s) e salva(s) com sucesso!");
+      setPendingMetricValues({});
       void loadData();
     } catch (err) {
       toast.error(authError(err, "Erro ao salvar a métrica pendente.").message);
@@ -326,32 +344,46 @@ export default function StudentSessionDetail() {
             </header>
 
             <div className="session-detail__metrics-list">
-              {session.metricas.map((m) => (
-                <div key={m.metricaId} className="session-detail__metric-row">
-                  <div className="session-detail__metric-info">
-                    {renderMetricIcon(m.tipo)}
-                    <div>
-                      <strong className="metric-title">{m.titulo}</strong>
-                      <span className="metric-subtitle">
-                        {m.tipo} · {m.obrigatoria ? "Obrigatória" : "Opcional"}
-                      </span>
+              {session.metricas.map((m) => {
+                const isPersonalPending =
+                  m.inclusaoPermitida && !m.valor && (m.quemPreenche === "PERSONAL" || m.obrigatoria);
+                return (
+                  <div key={m.metricaId} className="session-detail__metric-row">
+                    <div className="session-detail__metric-info">
+                      {renderMetricIcon(m.tipo)}
+                      <div>
+                        <strong className="metric-title">{m.titulo}</strong>
+                        <span className="metric-subtitle">
+                          {metricLabels[m.tipo] || m.tipo} ·{" "}
+                          {m.obrigatoria ? "Obrigatória" : "Opcional"} · preenche:{" "}
+                          {getPreenchimentoLabel(m.quemPreenche)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="session-detail__metric-val">
+                      {m.valor ? (
+                        <>
+                          <strong className="val-text">{m.valor}</strong>
+                          <span className="val-author">
+                            {m.quemPreenche === "PERSONAL"
+                              ? "por Personal"
+                              : m.quemPreenche === "ALUNO"
+                              ? "por Aluno(a)"
+                              : "Aluno / Personal"}
+                          </span>
+                        </>
+                      ) : !session.concluidaAluno ? (
+                        <Badge tone="neutral">● Aguardando execução</Badge>
+                      ) : isPersonalPending ? (
+                        <Badge tone="warning">● Pendente · você preenche</Badge>
+                      ) : (
+                        <Badge tone="neutral">● Opcional · não informada</Badge>
+                      )}
                     </div>
                   </div>
-
-                  <div className="session-detail__metric-val">
-                    {m.valor ? (
-                      <>
-                        <strong className="val-text">{m.valor}</strong>
-                        <span className="val-author">
-                          {m.quemPreenche === "PERSONAL" ? "por Personal" : "por Aluna"}
-                        </span>
-                      </>
-                    ) : (
-                      <Badge tone="warning">● Pendente · você preenche</Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {session.nivelCansaco !== null && session.nivelCansaco !== undefined && (
                 <div className="session-detail__metric-row">
@@ -372,15 +404,15 @@ export default function StudentSessionDetail() {
                         ? " · Moderado"
                         : " · Leve"}
                     </strong>
-                    <span className="val-author">por Aluna</span>
+                    <span className="val-author">por Aluno(a)</span>
                   </div>
                 </div>
               )}
             </div>
           </section>
 
-          {/* Card: 1 métrica pendente para você preencher (Screen 1 - 549:8705) */}
-          {!session.validadaPersonal && pendingPersonalMetric && (
+          {/* Card: métricas pendentes para você preencher (Screen 1 - 549:8705) */}
+          {session.concluidaAluno && !session.validadaPersonal && pendingPersonalMetrics.length > 0 && (
             <section
               className="workspace-card session-detail__pending-box"
               aria-label="Métrica pendente"
@@ -388,7 +420,11 @@ export default function StudentSessionDetail() {
               <div className="session-detail__pending-header">
                 <AlertCircle size={22} color="#ea580c" />
                 <div>
-                  <h3>1 métrica pendente para você preencher</h3>
+                  <h3>
+                    {pendingPersonalMetrics.length === 1
+                      ? "1 métrica pendente para você preencher"
+                      : `${pendingPersonalMetrics.length} métricas pendentes para você preencher`}
+                  </h3>
                   <p>
                     A sessão continua Concluída. Ao salvar, a pendência é removida do perfil e das
                     notificações.
@@ -396,21 +432,65 @@ export default function StudentSessionDetail() {
                 </div>
               </div>
 
-              <div className="session-detail__pending-form">
-                <label htmlFor="pending-input">
-                  {pendingPersonalMetric.titulo} *
-                </label>
-                <textarea
-                  id="pending-input"
-                  rows={2}
-                  placeholder="Descreva a avaliação técnica da execução..."
-                  value={pendingMetricValue}
-                  onChange={(e) => setPendingMetricValue(e.target.value)}
-                />
-                <span className="pending-hint">
-                  Tipo {pendingPersonalMetric.tipo} · fica visível para a aluna após salvar
-                </span>
-              </div>
+              {pendingPersonalMetrics.map((pm) => {
+                const inputId = `pending-input-${pm.metricaId}`;
+                const placeholder =
+                  pm.tipo === "TEMPO"
+                    ? "Ex.: 01:42 (mm:ss)"
+                    : pm.tipo === "FREQUENCIA_CARDIACA"
+                    ? "Ex.: 152 (entre 30 e 250 bpm)"
+                    : pm.tipo === "NUMERICO"
+                    ? "Ex.: 60 ou 12.5"
+                    : "Descreva a avaliação técnica da execução...";
+
+                return (
+                  <div key={pm.metricaId} className="session-detail__pending-form">
+                    <label htmlFor={inputId}>
+                      {pm.titulo}
+                      {pm.obrigatoria ? " *" : " (Opcional)"}
+                    </label>
+                    {pm.tipo === "TEXTO" ? (
+                      <textarea
+                        id={inputId}
+                        rows={2}
+                        placeholder={placeholder}
+                        value={pendingMetricValues[pm.metricaId] || ""}
+                        onChange={(e) =>
+                          setPendingMetricValues((prev) => ({
+                            ...prev,
+                            [pm.metricaId]: e.target.value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <input
+                        id={inputId}
+                        type="text"
+                        placeholder={placeholder}
+                        value={pendingMetricValues[pm.metricaId] || ""}
+                        onChange={(e) =>
+                          setPendingMetricValues((prev) => ({
+                            ...prev,
+                            [pm.metricaId]: e.target.value,
+                          }))
+                        }
+                        style={{
+                          width: "100%",
+                          padding: "0.625rem 0.75rem",
+                          borderRadius: "8px",
+                          border: "1px solid #cbd5e1",
+                          fontSize: "0.875rem",
+                        }}
+                      />
+                    )}
+                    <span className="pending-hint">
+                      Tipo {metricLabels[pm.tipo] || pm.tipo} ·{" "}
+                      {pm.obrigatoria ? "Obrigatória" : "Opcional"} · fica visível para o(a)
+                      aluno(a) após salvar
+                    </span>
+                  </div>
+                );
+              })}
 
               <div className="session-detail__pending-footer">
                 <span className="compliance-note">Registro feito em seu nome, com data e hora.</span>
@@ -419,7 +499,7 @@ export default function StudentSessionDetail() {
                   onClick={handleSavePendingMetric}
                   loading={savingPendingMetric}
                 >
-                  Salvar métrica
+                  {pendingPersonalMetrics.length === 1 ? "Salvar métrica" : "Salvar métricas"}
                 </Button>
               </div>
             </section>

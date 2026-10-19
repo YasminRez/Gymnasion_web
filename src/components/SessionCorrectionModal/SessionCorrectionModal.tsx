@@ -105,13 +105,17 @@ export default function SessionCorrectionModal({
                   <div key={m.metricaId} className="correction-modal__metric-item">
                     <FormField
                       id={`metric-${m.metricaId}`}
-                      label={`${m.titulo}${m.obrigatoria ? " *" : ""}`}
-                      hint={`Tipo: ${m.tipo} · ${
+                      label={`${m.titulo}${m.obrigatoria ? " *" : " (Opcional)"}`}
+                      hint={`Tipo: ${m.tipo} · ${m.obrigatoria ? "Obrigatória" : "Opcional"} · ${
                         m.quemPreenche === "PERSONAL"
                           ? "Exclusiva do personal"
                           : m.quemPreenche === "ALUNO"
                           ? "Preenchimento do aluno"
                           : "Ambos preenchem"
+                      }${
+                        !m.correcaoPermitida && !m.inclusaoPermitida
+                          ? " (métrica opcional não preenchida pelo aluno)"
+                          : ""
                       }`}
                       value={metricValues[m.metricaId] ?? ""}
                       onChange={(e) =>
@@ -120,7 +124,13 @@ export default function SessionCorrectionModal({
                           [m.metricaId]: e.target.value,
                         }))
                       }
-                      placeholder={m.tipo === "TEMPO" ? "mm:ss ou hh:mm:ss" : "Informe o valor"}
+                      placeholder={
+                        m.tipo === "TEMPO"
+                          ? "mm:ss (ex.: 01:42)"
+                          : m.tipo === "FREQUENCIA_CARDIACA"
+                          ? "Entre 30 e 250 bpm"
+                          : "Informe o valor"
+                      }
                       disabled={!m.correcaoPermitida && !m.inclusaoPermitida}
                     />
                   </div>

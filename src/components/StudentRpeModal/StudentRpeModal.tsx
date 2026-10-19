@@ -477,7 +477,9 @@ export default function StudentRpeModal({
               <div className="student-rpe-modal__personal-metrics-note">
                 <strong>Avaliação do personal trainer:</strong>{" "}
                 <span>
-                  {personalOnlyMetrics.map((m) => m.titulo).join(", ")}{" "}
+                  {personalOnlyMetrics
+                    .map((m) => `${m.titulo} (${m.obrigatoria ? "obrigatória" : "opcional"})`)
+                    .join(", ")}{" "}
                   {personalOnlyMetrics.length === 1
                     ? "será preenchida pelo seu personal após a conclusão."
                     : "serão preenchidas pelo seu personal após a conclusão."}

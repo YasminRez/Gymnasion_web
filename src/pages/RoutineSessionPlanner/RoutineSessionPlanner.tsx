@@ -19,7 +19,8 @@ import Badge from "../../components/Badge/Badge";
 import SportTag from "../../components/SportTag/SportTag";
 import FormField from "../../components/FormField/FormField";
 import { rotinaService } from "../../services/rotinaService";
-import { isRoutineActive } from "../../features/routines/routineModel";
+import { isRoutineActive, metricLabels } from "../../features/routines/routineModel";
+import { getPreenchimentoLabel } from "../../features/metrics/metricModel";
 import { authError } from "../../utils/authError";
 import { parseAtividades, serializeAtividades } from "../../utils/activityParser";
 import type {
@@ -770,22 +771,13 @@ export default function RoutineSessionPlanner() {
                     <CheckCircle2 size={16} className="metric-check-icon" />
                     <div className="metric-check-text">
                       <strong>{m.titulo}</strong>
-                      <span className="metric-type-hint">{m.tipo}</span>
+                      <span className="metric-type-hint">
+                        {metricLabels[m.tipo] || m.tipo} · preenche:{" "}
+                        {getPreenchimentoLabel(m.quemPreenche)}
+                      </span>
                     </div>
-                    <Badge
-                      tone={
-                        m.obrigatoria
-                          ? "danger"
-                          : m.quemPreenche === "PERSONAL"
-                          ? "neutral"
-                          : "info"
-                      }
-                    >
-                      {m.obrigatoria
-                        ? "Obrigatória"
-                        : m.quemPreenche === "PERSONAL"
-                        ? "Personal preenche"
-                        : "Opcional"}
+                    <Badge tone={m.obrigatoria !== false ? "danger" : "info"}>
+                      {m.obrigatoria !== false ? "Obrigatória" : "Opcional"}
                     </Badge>
                   </div>
                 ))
