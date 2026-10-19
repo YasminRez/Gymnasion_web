@@ -319,3 +319,26 @@ test("routineModalityCounts, getStudentInitials, and getModalityBadgeStyle match
   );
 });
 
+test("studentRoutines filters student active routines by modality when specified", () => {
+  const studentModel = load("features/personal/studentModel.ts");
+  const routinesList = [
+    makeRoutine("r1", "Treino Natação", 1, 3, true, "ATIVA", [{ id: "aluno-1", nome: "Mikael" }]),
+    makeRoutine("r2", "Treino Academia", 2, 4, true, "ATIVA", [{ id: "aluno-1", nome: "Mikael" }]),
+  ];
+
+  // Sem filtro de modalidade: retorna ambas as rotinas ativas
+  const allStudentRoutines = studentModel.studentRoutines(routinesList, "aluno-1");
+  assert.equal(allStudentRoutines.length, 2);
+
+  // Com filtro para modalidade 2 (Academia): retorna apenas a rotina de Academia
+  const academiaRoutines = studentModel.studentRoutines(routinesList, "aluno-1", 2);
+  assert.equal(academiaRoutines.length, 1);
+  assert.equal(academiaRoutines[0].id, "r2");
+
+  // Com filtro para modalidade 1 (Natação): retorna apenas a rotina de Natação
+  const natacaoRoutines = studentModel.studentRoutines(routinesList, "aluno-1", 1);
+  assert.equal(natacaoRoutines.length, 1);
+  assert.equal(natacaoRoutines[0].id, "r1");
+});
+
+

@@ -25,8 +25,13 @@ export function applyStudentMutation(students: AlunoResponse[], id: string, acti
   return students.map(item => item.id === id ? { ...item, status: action === "deactivate" ? "INATIVO" : "ATIVO" } : item);
 }
 
-export function studentRoutines(routines: RotinaResponse[], id: string) {
-  return routines.filter(routine => routine.ativo !== false && routine.alunos.some(student => student.id === id));
+export function studentRoutines(routines: RotinaResponse[], id: string, modalityId?: number | string) {
+  return routines.filter(
+    routine =>
+      routine.ativo !== false &&
+      routine.alunos.some(student => student.id === id) &&
+      (!modalityId || String(routine.modalidadeId ?? routine.modalidade?.id) === String(modalityId))
+  );
 }
 
 export function studentsWithoutRoutine(students: AlunoResponse[], routines: RotinaResponse[]) {

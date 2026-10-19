@@ -17,17 +17,11 @@ export function groupRoutine(routines: RotinaResponse[], group: TurmaResponse): 
   const candidates = eligibleRoutinesForGroup(routines, group);
   if (!group.alunos?.length || !candidates.length) return undefined;
   const memberIds = new Set(group.alunos.map(student => student.id));
-  let best: RotinaResponse | undefined;
-  let bestCount = 0;
   for (const routine of candidates) {
     const count = (routine.alunos || []).filter(student => memberIds.has(student.id)).length;
     if (count === memberIds.size) return routine;
-    if (count > bestCount) {
-      bestCount = count;
-      best = routine;
-    }
   }
-  return best;
+  return undefined;
 }
 export function groupFormError(name: string, modality: string, schedule: string) {
   if (!name.trim()) return "Informe o nome da turma.";

@@ -47,6 +47,10 @@ test("eligibleRoutinesForGroup filters active routines with same modalidadeId an
   assert.deepEqual(model.eligibleRoutinesForGroup(routines,group).map(r=>r.id),["r1"]);
   assert.equal(model.groupRoutine(routines,group)?.id,"r1");
   assert.equal(model.groupRoutine([],group),undefined);
+
+  // Se apenas 1 aluno da turma possui a rotina, groupRoutine retorna undefined (nao totalmente vinculada)
+  const partialRoutines=[{id:"r1",titulo:"Treino Natação",modalidadeId:1,ativo:true,status:"ATIVA",alunos:[{id:"a1"}]}];
+  assert.equal(model.groupRoutine(partialRoutines,group),undefined);
 });
 test("group service uses backend contract for all mutations and surfaces errors",async()=>{
   const calls=[];

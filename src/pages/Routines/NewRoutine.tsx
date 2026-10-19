@@ -24,7 +24,7 @@ export default function NewRoutine() {
   const [params] = useSearchParams();
   const { routineId } = useParams<{ routineId?: string }>();
   const isEditMode = Boolean(routineId);
-  const { students, routines, refresh } = usePersonal();
+  const { students, routines, groups, refresh } = usePersonal();
 
   // URL params para pré-preenchimento
   const initialStudentId = params.get("aluno") || "";
@@ -99,13 +99,6 @@ export default function NewRoutine() {
       });
   }, [routines.data, routineId]);
 
-  // Carrega turmas
-  useEffect(() => {
-    turmaService
-      .listar()
-      .then((data) => setTurmas(data))
-      .catch(() => setTurmas([]));
-  }, []);
 
   // Carrega dados da rotina para edição quando routineId está presente
   useEffect(() => {
