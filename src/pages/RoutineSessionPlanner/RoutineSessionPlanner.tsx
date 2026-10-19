@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Button from "../../components/Button/Button";
 import Badge from "../../components/Badge/Badge";
-import SportTag, { type Sport } from "../../components/SportTag/SportTag";
+import SportTag from "../../components/SportTag/SportTag";
 import FormField from "../../components/FormField/FormField";
 import { rotinaService } from "../../services/rotinaService";
 import { isRoutineActive } from "../../features/routines/routineModel";
@@ -284,10 +284,7 @@ export default function RoutineSessionPlanner() {
   const progressPct = Math.min(100, Math.round((plannedInWeek / targetFreq) * 100));
   const firstStudent = routine.alunos?.[0];
 
-  const sportName = (routine.nomeModalidade || routine.modalidade?.nome || "academia")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") as Sport;
+  const sportName = routine.nomeModalidade || routine.modalidade?.nome;
 
   return (
     <div className="session-planner-page">
