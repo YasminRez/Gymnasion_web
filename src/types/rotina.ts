@@ -48,9 +48,12 @@ export interface SessaoTreinoPlanejadaDTO {
     nivelCansaco: number | null;
     registradoPor?: string;
     metricas?: {
+      id?: string;
       metricaId: string;
-      titulo: string;
-      tipo: string;
+      titulo?: string;
+      tituloMetrica?: string;
+      tipo?: string;
+      tipoMetrica?: string;
       valor: string;
     }[];
   } | null;

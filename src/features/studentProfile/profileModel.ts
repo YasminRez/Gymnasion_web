@@ -40,9 +40,70 @@ export function sessionCandidates(tracking: StudentTracking | null, studentId: s
   return (tracking?.sessoes || []).filter(item => item.status === "PLANEJADA" && (!item.desempenho?.alunoId || item.desempenho.alunoId === studentId));
 }
 export function ownHistory(sessions: TrainingSession[], studentId: string) {
-  return [...new Map(sessions.filter(item => item.status === "CONCLUIDA" && item.dataReal && item.desempenho?.alunoId === studentId).map(item => [item.id, item])).values()]
-    .sort((a,b) => b.dataReal!.localeCompare(a.dataReal!));
+  return [
+    ...new Map(
+      sessions
+        .filter(
+          (item) =>
+            item.status === "CONCLUIDA" &&
+            item.dataReal &&
+            (!item.desempenho?.alunoId || item.desempenho.alunoId === studentId)
+        )
+        .map((item) => [item.id, item])
+    ).values(),
+  ].sort((a, b) => (b.dataReal || b.dataPlanejada).localeCompare(a.dataReal || a.dataPlanejada));
 }
+
+/**
+ * Retorna exclusivamente as sessões pertencentes à rotina ativa do aluno (planejadas e concluídas).
+ * Nunca mistura sessões de rotinas anteriores/encerradas.
+ */
+export function buildActiveRoutineSessions(
+  activeRoutine: RotinaResponse | null | undefined,
+  tracking: StudentTracking | null,
+  historySessions: TrainingSession[],
+  studentId: string
+): TrainingSession[] {
+  if (!activeRoutine || activeRoutine.ativo === false) {
+    return [];
+  }
+
+  const byId = new Map<string, TrainingSession>();
+
+  // 1. Se o acompanhamento (tracking) corresponde à rotina ativa, inclui todas as sessões (planejadas e concluídas)
+  if (tracking && tracking.rotinaAtivaId === activeRoutine.id) {
+    for (const s of tracking.sessoes || []) {
+      if (s.status === "CANCELADA") continue;
+      if (s.desempenho?.alunoId && s.desempenho.alunoId !== studentId) continue;
+      byId.set(s.sessaoId, {
+        id: s.sessaoId,
+        rotinaTreinoId: activeRoutine.id,
+        semana: s.semana,
+        dataPlanejada: s.dataPlanejada,
+        dataReal: s.dataReal,
+        duracao: s.duracao,
+        atividades: s.atividades,
+        status: s.status,
+        concluidaAluno: s.concluidaAluno,
+        validadaPersonal: s.validadaPersonal,
+        temPendenciasPersonal: s.temPendenciasPersonal,
+        quantidadePendenciasPersonal: s.quantidadePendenciasPersonal,
+        desempenho: s.desempenho,
+      });
+    }
+  }
+
+  // 2. Complementa com sessões do histórico que pertençam estritamente ao ID da rotina ativa
+  for (const h of historySessions) {
+    if (h.rotinaTreinoId !== activeRoutine.id) continue;
+    if (h.desempenho?.alunoId && h.desempenho.alunoId !== studentId) continue;
+    const existing = byId.get(h.id);
+    byId.set(h.id, existing ? { ...h, ...existing } : h);
+  }
+
+  return [...byId.values()];
+}
+
 export function metricNumber(type: string, value: string): number | null {
   if (type === "TEXTO" || !value.trim()) return null;
   if (type === "TEMPO") { if (!/^\d+:[0-5]\d$/.test(value)) return null; const [m,s] = value.split(":").map(Number); return m*60+s; }
@@ -64,10 +125,46 @@ export function evolutionSeries(sessions: TrainingSession[], metrics: RoutineMet
   }).sort((a,b)=>a.date.localeCompare(b.date)) }));
 }
 export function weekDays(tracking: StudentTracking | null, studentId: string, now = new Date()) {
-  const monday = new Date(now.getFullYear(),now.getMonth(),now.getDate()); monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
-  return Array.from({length:7},(_,i)=>{
-    const day = new Date(monday); day.setDate(day.getDate()+i); const date=localDateKey(day);
-    const sessions=(tracking?.sessoes||[]).filter(s=>(s.dataReal||s.dataPlanejada)===date && s.status!=="CANCELADA" && (!s.desempenho?.alunoId || s.desempenho.alunoId===studentId));
-    return {date,label:["S","T","Q","Q","S","S","D"][i],completed:sessions.filter(s=>s.status==="CONCLUIDA").length,planned:sessions.length,today:date===localDateKey(now)};
-  });
+  const validSessions = (tracking?.sessoes || []).filter(
+    (s) => s.status !== "CANCELADA" && (!s.desempenho?.alunoId || s.desempenho.alunoId === studentId)
+  );
+
+  const buildForMonday = (mondayDate: Date) =>
+    Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(mondayDate);
+      day.setDate(day.getDate() + i);
+      const date = localDateKey(day);
+      const sessions = validSessions.filter((s) => (s.dataReal || s.dataPlanejada) === date);
+      return {
+        date,
+        label: ["S", "T", "Q", "Q", "S", "S", "D"][i],
+        completed: sessions.filter((s) => s.status === "CONCLUIDA" || s.concluidaAluno).length,
+        planned: sessions.length,
+        today: date === localDateKey(now),
+      };
+    });
+
+  const calendarMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  calendarMonday.setDate(calendarMonday.getDate() - ((calendarMonday.getDay() + 6) % 7));
+  const calendarDays = buildForMonday(calendarMonday);
+
+  if (calendarDays.some((d) => d.planned > 0) || validSessions.length === 0) {
+    return calendarDays;
+  }
+
+  // Se a semana calendário atual não possui sessões, usa a semana de referência da rotina ativa (primeira com sessão pendente ou última semana)
+  const pendingSession = validSessions.find((s) => s.status === "PLANEJADA");
+  const targetWeekNum = pendingSession
+    ? pendingSession.semana
+    : validSessions[validSessions.length - 1].semana;
+  const weekSessions = validSessions.filter((s) => s.semana === targetWeekNum);
+  const refDateStr = (weekSessions[0] || validSessions[0]).dataPlanejada;
+  const [y, m, d] = refDateStr.split("-").map(Number);
+  if (y && m && d) {
+    const refMonday = new Date(y, m - 1, d);
+    refMonday.setDate(refMonday.getDate() - ((refMonday.getDay() + 6) % 7));
+    return buildForMonday(refMonday);
+  }
+
+  return calendarDays;
 }

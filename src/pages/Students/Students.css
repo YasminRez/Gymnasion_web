@@ -33,3 +33,9 @@
 }
 .students-v2 .workspace-empty { padding: 64px 24px; text-align: center; } .students-v2 .workspace-empty p { margin-top: 12px; }
 .students-v2__table { position: relative; } .students-v2__sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.students-v2__routine-cell, .students-v2__session-cell { display: flex; flex-direction: column; gap: 2px; }
+.students-v2__routine-cell strong, .students-v2__session-cell strong { color: var(--color-ink-700); font-weight: 600; }
+.students-v2__routine-cell small, .students-v2__session-cell small { color: var(--color-ink-400); font-size: 11px; }
+.students-v2__muted { color: var(--color-ink-400); }
+.students-v2__row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.students-v2__profile-link { font-size: 12px; font-weight: 600; white-space: nowrap; }

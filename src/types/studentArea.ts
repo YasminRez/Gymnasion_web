@@ -136,18 +136,30 @@ export interface StudentEvolutionResponseDTO {
   } | null;
 }
 
+export interface StudentExecutionMetricDTO {
+  id: string;
+  titulo: string;
+  tipo: TipoMetrica | string;
+  unidade?: string | null;
+  obrigatoria: boolean;
+  quemPreenche: "ALUNO" | "PERSONAL" | "AMBOS";
+}
+
 export interface StudentExecutionFormDTO {
-  sessaoId: string;
-  dataPlanejada: string;
-  duracaoPlanejada: number | null;
-  atividades: string;
-  metricas: {
+  sessao?: {
     id: string;
-    titulo: string;
-    tipo: TipoMetrica | string;
-    obrigatoria: boolean;
-    quemPreenche: "ALUNO" | "PERSONAL" | "AMBOS";
-  }[];
+    rotinaTreinoId?: string;
+    semana: number;
+    dataPlanejada: string;
+    dataReal?: string | null;
+    duracao?: number | null;
+    atividades: string;
+    status: string;
+    concluidaAluno?: boolean;
+    validadaPersonal?: boolean;
+  };
+  registroPermitido?: boolean;
+  metricas: StudentExecutionMetricDTO[];
 }
 
 export interface StudentExecutionPayloadDTO {
@@ -158,15 +170,35 @@ export interface StudentExecutionPayloadDTO {
 }
 
 export interface StudentHistorySessionDTO {
-  sessaoId: string;
-  rotinaId: string;
+  id?: string;
+  sessaoId?: string;
+  rotinaId?: string;
+  rotinaTreinoId?: string;
+  semana?: number;
   dataPlanejada: string;
-  dataReal: string;
+  dataReal: string | null;
   duracao: number | null;
-  nivelCansaco: number | null;
-  validadoPeloPersonal: boolean;
+  atividades?: string;
+  nivelCansaco?: number | null;
+  concluidaAluno?: boolean;
+  validadaPersonal?: boolean;
+  validadoPeloPersonal?: boolean;
   status: string;
-  resultados: {
+  desempenho?: {
+    id: string;
+    nivelCansaco: number | null;
+    registradoPor?: string;
+    metricas?: {
+      id?: string;
+      metricaId: string;
+      titulo?: string;
+      tituloMetrica?: string;
+      tipo?: string;
+      tipoMetrica?: string;
+      valor: string;
+    }[];
+  } | null;
+  resultados?: {
     metricaId: string;
     metricaTitulo: string;
     tipo: string;

@@ -1,40 +1,162 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import {
+  Clock,
+  Info,
+  Calendar,
+  CheckCircle2,
+  Activity,
+  Search,
+  X,
+  Filter,
+} from "lucide-react";
 import Badge from "../../components/Badge/Badge";
 import Button from "../../components/Button/Button";
 import SportTag from "../../components/SportTag/SportTag";
 import { useStudentArea } from "../../features/studentArea/StudentContext";
 import { filterStudentSessions } from "../../features/studentArea/studentAreaModel";
+import { parseAtividades } from "../../utils/activityParser";
 import "./StudentWorkouts.css";
 
+type SessionStatusFilter = "todas" | "pendentes" | "finalizadas";
+
 export default function StudentWorkouts() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     activeRoutine,
     loading,
     selectedWeekNum,
     setSelectedWeekNum,
     weeks,
-    historicalRoutines,
-    completedCount,
-    totalSessionsCount,
     searchQuery,
     setSearchQuery,
     openRpeModal,
-    setInspectedSession,
-    setInspectedRoutine,
   } = useStudentArea();
 
+  const [statusFilter, setStatusFilter] = useState<SessionStatusFilter>("todas");
+  const [dayFilter, setDayFilter] = useState<string>("TODOS");
+  const [highlightedSessionId, setHighlightedSessionId] = useState<string | null>(null);
+
+  // Sincroniza parâmetros da URL (?busca=..., ?semana=..., ?sessao=...)
   useEffect(() => {
     const q = searchParams.get("busca");
     if (q !== null) {
       setSearchQuery(q);
     }
-  }, [searchParams, setSearchQuery]);
+
+    const semanaParam = searchParams.get("semana");
+    if (semanaParam) {
+      const parsedWeek = Number(semanaParam);
+      if (Number.isFinite(parsedWeek) && parsedWeek > 0) {
+        setSelectedWeekNum(parsedWeek);
+      }
+    }
+
+    const sessaoParam = searchParams.get("sessao");
+    if (sessaoParam) {
+      setHighlightedSessionId(sessaoParam);
+      setStatusFilter("todas");
+      setDayFilter("TODOS");
+
+      // Se a semana não veio na URL, descobre em qual semana a sessão está
+      if (!semanaParam && weeks.length > 0) {
+        const weekContainingSession = weeks.find((w) =>
+          w.sessoes.some((s) => s.id === sessaoParam)
+        );
+        if (weekContainingSession && weekContainingSession.estado !== "bloqueada") {
+          setSelectedWeekNum(weekContainingSession.numero);
+        }
+      }
+    }
+  }, [searchParams, setSearchQuery, setSelectedWeekNum, weeks]);
+
+  // Faz scroll suave até a sessão clicada quando redirecionado do Meu painel
+  useEffect(() => {
+    if (!highlightedSessionId || loading) return;
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`sessao-${highlightedSessionId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [highlightedSessionId, selectedWeekNum, loading]);
 
   const activeWeek = weeks.find((w) => w.numero === selectedWeekNum) || weeks[0];
-  const visibleSessions = filterStudentSessions(activeWeek?.sessoes || [], searchQuery);
-  const progressPercent = Math.min(100, Math.round((completedCount / totalSessionsCount) * 100));
+  const weekSessions = activeWeek?.sessoes || [];
+
+  const pendingInWeekCount = useMemo(
+    () => weekSessions.filter((s) => s.status === "PLANEJADA").length,
+    [weekSessions]
+  );
+  const completedInWeekCount = useMemo(
+    () =>
+      weekSessions.filter((s) => s.status === "CONCLUIDA" || s.status === "VALIDADA").length,
+    [weekSessions]
+  );
+
+  // Dias da semana disponíveis na semana selecionada para filtro rápido
+  const availableDays = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const s of weekSessions) {
+      if (s.diaSemana && s.diaSemana !== "S/D" && !seen.has(s.diaSemana)) {
+        seen.add(s.diaSemana);
+        list.push(s.diaSemana);
+      }
+    }
+    return list;
+  }, [weekSessions]);
+
+  // Reseta o filtro de dia caso o usuário troque para uma semana que não possui aquele dia
+  useEffect(() => {
+    if (dayFilter !== "TODOS" && !availableDays.includes(dayFilter)) {
+      setDayFilter("TODOS");
+    }
+  }, [availableDays, dayFilter]);
+
+  // Filtra e ordena colocando SEMPRE de preferência os treinos que ainda não foram realizados ("PLANEJADA") no topo
+  const visibleSessions = useMemo(() => {
+    const textFiltered = filterStudentSessions(weekSessions, searchQuery);
+
+    const statusAndDayFiltered = textFiltered.filter((s) => {
+      const isCompleted = s.status === "CONCLUIDA" || s.status === "VALIDADA";
+      if (statusFilter === "pendentes" && isCompleted) return false;
+      if (statusFilter === "finalizadas" && !isCompleted) return false;
+      if (dayFilter !== "TODOS" && s.diaSemana !== dayFilter) return false;
+      return true;
+    });
+
+    // Ordenação: sessões não realizadas (PLANEJADA) vêm primeiro, mantendo a ordem cronológica dentro de cada grupo
+    return [...statusAndDayFiltered].sort((a, b) => {
+      const aPending = a.status === "PLANEJADA" ? 0 : 1;
+      const bPending = b.status === "PLANEJADA" ? 0 : 1;
+      if (aPending !== bPending) {
+        return aPending - bPending;
+      }
+      return (a.numero || 0) - (b.numero || 0);
+    });
+  }, [weekSessions, searchQuery, statusFilter, dayFilter]);
+
+  // Identifica o ID do primeiro treino pendente da semana para destacá-lo como próximo treino
+  const firstPendingSessionId = useMemo(
+    () => weekSessions.find((s) => s.status === "PLANEJADA")?.id || null,
+    [weekSessions]
+  );
+
+  const hasActiveFilters =
+    statusFilter !== "todas" || dayFilter !== "TODOS" || Boolean(searchQuery.trim());
+
+  const clearAllFilters = () => {
+    setStatusFilter("todas");
+    setDayFilter("TODOS");
+    setSearchQuery("");
+    if (searchParams.has("busca")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("busca");
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const sportKey: "natacao" | "tenis" | "academia" | "corrida" | "ciclismo" | "funcional" =
     activeRoutine?.modalidade?.toLowerCase().includes("tenis")
@@ -70,222 +192,329 @@ export default function StudentWorkouts() {
           </p>
         </div>
 
-        {activeRoutine && (
-          <div className="student-workouts__banner-progress">
-            <span className="student-workouts__banner-progress-label">
-              Semana {activeRoutine.semanaAtual} de {activeRoutine.totalSemanas} · {completedCount} de {totalSessionsCount} sessões
+        {activeRoutine && activeWeek && (
+          <div className="student-workouts__banner-summary">
+            <span className="student-workouts__banner-week-pill">
+              <Calendar size={14} aria-hidden="true" />
+              Semana {activeWeek.numero} · {completedInWeekCount}/{weekSessions.length}{" "}
+              {weekSessions.length === 1 ? "sessão finalizada" : "sessões finalizadas"}
             </span>
-            <div
-              className="student-workouts__progress-track"
-              role="progressbar"
-              aria-valuenow={completedCount}
-              aria-valuemin={0}
-              aria-valuemax={totalSessionsCount}
-              aria-label="Progresso de sessões da rotina"
-            >
-              <div
-                className="student-workouts__progress-fill"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
           </div>
         )}
       </section>
 
-      {/* Main 2-Column Content */}
-      <div className="student-workouts__grid">
-        {/* Left: Sessões da semana */}
-        <section className="student-workouts__sessions-card" aria-label="Sessões da semana">
-          <header className="student-workouts__sessions-header">
+      {/* Full-Width Weekly Sessions Section */}
+      <section className="student-workouts__sessions-card" aria-label="Sessões da semana">
+        <header className="student-workouts__sessions-header">
+          <div>
             <h2>Sessões da semana</h2>
+            <p className="student-workouts__sessions-subtitle">
+              Treinos ainda não realizados aparecem primeiro. Clique em “Finalizar sessão” para enviar suas métricas ao personal
+            </p>
+          </div>
 
-            {weeks.length > 0 && (
-              <div className="student-workouts__week-tabs" role="tablist" aria-label="Semanas da rotina">
-                {weeks.map((week) => {
-                  const isSelected = week.numero === selectedWeekNum;
-                  const isLocked = week.estado === "bloqueada";
-                  return (
-                    <button
-                      key={week.numero}
-                      type="button"
-                      role="tab"
-                      aria-selected={isSelected}
-                      disabled={isLocked}
-                      className={`student-workouts__week-tab${isSelected ? " is-active" : ""}${
-                        isLocked ? " is-locked" : ""
-                      }`}
-                      onClick={() => !isLocked && setSelectedWeekNum(week.numero)}
-                    >
-                      <span className="student-workouts__week-tab-title">
-                        {isLocked && (
-                          <img src="/workspace/402-2299-imgIconLock.svg" alt="" aria-hidden="true" />
-                        )}
-                        {week.titulo}
-                      </span>
-                      <small>{week.periodo}</small>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </header>
-
-          <div className="student-workouts__session-list">
-            {loading ? (
-              <div className="student-workouts__empty">
-                <p>Carregando treinos da sua rotina...</p>
-              </div>
-            ) : visibleSessions.length === 0 ? (
-              <div className="student-workouts__empty">
-                <p>
-                  {searchQuery
-                    ? `Nenhuma sessão encontrada para “${searchQuery}”.`
-                    : "Nenhuma sessão planejada para esta semana."}
-                </p>
-                {searchQuery && (
-                  <Button variant="secondary" onClick={() => setSearchQuery("")}>
-                    Limpar busca
-                  </Button>
-                )}
-              </div>
-            ) : (
-              visibleSessions.map((sessao) => {
-                const isHighlight = Boolean(sessao.destaque && sessao.status === "PLANEJADA");
+          {weeks.length > 0 && (
+            <div className="student-workouts__week-tabs" role="tablist" aria-label="Semanas da rotina">
+              {weeks.map((week) => {
+                const isSelected = week.numero === selectedWeekNum;
+                const isLocked = week.estado === "bloqueada";
                 return (
-                  <article
-                    key={sessao.id}
-                    className={`student-workouts__session${
-                      isHighlight ? " student-workouts__session--highlight" : ""
+                  <button
+                    key={week.numero}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    disabled={isLocked}
+                    className={`student-workouts__week-tab${isSelected ? " is-active" : ""}${
+                      isLocked ? " is-locked" : ""
                     }`}
+                    onClick={() => {
+                      if (!isLocked) {
+                        setSelectedWeekNum(week.numero);
+                        setHighlightedSessionId(null);
+                      }
+                    }}
                   >
-                    <div
-                      className={`student-workouts__date-box${
-                        isHighlight ? " student-workouts__date-box--highlight" : ""
-                      }`}
-                    >
-                      <span>{sessao.diaSemana}</span>
-                      <strong>{sessao.dataPlanejada}</strong>
-                    </div>
+                    <span className="student-workouts__week-tab-title">
+                      {isLocked && (
+                        <img src="/workspace/402-2299-imgIconLock.svg" alt="" aria-hidden="true" />
+                      )}
+                      {week.titulo}
+                    </span>
+                    <small>{week.periodo}</small>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </header>
 
-                    <div className="student-workouts__session-info">
-                      <h3>{sessao.titulo}</h3>
-                      <p>{sessao.descricao}</p>
+        {/* Barra de Filtros (Status, Dia da Semana e Busca) */}
+        {weekSessions.length > 0 && (
+          <div className="student-workouts__filters-bar" aria-label="Filtros de sessões">
+            <div className="student-workouts__filters-group">
+              <span className="student-workouts__filters-label">
+                <Filter size={13} aria-hidden="true" />
+                Status:
+              </span>
+              <div className="student-workouts__filter-pills" role="group" aria-label="Filtrar por status">
+                <button
+                  type="button"
+                  className={`student-workouts__filter-pill${
+                    statusFilter === "todas" ? " is-active" : ""
+                  }`}
+                  onClick={() => setStatusFilter("todas")}
+                >
+                  Todas <span>{weekSessions.length}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`student-workouts__filter-pill${
+                    statusFilter === "pendentes" ? " is-active" : ""
+                  }`}
+                  onClick={() => setStatusFilter("pendentes")}
+                >
+                  Não realizadas <span>{pendingInWeekCount}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`student-workouts__filter-pill${
+                    statusFilter === "finalizadas" ? " is-active" : ""
+                  }`}
+                  onClick={() => setStatusFilter("finalizadas")}
+                >
+                  Finalizadas <span>{completedInWeekCount}</span>
+                </button>
+              </div>
+
+              {availableDays.length > 1 && (
+                <div
+                  className="student-workouts__filter-pills student-workouts__filter-pills--days"
+                  role="group"
+                  aria-label="Filtrar por dia da semana"
+                >
+                  <button
+                    type="button"
+                    className={`student-workouts__filter-pill${
+                      dayFilter === "TODOS" ? " is-active" : ""
+                    }`}
+                    onClick={() => setDayFilter("TODOS")}
+                  >
+                    Todos os dias
+                  </button>
+                  {availableDays.map((day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      className={`student-workouts__filter-pill${
+                        dayFilter === day ? " is-active" : ""
+                      }`}
+                      onClick={() => setDayFilter(day)}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="student-workouts__search-box">
+              <Search size={14} className="student-workouts__search-icon" aria-hidden="true" />
+              <input
+                type="search"
+                placeholder="Filtrar por atividade ou orientação..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Filtrar sessões por atividade ou orientação"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="student-workouts__search-clear"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Limpar texto da busca"
+                >
+                  <X size={13} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="student-workouts__session-list">
+          {loading ? (
+            <div className="student-workouts__empty">
+              <p>Carregando treinos da sua rotina...</p>
+            </div>
+          ) : visibleSessions.length === 0 ? (
+            <div className="student-workouts__empty">
+              <p>
+                {hasActiveFilters
+                  ? "Nenhuma sessão encontrada para os filtros selecionados."
+                  : "Nenhuma sessão planejada para esta semana."}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="secondary" onClick={clearAllFilters}>
+                  Limpar filtros
+                </Button>
+              )}
+            </div>
+          ) : (
+            visibleSessions.map((sessao, idx) => {
+              const parsed = parseAtividades(sessao.descricao);
+              const sessionNumber = sessao.numero || idx + 1;
+              const sessionTitle = parsed.sessionName
+                ? `Sessão ${sessionNumber} · ${parsed.sessionName}`
+                : `Sessão ${sessionNumber}`;
+              const isCompleted =
+                sessao.status === "CONCLUIDA" || sessao.status === "VALIDADA";
+              const isNextPending = sessao.id === firstPendingSessionId && !isCompleted;
+              const isHighlighted = sessao.id === highlightedSessionId;
+
+              return (
+                <article
+                  key={sessao.id}
+                  id={`sessao-${sessao.id}`}
+                  className={`student-workouts__session-card${
+                    isCompleted ? " is-completed" : " is-pending"
+                  }${isNextPending ? " is-next-pending" : ""}${
+                    isHighlighted ? " is-highlighted" : ""
+                  }`}
+                >
+                  {/* Cabeçalho do Card da Sessão */}
+                  <div className="student-workouts__session-top">
+                    <div className="student-workouts__session-title-group">
+                      <div
+                        className={`student-workouts__date-box${
+                          isCompleted ? " is-completed" : ""
+                        }`}
+                      >
+                        <span>{sessao.diaSemana}</span>
+                        <strong>{sessao.dataPlanejada}</strong>
+                      </div>
+
+                      <div className="student-workouts__session-heading">
+                        <div className="student-workouts__session-heading-row">
+                          <h3>{sessionTitle}</h3>
+                          {isNextPending && (
+                            <Badge tone="primary">Próximo treino</Badge>
+                          )}
+                          {!isCompleted && !isNextPending && (
+                            <Badge tone="warning">Não realizado</Badge>
+                          )}
+                        </div>
+                        <span className="student-workouts__session-week-tag">
+                          Semana {sessao.semana}
+                          {sessao.dataReal ? ` · Realizada em ${sessao.dataReal}` : ""}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="student-workouts__session-actions">
-                      <Badge
-                        tone={
-                          sessao.status === "CONCLUIDA"
-                            ? "success"
-                            : sessao.status === "VALIDADA"
-                            ? "info"
-                            : "neutral"
-                        }
-                      >
-                        {sessao.status === "CONCLUIDA"
-                          ? "Concluída"
-                          : sessao.status === "VALIDADA"
-                          ? "Validada"
-                          : "Planejada"}
-                      </Badge>
+                      {sessao.duracaoPlanejada && (
+                        <div className="student-workouts__duration-badge" title="Duração estimada">
+                          <Clock size={14} aria-hidden="true" />
+                          <span>{sessao.duracaoPlanejada} min</span>
+                        </div>
+                      )}
 
-                      {sessao.status !== "PLANEJADA" ? (
-                        <button
-                          type="button"
-                          className="student-workouts__link-btn"
-                          onClick={() => setInspectedSession(sessao)}
-                        >
-                          Ver resultados
-                        </button>
-                      ) : isHighlight ? (
-                        <Button onClick={() => openRpeModal(sessao.id)}>
-                          Registrar execução
-                        </Button>
+                      {isCompleted ? (
+                        <Badge tone={sessao.status === "VALIDADA" ? "info" : "success"}>
+                          <CheckCircle2 size={13} style={{ marginRight: 4 }} aria-hidden="true" />
+                          {sessao.status === "VALIDADA"
+                            ? "Validada pelo personal"
+                            : "Sessão finalizada"}
+                        </Badge>
                       ) : (
-                        <button
-                          type="button"
-                          className="student-workouts__link-btn"
-                          onClick={() => setInspectedSession(sessao)}
-                        >
-                          Ver detalhes
-                        </button>
+                        <Button onClick={() => openRpeModal(sessao.id)}>
+                          Finalizar sessão
+                        </Button>
                       )}
                     </div>
-                  </article>
-                );
-              })
-            )}
-          </div>
+                  </div>
 
-          <footer className="student-workouts__readonly-note">
-            <img src="/workspace/402-2299-imgIconLock.svg" alt="" aria-hidden="true" />
-            <span>
-              Somente leitura · o planejamento é definido pelo seu personal. Semanas futuras
-              aparecem quando começarem.
-            </span>
-          </footer>
-        </section>
-
-        {/* Right: Histórico de rotinas + Status das sessões */}
-        <aside className="student-workouts__aside">
-          <section className="student-workouts__side-card" aria-label="Histórico de rotinas">
-            <header className="student-workouts__side-header">
-              <h2>Histórico de rotinas</h2>
-              <p>Consulte semanas, sessões e resultados</p>
-            </header>
-
-            <div className="student-workouts__history-list">
-              {historicalRoutines.length === 0 ? (
-                <p style={{ color: "var(--color-neutral-500, #64748b)", fontSize: "0.875rem", margin: "0.5rem 0" }}>
-                  Nenhuma rotina encerrada no momento.
-                </p>
-              ) : (
-                historicalRoutines.map((rotina) => (
-                  <button
-                    key={rotina.id}
-                    type="button"
-                    className="student-workouts__history-item"
-                    onClick={() => setInspectedRoutine(rotina)}
-                  >
-                    <div className="student-workouts__history-info">
-                      <strong>{rotina.titulo}</strong>
-                      <span>{rotina.periodo}</span>
-                      <Badge tone="neutral">Encerrada</Badge>
+                  {/* Blocos Numerados de Atividades */}
+                  {parsed.activities.length > 0 ? (
+                    <div className="student-workouts__activities-list" aria-label="Atividades da sessão">
+                      {parsed.activities.map((act, actIdx) => (
+                        <div key={act.id} className="student-workouts__activity-item">
+                          <span className="student-workouts__activity-num" aria-hidden="true">
+                            {actIdx + 1}
+                          </span>
+                          <div className="student-workouts__activity-body">
+                            <strong>{act.title}</strong>
+                            {act.description && <p>{act.description}</p>}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <img
-                      src="/workspace/401-744-imgIconChevr.svg"
-                      alt=""
-                      aria-hidden="true"
-                      className="student-workouts__history-chevron"
-                    />
-                  </button>
-                ))
-              )}
-            </div>
-          </section>
+                  ) : (
+                    !parsed.orientations &&
+                    sessao.descricao && (
+                      <p className="student-workouts__fallback-desc">{sessao.descricao}</p>
+                    )
+                  )}
 
-          <section className="student-workouts__side-card" aria-label="Status das sessões">
-            <header className="student-workouts__side-header">
-              <h2>Status das sessões</h2>
-            </header>
+                  {/* Caixa de Orientações em Destaque */}
+                  {parsed.orientations && (
+                    <div className="student-workouts__orientations-box">
+                      <Info size={16} className="student-workouts__orientations-icon" aria-hidden="true" />
+                      <div>
+                        <strong>Orientações do personal</strong>
+                        <p>{parsed.orientations}</p>
+                      </div>
+                    </div>
+                  )}
 
-            <ul className="student-workouts__legend-list">
-              <li>
-                <Badge tone="neutral">Planejada</Badge>
-                <span>Aguardando sua execução</span>
-              </li>
-              <li>
-                <Badge tone="success">Concluída</Badge>
-                <span>Execução confirmada por você</span>
-              </li>
-              <li>
-                <Badge tone="info">Validada</Badge>
-                <span>Conferida pelo personal</span>
-              </li>
-            </ul>
-          </section>
-        </aside>
-      </div>
+                  {/* Resumo de Métricas e RPE enviados após finalizar a sessão */}
+                  {isCompleted &&
+                    ((sessao.resultados && sessao.resultados.length > 0) ||
+                      typeof sessao.rpe === "number" ||
+                      typeof sessao.duracaoReal === "number") && (
+                      <div className="student-workouts__results-box" aria-label="Métricas enviadas">
+                        <div className="student-workouts__results-header">
+                          <Activity size={14} aria-hidden="true" />
+                          <span>Métricas e execução enviadas</span>
+                        </div>
+                        <div className="student-workouts__results-grid">
+                          {typeof sessao.duracaoReal === "number" && (
+                            <div className="student-workouts__result-pill">
+                              <span>Duração real</span>
+                              <strong>{sessao.duracaoReal} min</strong>
+                            </div>
+                          )}
+                          {typeof sessao.rpe === "number" && (
+                            <div className="student-workouts__result-pill">
+                              <span>Esforço (RPE Borg)</span>
+                              <strong>{sessao.rpe}/10</strong>
+                            </div>
+                          )}
+                          {sessao.resultados?.map((res) => (
+                            <div key={res.metricaId} className="student-workouts__result-pill">
+                              <span>{res.titulo}</span>
+                              <strong>
+                                {res.valor}
+                                {res.unidade ? ` ${res.unidade}` : ""}
+                              </strong>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                </article>
+              );
+            })
+          )}
+        </div>
+
+        <footer className="student-workouts__readonly-note">
+          <img src="/workspace/402-2299-imgIconLock.svg" alt="" aria-hidden="true" />
+          <span>
+            O planejamento é definido pelo seu personal. Ao concluir um treino, clique em “Finalizar sessão” para registrar suas métricas e esforço percebido.
+          </span>
+        </footer>
+      </section>
     </div>
   );
 }
+

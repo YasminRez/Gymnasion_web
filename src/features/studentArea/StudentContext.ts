@@ -1,8 +1,10 @@
 import { createContext, useContext } from "react";
 import type {
+  StudentExecutionMetricDTO,
   StudentFeedbackItem,
   StudentHistoricalRoutine,
   StudentRoutineWeek,
+  StudentSessionMetricResult,
   StudentWeekDaySummary,
   StudentWorkoutSession,
 } from "../../types/studentArea";
@@ -27,6 +29,14 @@ export interface StudentActiveRoutineInfo {
   objetivos: string;
   totalSemanas: number;
   semanaAtual: number;
+  metricas?: StudentExecutionMetricDTO[];
+}
+
+export interface StudentExecutionConfirmDetails {
+  dataReal?: string;
+  duracao?: number | null;
+  resultados?: StudentSessionMetricResult[];
+  alreadySavedOnBackend?: boolean;
 }
 
 export interface StudentContextValue {
@@ -50,7 +60,7 @@ export interface StudentContextValue {
   rpeBusy: boolean;
   openRpeModal: (sessionId?: string) => void;
   closeRpeModal: () => void;
-  confirmRpeExecution: (rpe: number | null) => Promise<void>;
+  confirmRpeExecution: (rpe: number | null, details?: StudentExecutionConfirmDetails) => Promise<void>;
   inspectedSession: StudentWorkoutSession | null;
   setInspectedSession: (session: StudentWorkoutSession | null) => void;
   inspectedRoutine: StudentHistoricalRoutine | null;

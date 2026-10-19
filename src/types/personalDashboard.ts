@@ -18,6 +18,8 @@ export interface TrainingSession {
   status: "PLANEJADA" | "CONCLUIDA" | "CANCELADA";
   concluidaAluno: boolean;
   validadaPersonal: boolean;
+  temPendenciasPersonal?: boolean;
+  quantidadePendenciasPersonal?: number;
   desempenho: {
     id: string;
     dataRegistro: string;
