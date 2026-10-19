@@ -186,7 +186,18 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.student-rpe-modal__footer--between {
+  justify-content: space-between;
+}
+
+.student-rpe-modal__footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .student-rpe-modal__skip {
@@ -204,8 +215,177 @@
   background: var(--color-background);
 }
 
+.student-rpe-modal__error-banner {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.student-rpe-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.student-rpe-modal__row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.student-rpe-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.student-rpe-modal__field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-700);
+}
+
+.student-rpe-modal__field input,
+.student-rpe-modal__metric-item input,
+.student-rpe-modal__metric-item textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-ink-900);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.student-rpe-modal__field input:focus,
+.student-rpe-modal__metric-item input:focus,
+.student-rpe-modal__metric-item textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-500, #f97316);
+  box-shadow: 0 0 0 3px rgb(249 115 22 / 14%);
+}
+
+.student-rpe-modal__field input.has-error,
+.student-rpe-modal__metric-item input.has-error,
+.student-rpe-modal__metric-item textarea.has-error {
+  border-color: #ef4444;
+  background: #fffafa;
+}
+
+.student-rpe-modal__field-error {
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.student-rpe-modal__metrics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.student-rpe-modal__metrics-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.student-rpe-modal__metrics-head strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-900);
+}
+
+.student-rpe-modal__metrics-head span {
+  font-size: 12px;
+  color: var(--color-ink-500);
+}
+
+.student-rpe-modal__metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.student-rpe-modal__metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.student-rpe-modal__metric-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.student-rpe-modal__metric-label-row label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-900);
+}
+
+.student-rpe-modal__metric-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.student-rpe-modal__metric-type {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink-500);
+}
+
+.student-rpe-modal__empty-metrics {
+  font-size: 13px;
+  color: var(--color-ink-500);
+  line-height: 1.45;
+  padding: 6px 0;
+}
+
+.student-rpe-modal__personal-metrics-note {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 12px;
+  color: #1e40af;
+  line-height: 1.4;
+}
+
 @media (max-width: 520px) {
+  .student-rpe-modal__row-2 {
+    grid-template-columns: 1fr;
+  }
   .student-rpe-modal__scale-buttons {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
+  .student-rpe-modal__footer--between {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .student-rpe-modal__footer-right {
+    justify-content: space-between;
+  }
 }
+

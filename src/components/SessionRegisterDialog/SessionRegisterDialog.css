@@ -13,4 +13,8 @@
 .session-register__effort { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px; background: var(--color-warning-50); }
 .session-register__effort > strong { display: grid; place-items: center; width: 36px; height: 36px; flex: none; background: var(--color-warning); color: white; border-radius: 8px; }
 .session-register__effort p { font-size: 13px; color: var(--color-ink-500); }
+.session-register__preview { background: var(--color-background); border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; font-size: 12px; }
+.session-register__preview strong { color: var(--color-ink-700); font-weight: 600; }
+.session-register__preview ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; color: var(--color-ink-600); }
+.session-register__preview small { color: var(--color-ink-400); font-size: 11px; }
 @media (max-width: 520px) { .session-register__grid { grid-template-columns: 1fr; } .session-register__rpe { grid-template-columns: repeat(5,minmax(0,1fr)); } }

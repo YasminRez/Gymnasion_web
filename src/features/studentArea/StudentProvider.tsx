@@ -6,16 +6,16 @@ import { localDateKey } from "../personal/dashboardModel";
 import { StudentContext, type StudentActiveRoutineInfo, type StudentIdentityInfo } from "./StudentContext";
 import {
   applySessionExecution,
+  buildWeekDaysSummary,
   countCompletedSessions,
   formatDiaSemanaPt,
   formatDataPlanejadaDdMm,
-  INITIAL_WEEK_DAYS,
 } from "./studentAreaModel";
+import { parseAtividades } from "../../utils/activityParser";
 import type {
   StudentFeedbackItem,
   StudentHistoricalRoutine,
   StudentRoutineWeek,
-  StudentWeekDaySummary,
   StudentWorkoutSession,
 } from "../../types/studentArea";
 
@@ -25,7 +25,6 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedWeekNum, setSelectedWeekNum] = useState<number>(1);
   const [weeks, setWeeks] = useState<StudentRoutineWeek[]>([]);
-  const [weekDays, setWeekDays] = useState<StudentWeekDaySummary[]>(INITIAL_WEEK_DAYS);
   const [historicalRoutines, setHistoricalRoutines] = useState<StudentHistoricalRoutine[]>([]);
   const [feedbacks, setFeedbacks] = useState<StudentFeedbackItem[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
@@ -135,7 +134,18 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
           
           let numSemanaAtual = 1;
           if (semanasBackend.length > 0) {
-            numSemanaAtual = semanasBackend[semanasBackend.length - 1].numeroSemana;
+            const semanaComPendente = semanasBackend.find((sem) =>
+              (sem.sessoes || []).some(
+                (s) =>
+                  !s.concluidaAluno &&
+                  !s.validadaPersonal &&
+                  s.status !== "CONCLUIDA" &&
+                  s.status !== "VALIDADA"
+              )
+            );
+            numSemanaAtual = semanaComPendente
+              ? semanaComPendente.numeroSemana
+              : semanasBackend[semanasBackend.length - 1].numeroSemana;
           }
           setSelectedWeekNum(numSemanaAtual);
 
@@ -147,6 +157,13 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
             objetivos: rotinaAtiva.objetivos || "Desenvolver resistência e capacidade física.",
             totalSemanas: Math.max(semanasBackend.length, numSemanaAtual),
             semanaAtual: numSemanaAtual,
+            metricas: (rotinaAtiva.metricas || []).map((m) => ({
+              id: m.id,
+              titulo: m.titulo,
+              tipo: m.tipo,
+              obrigatoria: Boolean(m.obrigatoria),
+              quemPreenche: m.quemPreenche || "ALUNO",
+            })),
           });
 
           let highlightAssigned = false;
@@ -160,9 +177,9 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
               : "bloqueada";
 
             const sessoes: StudentWorkoutSession[] = (sem.sessoes || []).map((s, idx) => {
-              const status = (s.status === "VALIDADA"
+              const status = (s.validadaPersonal || s.status === "VALIDADA"
                 ? "VALIDADA"
-                : s.status === "CONCLUIDA"
+                : s.concluidaAluno || s.status === "CONCLUIDA"
                 ? "CONCLUIDA"
                 : "PLANEJADA") as "PLANEJADA" | "CONCLUIDA" | "VALIDADA";
 
@@ -175,6 +192,8 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
               const diaSemana = formatDiaSemanaPt(s.dataPlanejada);
               const dataDdMm = formatDataPlanejadaDdMm(s.dataPlanejada);
               const rpe = s.desempenho?.nivelCansaco ?? null;
+              const parsed = parseAtividades(s.atividades);
+              const headline = parsed.sessionName || parsed.activities[0]?.title || "";
 
               return {
                 id: s.id,
@@ -183,7 +202,7 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
                 diaSemana,
                 dataPlanejada: dataDdMm,
                 dataPlanejadaIso: s.dataPlanejada,
-                titulo: `Sessão ${idx + 1} · ${s.atividades?.slice(0, 40) || "Treino"}`,
+                titulo: headline ? `Sessão ${idx + 1} · ${headline}` : `Sessão ${idx + 1}`,
                 descricao: s.atividades || "Sem descrição informada.",
                 duracaoPlanejada: s.duracao || 50,
                 duracaoReal: s.duracao,
@@ -193,8 +212,8 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
                 rpe,
                 resultados: (s.desempenho?.metricas || []).map((m) => ({
                   metricaId: m.metricaId,
-                  titulo: m.titulo,
-                  tipo: m.tipo,
+                  titulo: m.titulo || m.tituloMetrica || "Métrica",
+                  tipo: m.tipo || m.tipoMetrica || "NUMERICO",
                   valor: m.valor,
                 })),
               };
@@ -234,6 +253,11 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
     void loadData();
   }, [loadData]);
 
+  const weekDays = useMemo(() => {
+    const currentWeek = weeks.find((w) => w.estado === "atual") || weeks[0];
+    return buildWeekDaysSummary(currentWeek);
+  }, [weeks]);
+
   const openRpeModal = useCallback(
     (sessionId?: string) => {
       if (sessionId) {
@@ -245,7 +269,7 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
         currentWeek?.sessoes.find((s) => s.destaque && s.status === "PLANEJADA") ||
         currentWeek?.sessoes.find((s) => s.status === "PLANEJADA") ||
         weeks.flatMap((w) => w.sessoes).find((s) => s.status === "PLANEJADA");
-      setRpeModalSessionId(nextSession?.id || "w3-s3");
+      setRpeModalSessionId(nextSession?.id || null);
     },
     [weeks]
   );
@@ -260,49 +284,70 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
   }, [searchParams, setSearchParams]);
 
   const confirmRpeExecution = useCallback(
-    async (rpe: number | null) => {
+    async (
+      rpe: number | null,
+      details?: {
+        dataReal?: string;
+        duracao?: number | null;
+        resultados?: StudentWorkoutSession["resultados"];
+        alreadySavedOnBackend?: boolean;
+      }
+    ) => {
       if (!rpeModalSessionId) return;
       setRpeBusy(true);
       try {
-        try {
+        const realIso = details?.dataReal || localDateKey(new Date());
+        if (!details?.alreadySavedOnBackend) {
           await alunoService.registrarExecucao(rpeModalSessionId, {
-            dataReal: localDateKey(new Date()),
-            duracao: 55,
+            dataReal: realIso,
+            duracao: details?.duracao ?? 50,
             nivelCansaco: rpe,
-            resultados: [],
+            resultados: (details?.resultados || []).map((r) => ({
+              metricaId: r.metricaId,
+              valor: r.valor,
+            })),
           });
-        } catch {
-          // Segue com atualização no estado local
         }
 
-        setWeeks((prev) => applySessionExecution(prev, rpeModalSessionId, rpe, "em 08/10"));
-        setWeekDays((prev) =>
-          prev.map((day) => (day.status === "today" ? { ...day, status: "completed" } : day))
+        const formattedRealDate = formatDataPlanejadaDdMm(realIso);
+        setWeeks((prev) =>
+          applySessionExecution(
+            prev,
+            rpeModalSessionId,
+            rpe,
+            formattedRealDate,
+            details?.resultados,
+            details?.duracao
+          )
         );
         toast.success(
           rpe !== null
-            ? `Sessão registrada com sucesso (RPE ${rpe}/10)!`
-            : "Sessão registrada com sucesso!"
+            ? `Sessão finalizada com sucesso (RPE ${rpe}/10)!`
+            : "Sessão finalizada com sucesso!"
         );
         closeRpeModal();
+        void loadData();
       } finally {
         setRpeBusy(false);
       }
     },
-    [rpeModalSessionId, closeRpeModal]
+    [rpeModalSessionId, closeRpeModal, loadData]
   );
 
-  const sendObservationToPersonal = useCallback(async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    try {
-      await alunoService.registrarObservacao(trimmed);
-    } catch {
-      // Confirma localmente
-    }
-    toast.success("Mensagem enviada para Rafael Souza!");
-    setMessageModalOpen(false);
-  }, []);
+  const sendObservationToPersonal = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      try {
+        await alunoService.registrarObservacao(trimmed);
+      } catch {
+        // Confirma localmente
+      }
+      toast.success(`Mensagem enviada para ${student.personal.name}!`);
+      setMessageModalOpen(false);
+    },
+    [student.personal.name]
+  );
 
   const markFeedbacksRead = useCallback(() => {
     setUnreadNotifications(0);

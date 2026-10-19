@@ -149,23 +149,23 @@ export function applySessionExecution(
   weeks: StudentRoutineWeek[],
   sessionId: string,
   rpe: number | null,
-  realDateLabel = "hoje"
+  realDateLabel = "hoje",
+  resultados?: StudentWorkoutSession["resultados"],
+  duracaoReal?: number | null
 ): StudentRoutineWeek[] {
   let nextHighlightAssigned = false;
 
   const updated = weeks.map((week) => {
     const sessoes = week.sessoes.map((sessao) => {
       if (sessao.id !== sessionId) return sessao;
-      const alreadyHasRealDate = sessao.descricao.includes("realizada em");
       return {
         ...sessao,
         status: "CONCLUIDA" as const,
         destaque: false,
         rpe: rpe ?? sessao.rpe ?? null,
         dataReal: realDateLabel,
-        descricao: alreadyHasRealDate
-          ? sessao.descricao
-          : `${sessao.descricao} · realizada ${realDateLabel}`,
+        duracaoReal: duracaoReal ?? sessao.duracaoReal ?? sessao.duracaoPlanejada,
+        resultados: resultados && resultados.length > 0 ? resultados : sessao.resultados,
       };
     });
     return { ...week, sessoes };
@@ -189,13 +189,12 @@ export function applySessionExecution(
   });
 }
 
-export function countCompletedSessions(weeks: StudentRoutineWeek[], baseCompleted = 8): number {
+export function countCompletedSessions(weeks: StudentRoutineWeek[], baseCompleted = 0): number {
   const listedCompleted = weeks.reduce(
     (acc, w) => acc + w.sessoes.filter((s) => s.status !== "PLANEJADA").length,
     0
   );
-  // Semana 1 teve 4 sessões concluídas antes das semanas 2..4 listadas
-  return Math.max(baseCompleted, 4 + listedCompleted);
+  return Math.max(baseCompleted, listedCompleted);
 }
 
 export function formatDiaSemanaPt(isoDateStr?: string | null): string {
@@ -221,6 +220,47 @@ export function formatDataPlanejadaDdMm(isoDateStr?: string | null): string {
   return isoDateStr;
 }
 
+
+export function buildWeekDaysSummary(
+  currentWeek?: StudentRoutineWeek | null
+): StudentWeekDaySummary[] {
+  const dayDefs: Array<{ id: string; label: string; code: string; jsDay: number }> = [
+    { id: "mon", label: "S", code: "SEG", jsDay: 1 },
+    { id: "tue", label: "T", code: "TER", jsDay: 2 },
+    { id: "wed", label: "Q", code: "QUA", jsDay: 3 },
+    { id: "thu", label: "Q", code: "QUI", jsDay: 4 },
+    { id: "fri", label: "S", code: "SEX", jsDay: 5 },
+    { id: "sat", label: "S", code: "SÁB", jsDay: 6 },
+    { id: "sun", label: "D", code: "DOM", jsDay: 0 },
+  ];
+
+  const sessions = currentWeek?.sessoes || [];
+  if (sessions.length === 0) {
+    return dayDefs.map((d) => ({ id: d.id, label: d.label, status: "rest" }));
+  }
+
+  const todayJsDay = new Date().getDay();
+
+  return dayDefs.map((d) => {
+    const daySessions = sessions.filter((s) => s.diaSemana.toUpperCase() === d.code);
+    if (daySessions.length === 0) {
+      return { id: d.id, label: d.label, status: "rest" };
+    }
+    const allCompleted = daySessions.every(
+      (s) => s.status === "CONCLUIDA" || s.status === "VALIDADA"
+    );
+    if (allCompleted) {
+      return { id: d.id, label: d.label, status: "completed" };
+    }
+    const isHighlightOrToday =
+      daySessions.some((s) => s.destaque) || d.jsDay === todayJsDay;
+    return {
+      id: d.id,
+      label: d.label,
+      status: isHighlightOrToday ? "today" : "planned",
+    };
+  });
+}
 
 export const INITIAL_WEEK_DAYS: StudentWeekDaySummary[] = [
   { id: "mon", label: "S", status: "completed" },

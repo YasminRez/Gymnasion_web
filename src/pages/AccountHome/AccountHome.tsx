@@ -1,15 +1,33 @@
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Activity, ArrowRight, CheckCircle2, Info } from "lucide-react";
 import Avatar from "../../components/Avatar/Avatar";
 import Badge from "../../components/Badge/Badge";
 import Button from "../../components/Button/Button";
 import SportTag from "../../components/SportTag/SportTag";
 import StudentSmoothChart from "../../components/StudentSmoothChart/StudentSmoothChart";
 import { useStudentArea } from "../../features/studentArea/StudentContext";
+import { parseAtividades } from "../../utils/activityParser";
 import "./AccountHome.css";
+
+function parseMetricNumericValue(raw: string): number | null {
+  const trimmed = raw.trim();
+  // Tempo mm:ss -> segundos
+  const timeMatch = /^(\d{1,3}):([0-5]\d)$/.exec(trimmed);
+  if (timeMatch) {
+    return Number(timeMatch[1]) * 60 + Number(timeMatch[2]);
+  }
+  const numMatch = /-?\d+(?:[.,]\d+)?/.exec(trimmed);
+  if (numMatch) {
+    const n = Number(numMatch[0].replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
 
 export default function AccountHome() {
   const location = useLocation();
+  const navigate = useNavigate();
   const {
     student,
     activeRoutine,
@@ -19,7 +37,7 @@ export default function AccountHome() {
     monthlySessionsCount,
     averageRpe,
     openRpeModal,
-    setInspectedSession,
+    setSelectedWeekNum,
   } = useStudentArea();
 
   useEffect(() => {
@@ -29,16 +47,133 @@ export default function AccountHome() {
   }, [location.hash]);
 
   const currentWeek = weeks.find((w) => w.estado === "atual") || weeks[0];
+
+  // Apenas sessões pendentes ("PLANEJADA") entram como próxima sessão a finalizar
   const nextSession =
     currentWeek?.sessoes.find((s) => s.destaque && s.status === "PLANEJADA") ||
     currentWeek?.sessoes.find((s) => s.status === "PLANEJADA") ||
-    currentWeek?.sessoes[0];
+    weeks
+      .filter((w) => w.estado !== "bloqueada")
+      .flatMap((w) => w.sessoes)
+      .find((s) => s.status === "PLANEJADA");
+
+  const nextSessionParsed = useMemo(
+    () => (nextSession ? parseAtividades(nextSession.descricao) : null),
+    [nextSession]
+  );
 
   const newFeedbacksCount = feedbacks.filter((f) => f.novo).length;
   const completedDaysInWeek = currentWeek
     ? currentWeek.sessoes.filter((s) => s.status !== "PLANEJADA").length
     : 0;
   const totalDaysInWeek = currentWeek ? currentWeek.sessoes.length : 0;
+
+  const studentMetrics = useMemo(
+    () => (activeRoutine?.metricas || []).filter((m) => m.quemPreenche !== "PERSONAL"),
+    [activeRoutine]
+  );
+
+  // Calcula dados reais para o card "Minha evolução" a partir das sessões finalizadas
+  const evolutionSummary = useMemo(() => {
+    const completedSessions = weeks
+      .flatMap((w) => w.sessoes)
+      .filter((s) => s.status === "CONCLUIDA" || s.status === "VALIDADA");
+
+    const primaryMetric = studentMetrics[0];
+
+    if (primaryMetric) {
+      const entries = completedSessions
+        .map((s) => {
+          const found = s.resultados?.find(
+            (r) =>
+              r.metricaId === primaryMetric.id ||
+              r.titulo.toLowerCase() === primaryMetric.titulo.toLowerCase()
+          );
+          if (!found) return null;
+          return {
+            label: `S${s.semana}·${s.numero}`,
+            raw: found.valor,
+            num: parseMetricNumericValue(found.valor),
+          };
+        })
+        .filter((item): item is { label: string; raw: string; num: number | null } => Boolean(item));
+
+      if (entries.length > 0) {
+        const lastEntry = entries[entries.length - 1];
+        const numericPoints = entries
+          .map((e) => e.num)
+          .filter((v): v is number => typeof v === "number");
+
+        let chartValues = [45, 65];
+        if (numericPoints.length >= 2) {
+          const min = Math.min(...numericPoints);
+          const max = Math.max(...numericPoints);
+          const span = max - min || 1;
+          chartValues = numericPoints.map((v) => Math.round(20 + ((v - min) / span) * 68));
+        } else if (numericPoints.length === 1) {
+          chartValues = [50, 68];
+        }
+
+        const chartLabels =
+          entries.length >= 2
+            ? entries.map((e) => e.label)
+            : ["Início", lastEntry.label];
+
+        return {
+          hasData: true,
+          title: primaryMetric.titulo,
+          subtitle: `${entries.length} ${
+            entries.length === 1 ? "sessão registrada" : "sessões registradas"
+          } na rotina`,
+          latestValue: lastEntry.raw,
+          unit: primaryMetric.unidade || "",
+          badgeText: "Atualizado",
+          values: chartValues,
+          labels: chartLabels,
+        };
+      }
+    }
+
+    // Fallback para RPE das sessões finalizadas caso ainda não haja métrica numérica
+    const rpeSessions = completedSessions.filter((s) => typeof s.rpe === "number");
+    if (rpeSessions.length > 0) {
+      const lastRpe = rpeSessions[rpeSessions.length - 1];
+      const values =
+        rpeSessions.length >= 2
+          ? rpeSessions.map((s) => Math.round(((s.rpe || 5) / 10) * 85 + 10))
+          : [50, Math.round(((lastRpe.rpe || 5) / 10) * 85 + 10)];
+      const labels =
+        rpeSessions.length >= 2
+          ? rpeSessions.map((s) => `S${s.semana}·${s.numero}`)
+          : ["Início", `S${lastRpe.semana}·${lastRpe.numero}`];
+
+      return {
+        hasData: true,
+        title: "Esforço percebido (RPE)",
+        subtitle: `Escala de Borg CR-10 · ${rpeSessions.length} ${
+          rpeSessions.length === 1 ? "sessão" : "sessões"
+        }`,
+        latestValue: `${lastRpe.rpe}/10`,
+        unit: `média ${averageRpe}`,
+        badgeText: "Registrado",
+        values,
+        labels,
+      };
+    }
+
+    return {
+      hasData: false,
+      title: primaryMetric ? primaryMetric.titulo : "Acompanhamento de métricas",
+      subtitle: activeRoutine
+        ? "Finalize sua primeira sessão para visualizar o gráfico de evolução"
+        : "Nenhuma rotina ativa vinculada",
+      latestValue: "—",
+      unit: primaryMetric?.unidade || "",
+      badgeText: "Aguardando registros",
+      values: [],
+      labels: [],
+    };
+  }, [weeks, studentMetrics, averageRpe, activeRoutine]);
 
   const sportKey: "natacao" | "tenis" | "academia" | "corrida" | "ciclismo" | "funcional" =
     activeRoutine?.modalidade?.toLowerCase().includes("tenis")
@@ -63,10 +198,10 @@ export default function AccountHome() {
             <span className="student-panel__stat-icon student-panel__stat-icon--orange">
               <img src="/student-profile/imgIconActivity2.svg" alt="" />
             </span>
-            <Badge tone="success">Ativo</Badge>
+            <Badge tone="success">Rotina atual</Badge>
           </div>
           <strong className="student-panel__stat-value">{monthlySessionsCount}</strong>
-          <span className="student-panel__stat-label">Sessões concluídas</span>
+          <span className="student-panel__stat-label">Sessões finalizadas</span>
         </article>
 
         <article className="student-panel__stat-card">
@@ -130,54 +265,121 @@ export default function AccountHome() {
               <div className="student-panel__next-date" aria-hidden="true">
                 <span className="student-panel__next-weekday">{nextSession.diaSemana}</span>
                 <strong className="student-panel__next-day">{nextSession.dataPlanejada}</strong>
-                <span className="student-panel__next-time">{nextSession.duracaoPlanejada ? `${nextSession.duracaoPlanejada} min` : "Treino"}</span>
+                <span className="student-panel__next-time">
+                  {nextSession.duracaoPlanejada ? `${nextSession.duracaoPlanejada} min` : "Treino"}
+                </span>
               </div>
 
               <div className="student-panel__next-body">
-                <span className="student-panel__next-eyebrow">PRÓXIMA SESSÃO</span>
+                <span className="student-panel__next-eyebrow">
+                  PRÓXIMA SESSÃO · SEMANA {nextSession.semana}
+                </span>
                 <div className="student-panel__next-title-row">
-                  <h2>{activeRoutine ? activeRoutine.titulo : "Treino"}</h2>
+                  <h2>{nextSession.titulo}</h2>
                   {activeRoutine && <SportTag sport={sportKey} />}
                 </div>
                 <p className="student-panel__next-subtitle">
-                  {`Com ${student.personal.name} · ${nextSession.descricao.slice(0, 60)}`}
+                  {activeRoutine ? `${activeRoutine.titulo} · ` : ""}
+                  Planejado por {student.personal.name}
                 </p>
+
+                {/* Preview estruturado das atividades planejadas */}
+                {nextSessionParsed && nextSessionParsed.activities.length > 0 && (
+                  <div className="student-panel__next-activities">
+                    {nextSessionParsed.activities.slice(0, 3).map((act, idx) => (
+                      <div key={act.id} className="student-panel__next-activity-pill">
+                        <span className="student-panel__next-activity-num">{idx + 1}</span>
+                        <span className="student-panel__next-activity-text">
+                          <strong>{act.title}</strong>
+                          {act.description ? ` · ${act.description}` : ""}
+                        </span>
+                      </div>
+                    ))}
+                    {nextSessionParsed.activities.length > 3 && (
+                      <span className="student-panel__next-activity-more">
+                        +{nextSessionParsed.activities.length - 3} atividade(s)
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {nextSessionParsed?.orientations && (
+                  <div className="student-panel__next-orientation">
+                    <Info size={14} aria-hidden="true" />
+                    <span>{nextSessionParsed.orientations}</span>
+                  </div>
+                )}
+
                 <div className="student-panel__next-actions">
                   <Button
                     variant="secondary"
-                    onClick={() => setInspectedSession(nextSession)}
+                    onClick={() => {
+                      setSelectedWeekNum(nextSession.semana);
+                      navigate(
+                        `/conta/treinos?semana=${nextSession.semana}&sessao=${encodeURIComponent(
+                          nextSession.id
+                        )}`
+                      );
+                    }}
                   >
                     Ver sessão
                   </Button>
                   <Button onClick={() => openRpeModal(nextSession.id)}>
-                    Registrar execução
+                    Finalizar sessão
                   </Button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="student-panel__next-body" style={{ padding: "1.5rem 0" }}>
+            <div className="student-panel__next-body student-panel__next-empty">
               <span className="student-panel__next-eyebrow">PRÓXIMA SESSÃO</span>
-              <h2>Nenhum treino pendente para esta semana</h2>
+              <div className="student-panel__next-title-row">
+                <h2>
+                  {activeRoutine && totalDaysInWeek > 0
+                    ? "Todas as sessões da semana foram finalizadas!"
+                    : "Nenhum treino pendente para esta semana"}
+                </h2>
+                {activeRoutine && totalDaysInWeek > 0 && (
+                  <Badge tone="success">
+                    <CheckCircle2 size={13} style={{ marginRight: 4 }} aria-hidden="true" />
+                    Semana concluída
+                  </Badge>
+                )}
+              </div>
               <p className="student-panel__next-subtitle">
                 {activeRoutine
-                  ? "Todas as sessões planejadas da semana atual foram concluídas."
+                  ? "Você concluiu todos os treinos planejados para a semana atual. Você pode revisar os detalhes e métricas enviadas em Meus treinos."
                   : "Aguardando novo planejamento de treino do seu personal."}
               </p>
+              {activeRoutine && (
+                <div className="student-panel__next-actions">
+                  <Button variant="secondary" onClick={() => navigate("/conta/treinos")}>
+                    Ver sessões em Meus treinos
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </section>
 
         <section className="student-panel__card student-panel__week" aria-label="Minha semana">
-          <header className="student-panel__card-header">
+          <header className="student-panel__card-header student-panel__card-header--split">
             <div>
               <h2>Minha semana</h2>
               <p>
                 {totalDaysInWeek > 0
-                  ? `${completedDaysInWeek} de ${totalDaysInWeek} sessões planejadas concluídas`
+                  ? `${completedDaysInWeek} de ${totalDaysInWeek} sessões finalizadas`
                   : "Sem sessões agendadas para esta semana"}
               </p>
             </div>
+            <button
+              type="button"
+              className="student-panel__link-btn"
+              onClick={() => navigate("/conta/treinos")}
+            >
+              <span>Meus treinos</span>
+              <ArrowRight size={14} aria-hidden="true" />
+            </button>
           </header>
 
           <div className="student-panel__week-days">
@@ -213,9 +415,15 @@ export default function AccountHome() {
             ))}
           </div>
 
-          <div className="student-panel__week-legend">
-            <span className="student-panel__week-dot" aria-hidden="true" />
-            <span>Natação</span>
+          <div className="student-panel__week-legend-row">
+            <div className="student-panel__week-legend">
+              <span className="student-panel__week-dot" aria-hidden="true" />
+              <span>{activeRoutine ? activeRoutine.modalidade : "Planejada"}</span>
+            </div>
+            <div className="student-panel__week-legend">
+              <span className="student-panel__week-dot student-panel__week-dot--muted" aria-hidden="true" />
+              <span>Descanso</span>
+            </div>
           </div>
         </section>
       </div>
@@ -223,27 +431,51 @@ export default function AccountHome() {
       {/* Row 3: Minha Evolução + Feedbacks do Personal */}
       <div className="student-panel__bottom">
         <section className="student-panel__card student-panel__evolution" aria-label="Minha evolução">
-          <header className="student-panel__card-header">
+          <header className="student-panel__card-header student-panel__card-header--split">
             <div>
               <h2>Minha evolução</h2>
-              <p>Ritmo médio /100m · últimas 8 semanas</p>
+              <p>
+                {evolutionSummary.title} · {evolutionSummary.subtitle}
+              </p>
             </div>
+            <button
+              type="button"
+              className="student-panel__link-btn"
+              onClick={() => navigate("/conta/evolucao")}
+            >
+              <span>Ver completo</span>
+              <ArrowRight size={14} aria-hidden="true" />
+            </button>
           </header>
 
-          <div className="student-panel__evolution-metric">
-            <strong>1:42</strong>
-            <span className="student-panel__evolution-unit">min/100m</span>
-            <Badge tone="success">▼ 8% melhora</Badge>
-          </div>
+          {evolutionSummary.hasData ? (
+            <>
+              <div className="student-panel__evolution-metric">
+                <strong>{evolutionSummary.latestValue}</strong>
+                {evolutionSummary.unit && (
+                  <span className="student-panel__evolution-unit">{evolutionSummary.unit}</span>
+                )}
+                <Badge tone="success">{evolutionSummary.badgeText}</Badge>
+              </div>
 
-          <div className="student-panel__evolution-chart">
-            <StudentSmoothChart
-              values={[12, 18, 22, 30, 42, 46, 56, 68, 74, 88]}
-              labels={["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]}
-              color="blue"
-              ariaLabel="Gráfico de evolução de ritmo médio por 100 metros nas últimas 8 semanas"
-            />
-          </div>
+              <div className="student-panel__evolution-chart">
+                <StudentSmoothChart
+                  values={evolutionSummary.values}
+                  labels={evolutionSummary.labels}
+                  color="blue"
+                  ariaLabel={`Gráfico de evolução de ${evolutionSummary.title}`}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="student-panel__evolution-empty">
+              <Activity size={24} aria-hidden="true" />
+              <p>
+                Ainda não há métricas registradas nesta rotina. Ao concluir um treino e clicar em{" "}
+                <strong>“Finalizar sessão”</strong>, seus resultados aparecerão aqui.
+              </p>
+            </div>
+          )}
         </section>
 
         <section
@@ -258,7 +490,7 @@ export default function AccountHome() {
 
           <div className="student-panel__feedbacks-list">
             {feedbacks.length === 0 ? (
-              <p style={{ color: "var(--color-neutral-500, #64748b)", fontSize: "0.875rem", margin: "1rem 0" }}>
+              <p style={{ color: "var(--color-neutral-500, #64748b)", fontSize: "0.875rem", margin: "0.75rem 0" }}>
                 Nenhum feedback registrado pelo seu personal ainda.
               </p>
             ) : (
@@ -277,26 +509,22 @@ export default function AccountHome() {
             )}
           </div>
 
-          <div className="student-panel__strava-banner">
-            <span className="student-panel__strava-icon" aria-hidden="true">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-            </span>
-            <div>
-              <strong>Strava conectado</strong>
-              <p>Última sincronização hoje, 06:58</p>
+          {studentMetrics.length > 0 && (
+            <div className="student-panel__metrics-banner">
+              <div className="student-panel__metrics-banner-header">
+                <Activity size={14} aria-hidden="true" />
+                <strong>Métricas solicitadas ao finalizar sessão</strong>
+              </div>
+              <div className="student-panel__metrics-tags">
+                {studentMetrics.map((m) => (
+                  <span key={m.id} className="student-panel__metric-tag">
+                    {m.titulo}
+                    {m.obrigatoria ? " *" : ""}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </section>
       </div>
     </div>

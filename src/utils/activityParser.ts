@@ -19,16 +19,25 @@ export function parseAtividades(raw?: string | null): ParsedSessionActivities {
     return { sessionName: "", activities: [], orientations: "" };
   }
 
-  const lines = raw
+  let normalized = raw;
+  let extractedSessionName = "";
+  const sessaoTagMatch = normalized.match(/\[SESSAO:\s*([^\]]*)\]/i);
+  if (sessaoTagMatch) {
+    extractedSessionName = sessaoTagMatch[1]?.trim() || "";
+    normalized = normalized.replace(sessaoTagMatch[0], "\n");
+  }
+  normalized = normalized.replace(/\[ATIVIDADES\]/gi, "\n").replace(/\[ORIENTACOES\]/gi, "\nOrientações: ");
+
+  const lines = normalized
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
 
   if (lines.length === 0) {
-    return { sessionName: "", activities: [], orientations: "" };
+    return { sessionName: extractedSessionName, activities: [], orientations: "" };
   }
 
-  let sessionName = "";
+  let sessionName = extractedSessionName;
   let orientations = "";
   const activityLines: string[] = [];
 
@@ -48,20 +57,30 @@ export function parseAtividades(raw?: string | null): ParsedSessionActivities {
     // Nome explícito da sessão
     const sessionNameMatch = line.match(/^(?:nome da sess[aã]o|sess[aã]o|t[ií]tulo):\s*(.*)$/i);
     if (sessionNameMatch) {
-      sessionName = sessionNameMatch[1]?.trim() || "";
+      if (!sessionName) {
+        sessionName = sessionNameMatch[1]?.trim() || "";
+      }
       continue;
     }
 
     // Primeira linha como título da sessão se não tiver delimitador e houver mais linhas
-    if (i === 0 && lines.length > 1 && !line.includes(":") && !line.includes("·")) {
+    if (
+      !sessionName &&
+      i === 0 &&
+      lines.length > 1 &&
+      !line.includes(":") &&
+      !line.includes("·") &&
+      !line.includes("—") &&
+      !/^\d+[.)]\s/.test(line)
+    ) {
       sessionName = line;
       continue;
     }
 
-    activityLines.push(line);
+    activityLines.push(line.replace(/^\d+[.)]\s*/, "").trim());
   }
 
-  const activities: ActivityItem[] = activityLines.map((line, idx) => {
+  const activities: ActivityItem[] = activityLines.filter(Boolean).map((line, idx) => {
     let title = "";
     let description = "";
 
@@ -69,6 +88,10 @@ export function parseAtividades(raw?: string | null): ParsedSessionActivities {
       const parts = line.split("·");
       title = parts[0]?.trim() || `Atividade ${idx + 1}`;
       description = parts.slice(1).join("·").trim();
+    } else if (line.includes("—")) {
+      const parts = line.split("—");
+      title = parts[0]?.trim() || `Atividade ${idx + 1}`;
+      description = parts.slice(1).join("—").trim();
     } else if (line.includes(":")) {
       const colonIdx = line.indexOf(":");
       title = line.substring(0, colonIdx).trim() || `Atividade ${idx + 1}`;

@@ -9,6 +9,8 @@
 .profile-routine__week { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 8px; margin-top: 16px; }
 .profile-routine__week > div { border: 1px solid transparent; background: var(--color-background); border-radius: 10px; padding: 8px; display: flex; align-items: center; flex-direction: column; gap: 4px; color: var(--color-ink-400); font-size: 11px; min-height: 52px; }
 .profile-routine__week .is-completed { background: var(--color-primary-50); color: var(--color-primary-600); }
+.profile-routine__week .is-planned { border-color: var(--color-warning, #f59e0b); color: var(--color-ink-700); font-weight: 600; }
 .profile-routine__week .is-today { border-color: var(--color-primary-500); }
 .profile-routine__day-dot { height: 14px; width: 14px; border: 1px solid var(--color-ink-300); border-radius: 50%; }
+.profile-routine__day-dot.is-active { background: var(--color-warning-50, #fef3c7); border-color: var(--color-warning, #f59e0b); }
 @media (max-width: 640px) { .profile-routine header { flex-wrap: wrap; } .profile-routine__week { gap: 4px; } }

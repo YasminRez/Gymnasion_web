@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Info } from "lucide-react";
 import AppSidebar from "../AppSidebar/AppSidebar";
 import AppTopbar from "../AppTopbar/AppTopbar";
 import SidebarCallout from "../SidebarCallout/SidebarCallout";
@@ -13,6 +14,7 @@ import { useStudentArea } from "../../features/studentArea/StudentContext";
 import { authService } from "../../services/authService";
 import { relatorioService } from "../../services/relatorioService";
 import { session } from "../../services/session";
+import { parseAtividades } from "../../utils/activityParser";
 import "./StudentLayout.css";
 
 export default function StudentLayout() {
@@ -21,6 +23,7 @@ export default function StudentLayout() {
   const location = useLocation();
   const {
     student,
+    activeRoutine,
     unreadNotifications,
     setSearchQuery,
     rpeModalSessionId,
@@ -180,90 +183,124 @@ export default function StudentLayout() {
 
       {rpeModalSessionId && (
         <StudentRpeModal
+          sessionId={rpeModalSessionId}
           initialRpe={7}
           busy={rpeBusy}
           onClose={closeRpeModal}
-          onConfirm={(rpe) => void confirmRpeExecution(rpe)}
+          onConfirm={(rpe, details) => void confirmRpeExecution(rpe, details)}
         />
       )}
 
-      {inspectedSession && (
-        <WorkspaceDialog
-          title={inspectedSession.titulo}
-          description={`${inspectedSession.diaSemana}, ${inspectedSession.dataPlanejada}${
-            inspectedSession.horario ? ` às ${inspectedSession.horario}` : ""
-          } · ${inspectedSession.local || "Piscina semiolímpica"}`}
-          icon="/student-profile/imgIconActivity2.svg"
-          onClose={() => setInspectedSession(null)}
-          actions={
-            <>
-              <Button variant="secondary" onClick={() => setInspectedSession(null)}>
-                Fechar
-              </Button>
-              {inspectedSession.status === "PLANEJADA" && (
-                <Button
-                  onClick={() => {
-                    const id = inspectedSession.id;
-                    setInspectedSession(null);
-                    openRpeModal(id);
-                  }}
-                >
-                  Registrar execução
+      {inspectedSession && (() => {
+        const parsed = parseAtividades(inspectedSession.descricao);
+        return (
+          <WorkspaceDialog
+            title={inspectedSession.titulo}
+            description={`Semana ${inspectedSession.semana} · ${inspectedSession.diaSemana}, ${inspectedSession.dataPlanejada}${
+              activeRoutine ? ` · ${activeRoutine.modalidade}` : ""
+            }`}
+            icon="/student-profile/imgIconActivity2.svg"
+            onClose={() => setInspectedSession(null)}
+            actions={
+              <>
+                <Button variant="secondary" onClick={() => setInspectedSession(null)}>
+                  Fechar
                 </Button>
-              )}
-            </>
-          }
-        >
-          <div className="student-session-dialog">
-            <div className="student-session-dialog__badges">
-              <Badge
-                tone={
-                  inspectedSession.status === "CONCLUIDA"
-                    ? "success"
+                {inspectedSession.status === "PLANEJADA" && (
+                  <Button
+                    onClick={() => {
+                      const id = inspectedSession.id;
+                      setInspectedSession(null);
+                      openRpeModal(id);
+                    }}
+                  >
+                    Finalizar sessão
+                  </Button>
+                )}
+              </>
+            }
+          >
+            <div className="student-session-dialog">
+              <div className="student-session-dialog__badges">
+                <Badge
+                  tone={
+                    inspectedSession.status === "CONCLUIDA"
+                      ? "success"
+                      : inspectedSession.status === "VALIDADA"
+                      ? "info"
+                      : "neutral"
+                  }
+                >
+                  {inspectedSession.status === "CONCLUIDA"
+                    ? "Sessão finalizada"
                     : inspectedSession.status === "VALIDADA"
-                    ? "info"
-                    : "neutral"
-                }
-              >
-                {inspectedSession.status === "CONCLUIDA"
-                  ? "Concluída"
-                  : inspectedSession.status === "VALIDADA"
-                  ? "Validada"
-                  : "Planejada"}
-              </Badge>
-              {inspectedSession.duracaoPlanejada && (
-                <span className="student-session-dialog__meta">
-                  Duração planejada: {inspectedSession.duracaoPlanejada} min
-                </span>
-              )}
-              {typeof inspectedSession.rpe === "number" && (
-                <span className="student-session-dialog__meta">
-                  RPE (Borg): {inspectedSession.rpe}/10
-                </span>
-              )}
-            </div>
-
-            <div className="student-session-dialog__block">
-              <h3>Descrição da sessão</h3>
-              <p>{inspectedSession.descricao}</p>
-            </div>
-
-            {inspectedSession.resultados && inspectedSession.resultados.length > 0 && (
-              <div className="student-session-dialog__block">
-                <h3>Resultados registrados</h3>
-                <div className="student-session-dialog__results">
-                  {inspectedSession.resultados.map((res) => (
-                    <div key={res.metricaId} className="student-session-dialog__result-card">
-                      <span>{res.titulo}</span>
-                      <strong>{res.valor}</strong>
-                    </div>
-                  ))}
-                </div>
+                    ? "Validada pelo personal"
+                    : "Planejada"}
+                </Badge>
+                {inspectedSession.duracaoPlanejada && (
+                  <span className="student-session-dialog__meta">
+                    Duração estimada: {inspectedSession.duracaoPlanejada} min
+                  </span>
+                )}
+                {typeof inspectedSession.rpe === "number" && (
+                  <span className="student-session-dialog__meta">
+                    RPE (Borg): {inspectedSession.rpe}/10
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        </WorkspaceDialog>
-      )}
+
+              {parsed.activities.length > 0 ? (
+                <div className="student-session-dialog__block">
+                  <h3>Atividades planejadas</h3>
+                  <div className="student-session-dialog__activities">
+                    {parsed.activities.map((act, idx) => (
+                      <div key={act.id} className="student-session-dialog__activity-item">
+                        <span className="student-session-dialog__activity-num">{idx + 1}</span>
+                        <div>
+                          <strong>{act.title}</strong>
+                          {act.description && <p>{act.description}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                !parsed.orientations &&
+                inspectedSession.descricao && (
+                  <div className="student-session-dialog__block">
+                    <h3>Descrição da sessão</h3>
+                    <p>{inspectedSession.descricao}</p>
+                  </div>
+                )
+              )}
+
+              {parsed.orientations && (
+                <div className="student-session-dialog__orientations">
+                  <Info size={16} aria-hidden="true" />
+                  <div>
+                    <strong>Orientações do personal</strong>
+                    <p>{parsed.orientations}</p>
+                  </div>
+                </div>
+              )}
+
+              {inspectedSession.resultados && inspectedSession.resultados.length > 0 && (
+                <div className="student-session-dialog__block">
+                  <h3>Métricas enviadas</h3>
+                  <div className="student-session-dialog__results">
+                    {inspectedSession.resultados.map((res) => (
+                      <div key={res.metricaId} className="student-session-dialog__result-card">
+                        <span>{res.titulo}</span>
+                        <strong>{res.valor}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </WorkspaceDialog>
+        );
+      })()}
 
       {inspectedRoutine && (
         <WorkspaceDialog

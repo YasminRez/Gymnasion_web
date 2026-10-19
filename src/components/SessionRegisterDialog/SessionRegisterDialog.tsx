@@ -9,10 +9,18 @@ import { localDateKey } from "../../features/personal/dashboardModel";
 import { metricError, serializeMetric, sessionCandidates } from "../../features/studentProfile/profileModel";
 import { studentProfileService } from "../../services/studentProfileService";
 import { authError } from "../../utils/authError";
+import { parseAtividades } from "../../utils/activityParser";
 import type { AlunoResponse } from "../../types/student";
 import type { RotinaResponse } from "../../types/rotina";
 import type { StudentTracking } from "../../types/studentProfile";
 import "./SessionRegisterDialog.css";
+
+function formatCandidateOption(s: { dataPlanejada: string; semana: number; atividades: string }, idx: number) {
+  const parsed = parseAtividades(s.atividades);
+  const title = parsed.sessionName || parsed.activities[0]?.title || `Sessão ${idx + 1}`;
+  const count = parsed.activities.length;
+  return `${s.dataPlanejada.split("-").reverse().join("/")} · Semana ${s.semana} · ${title}${count ? ` (${count} ativ.)` : ""}`;
+}
 
 export default function SessionRegisterDialog({ student, routine, tracking, onClose, onSaved }: { student: AlunoResponse; routine: RotinaResponse; tracking: StudentTracking | null; onClose: () => void; onSaved: () => void }) {
   const candidates = sessionCandidates(tracking,student.id);
@@ -29,6 +37,7 @@ export default function SessionRegisterDialog({ student, routine, tracking, onCl
   const allowed = routine.metricas.filter(metric=>metric.quemPreenche!=="ALUNO");
   const blocked = !candidates.length ? "Não há sessão planejada disponível nesta rotina. Cadastre o planejamento antes de registrar os resultados." : !allowed.length ? "Esta rotina não possui métricas que o personal possa preencher." : "";
   const selected = candidates.find(s=>s.sessaoId===sessionId);
+  const selectedParsed = selected ? parseAtividades(selected.atividades) : null;
 
   function continueForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,7 +72,20 @@ export default function SessionRegisterDialog({ student, routine, tracking, onCl
       <div className="session-register__effort" role="status"><strong>{rpe ?? "—"}</strong><div><b>{rpe===null?"Esforço não informado":rpe<=2?"Muito leve":rpe<=4?"Leve":rpe<=6?"Moderado":rpe<=8?"Muito intenso":"Esforço máximo"}</b><p>{rpe===null?"Você pode salvar sem informar o RPE.":"Registre a percepção de esforço relatada pelo aluno."}</p></div></div>
       <footer className="workspace-dialog__actions"><Button variant="ghost" disabled={busy} onClick={()=>setRpeStep(false)}>Voltar</Button><Button variant="ghost" disabled={busy} onClick={()=>void save(null)}>Pular</Button><Button loading={busy} onClick={()=>void save(rpe)}>Salvar sessão</Button></footer>
     </> : <form className="session-register__form" onSubmit={continueForm} noValidate>
-      <FormField id="session-choice" label="Sessão planejada" value={sessionId} options={candidates.map(s=>({value:s.sessaoId,label:s.dataPlanejada.split("-").reverse().join("/")+" · Semana "+s.semana+(s.atividades?" · "+s.atividades:"")}))} onChange={(e: ChangeEvent<HTMLSelectElement>)=>setSessionId(e.target.value)} error={errors.session} disabled={!candidates.length} required />
+      <FormField id="session-choice" label="Sessão planejada (priorizando não realizadas)" value={sessionId} options={candidates.map((s,idx)=>({value:s.sessaoId,label:formatCandidateOption(s,idx)}))} onChange={(e: ChangeEvent<HTMLSelectElement>)=>setSessionId(e.target.value)} error={errors.session} disabled={!candidates.length} required />
+      {selectedParsed && selectedParsed.activities.length > 0 && (
+        <div className="session-register__preview" aria-label="Atividades da sessão selecionada">
+          <strong>{selectedParsed.sessionName || "Atividades planejadas nesta sessão"}</strong>
+          <ul>
+            {selectedParsed.activities.map((act, idx) => (
+              <li key={act.id}>
+                <span>{idx + 1}. {act.title}</span>
+                {act.description && <small> · {act.description}</small>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="session-register__grid"><FormField id="session-date" label="Data da sessão" type="date" value={date} max={localDateKey(new Date())} onChange={(e: ChangeEvent<HTMLInputElement>)=>setDate(e.target.value)} error={errors.date} required /><FormField id="session-duration" label="Duração (minutos)" type="number" min="1" step="1" value={duration} placeholder="Ex.: 52" onChange={(e: ChangeEvent<HTMLInputElement>)=>setDuration(e.target.value)} error={errors.duration} /></div>
       <div className="session-register__metrics-title"><strong>Métricas da rotina</strong><StudentSports student={{...student,modalidades:student.modalidades.filter(m=>m.id===routine.modalidadeId)}} /></div>
       <div className="session-register__grid">{routine.metricas.map(metric=><FormField key={metric.id} id={"session-metric-"+metric.id} label={metric.titulo+(metric.tipo==="TEMPO"?" (mm:ss)":metric.tipo==="FREQUENCIA_CARDIACA"?" (bpm)":"")} value={values[metric.id]||""} maxLength={255} disabled={metric.quemPreenche==="ALUNO"} hint={metric.quemPreenche==="ALUNO"?"Preenchimento exclusivo do aluno.":undefined} placeholder={metric.tipo==="TEMPO"?"01:42":metric.tipo==="TEXTO"?"Registre suas observações":"Informe o valor"} onChange={(e: ChangeEvent<HTMLInputElement>)=>{setValues(previous=>({...previous,[metric.id]:e.target.value}));setErrors(previous=>({...previous,[metric.id]:""}));}} error={errors[metric.id]} />)}</div>

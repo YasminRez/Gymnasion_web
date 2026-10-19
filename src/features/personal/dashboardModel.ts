@@ -6,8 +6,10 @@ export function localDateKey(date: Date) {
 export function completedSessions(histories: StudentHistory[]) {
   return [...new Map(histories.flatMap(item => item.sessions).filter(item => item.status === "CONCLUIDA" && item.dataReal).map(item => [item.id,item])).values()];
 }
-export function lastSession(histories: StudentHistory[], alunoId: string): TrainingSession | undefined {
-  return histories.find(item => item.alunoId === alunoId)?.sessions.filter(item => item.status === "CONCLUIDA" && item.dataReal).sort((a,b) => b.dataReal!.localeCompare(a.dataReal!))[0];
+export function lastSession(histories: StudentHistory[], alunoId: string, activeRoutineIds?: string[]): TrainingSession | undefined {
+  const list = histories.find(item => item.alunoId === alunoId)?.sessions.filter(item => item.status === "CONCLUIDA" && item.dataReal) || [];
+  const filtered = activeRoutineIds ? list.filter(item => activeRoutineIds.includes(item.rotinaTreinoId)) : list;
+  return filtered.sort((a,b) => b.dataReal!.localeCompare(a.dataReal!))[0];
 }
 export function weeklySessions(histories: StudentHistory[], now = new Date()) {
   const start = new Date(now.getFullYear(),now.getMonth(),now.getDate());
