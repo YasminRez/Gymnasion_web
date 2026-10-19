@@ -33,8 +33,17 @@ export default function GroupRoutineModal({
   const [conflictPrompt, setConflictPrompt] = useState(false);
   const lock = useRef(false);
 
+  const isRoutineFullyLinked = (routineId: string) => {
+    const routine = routines.find((r) => r.id === routineId);
+    if (!routine || !group.alunos?.length) return false;
+    const routineStudentIds = new Set((routine.alunos || []).map((a) => a.id));
+    return group.alunos.every((student) => routineStudentIds.has(student.id));
+  };
+
+  const isSelectedAlreadyLinked = isRoutineFullyLinked(selectedRoutineId);
+
   async function handleConfirm(substituir?: boolean) {
-    if (!selectedRoutineId || lock.current || busy) return;
+    if (!selectedRoutineId || lock.current || busy || (!substituir && isSelectedAlreadyLinked)) return;
     lock.current = true;
     setBusy(true);
     setError("");
@@ -46,7 +55,14 @@ export default function GroupRoutineModal({
         err,
         "Não foi possível vincular a turma à rotina."
       ).message;
-      const message = extractProblemDetail(err, fallback);
+      let message = extractProblemDetail(err, fallback);
+      if (
+        message.toLowerCase().includes("já possui o treino vinculado") ||
+        message.toLowerCase().includes("já possuem esta rotina") ||
+        message.toLowerCase().includes("já estão vinculados")
+      ) {
+        message = "Todos os alunos desta turma já possuem esta rotina de treino vinculada.";
+      }
       setError(message);
       if (
         message.toLowerCase().includes("já possui uma rotina") ||
@@ -75,11 +91,11 @@ export default function GroupRoutineModal({
             Cancelar
           </Button>
           <Button
-            disabled={!selectedRoutineId || busy || eligibleRoutines.length === 0}
+            disabled={!selectedRoutineId || busy || eligibleRoutines.length === 0 || isSelectedAlreadyLinked}
             loading={busy}
             onClick={() => handleConfirm(false)}
           >
-            Vincular rotina
+            {isSelectedAlreadyLinked ? "Rotina já vinculada a esta turma" : "Vincular rotina"}
           </Button>
         </>
       }
@@ -103,7 +119,9 @@ export default function GroupRoutineModal({
           >
             {eligibleRoutines.map((routine) => {
               const isSelected = selectedRoutineId === routine.id;
-              const isCurrent = currentLinked?.id === routine.id;
+              const isFullyLinked = isRoutineFullyLinked(routine.id);
+              const memberIds = new Set(group.alunos.map((s) => s.id));
+              const linkedGroupStudentsCount = (routine.alunos || []).filter((s) => memberIds.has(s.id)).length;
               const metricsCount = routine.metricas?.length || 0;
               const linkedCount = routine.alunos?.length || 0;
 
@@ -129,11 +147,15 @@ export default function GroupRoutineModal({
                   <div className="group-routine-modal__info">
                     <strong>
                       {routine.titulo}{" "}
-                      {isCurrent && (
+                      {isFullyLinked ? (
                         <small className="group-routine-modal__badge">
                           Vinculada à turma
                         </small>
-                      )}
+                      ) : linkedGroupStudentsCount > 0 ? (
+                        <small className="group-routine-modal__badge" style={{ background: "var(--color-neutral-100)", color: "var(--color-neutral-700)" }}>
+                          {linkedGroupStudentsCount} de {group.alunos.length} alunos
+                        </small>
+                      ) : null}
                     </strong>
                     <span>
                       {routine.nomeModalidade || group.nomeModalidade} ·{" "}
@@ -146,6 +168,12 @@ export default function GroupRoutineModal({
               );
             })}
           </div>
+        )}
+
+        {isSelectedAlreadyLinked && (
+          <p className="group-routine-modal__hint" style={{ color: "var(--color-primary-600)", fontWeight: 500, marginTop: "8px" }}>
+            Todos os alunos desta turma já possuem esta rotina de treino vinculada.
+          </p>
         )}
 
         <p className="group-routine-modal__hint">

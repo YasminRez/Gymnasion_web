@@ -87,7 +87,7 @@ export default function GroupDetails() {
         {students.error && <div className="workspace-error" role="alert">{students.error}<Button variant="ghost" onClick={()=>void refresh()}>Tentar novamente</Button></div>}
         {!students.loading && !students.error && !students.data.some(student=>student.status==="ATIVO") && <p className="workspace-empty">Nenhum aluno ativo disponível para adicionar.</p>}
         <ul className="group-details__members">{group.alunos.map(student=>{
-          const activeStudentRoutine = studentRoutines(routines.data, student.id)[0];
+          const activeStudentRoutine = studentRoutines(routines.data, student.id, group.modalidadeId)[0];
           return <li key={student.id}><Avatar name={student.nome || "Aluno"} /><div><Link to={"/alunos/"+encodeURIComponent(student.id)}>{student.nome || "Aluno"}</Link><p>{student.email || group.nomeModalidade} · <strong>{activeStudentRoutine ? `Rotina: ${activeStudentRoutine.titulo}` : "Sem rotina ativa"}</strong></p></div><Button variant="secondary" disabled={busy || saving} aria-label={"Remover " + (student.nome || "aluno")} onClick={()=>setRemoval(student)} icon={<img src="/groups/imgIconX.svg" alt="" />}>Remover</Button></li>;
         })}</ul>
       </section>

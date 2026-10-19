@@ -99,6 +99,7 @@ export default function NewRoutine() {
       });
   }, [routines.data, routineId]);
 
+
   // Carrega dados da rotina para edição quando routineId está presente
   useEffect(() => {
     if (!routineId) return;

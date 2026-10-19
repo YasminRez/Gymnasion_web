@@ -130,7 +130,14 @@ export default function RoutineAssignModal({
           err,
           "Não foi possível vincular a turma selecionada."
         ).message;
-        const msg = extractProblemDetail(err, fallback);
+        let msg = extractProblemDetail(err, fallback);
+        if (
+          msg.toLowerCase().includes("já possui o treino vinculado") ||
+          msg.toLowerCase().includes("já possuem esta rotina") ||
+          msg.toLowerCase().includes("já estão vinculados")
+        ) {
+          msg = "Todos os alunos desta turma já possuem esta rotina de treino vinculada.";
+        }
         setError(msg);
         if (
           msg.toLowerCase().includes("já possui uma rotina") ||
@@ -186,9 +193,16 @@ export default function RoutineAssignModal({
   }
 
   const modalityName = routine.nomeModalidade || routine.modalidade?.nome || "mesma modalidade";
+  const selectedTurma = allGroups.find((g) => g.id === selectedTurmaId);
+  const isSelectedTurmaAlreadyLinked = Boolean(
+    selectedTurma &&
+    selectedTurma.alunos?.length > 0 &&
+    selectedTurma.alunos.every((a) => existingIds.has(a.id))
+  );
+
   const canConfirm =
     mode === "turma"
-      ? Boolean(selectedTurmaId) && eligibleGroups.length > 0
+      ? Boolean(selectedTurmaId) && eligibleGroups.length > 0 && !isSelectedTurmaAlreadyLinked
       : selectedIds.size > 0;
 
   return (
@@ -214,7 +228,9 @@ export default function RoutineAssignModal({
               onClick={handleAssign}
             >
               {mode === "turma"
-                ? "Vincular turma"
+                ? isSelectedTurmaAlreadyLinked
+                  ? "Turma já vinculada à rotina"
+                  : "Vincular turma"
                 : `Vincular ${selectedIds.size > 0 ? `(${selectedIds.size})` : ""}`}
             </Button>
           </>
