@@ -1,3 +1,4 @@
+import { useAccountSettings } from "../../features/settings/useAccountSettings";
 import { useEffect, useRef, useState } from "react";
 import Avatar from "../Avatar/Avatar";
 import NotificationPopover from "../NotificationPopover/NotificationPopover";
@@ -43,6 +44,7 @@ export default function AppTopbar({
   notificationBusy,
   onRefreshNotifications,
 }: Props) {
+  const { settings } = useAccountSettings();
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -98,7 +100,7 @@ export default function AppTopbar({
             type="button"
             className="ds-topbar__notifications"
             aria-label={
-              notificationCount
+              settings.showNotificationBadge && notificationCount
                 ? `Abrir notificações: ${notificationCount} não lidas`
                 : "Abrir notificações"
             }
@@ -106,14 +108,14 @@ export default function AppTopbar({
             aria-haspopup="dialog"
             onClick={handleNotificationsClick}
           >
-            <img src="/design-system/imgBell.svg" alt="" />
-            {notificationDot ? (
+            <img src="/design-system/imgBellQuiet.svg" alt="" />
+            {settings.showNotificationBadge && (notificationDot ? (
               <span className="ds-topbar__notification-dot" />
             ) : (
               Boolean(notificationCount) && (
                 <span className="ds-topbar__notification-count">{notificationCount}</span>
               )
-            )}
+            ))}
           </button>
 
           {popoverOpen && (
@@ -129,7 +131,7 @@ export default function AppTopbar({
           )}
         </div>
 
-        <Avatar name={userName} initials={userInitials} src={avatar} tone={avatarTone} />
+        <Avatar name={userName} initials={userInitials} src={settings.photo || avatar} tone={avatarTone} />
       </div>
     </header>
   );

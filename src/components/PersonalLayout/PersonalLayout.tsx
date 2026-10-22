@@ -21,6 +21,7 @@ export default function PersonalLayout() {
   const notificationsList = Array.isArray(notifications?.data) ? notifications.data : [];
   const groupsList = Array.isArray(groups?.data) ? groups.data : [];
   const name = studentsList.find(student => student.nomePersonal)?.nomePersonal || "Personal";
+  const isSettings = location.pathname === "/configuracoes";
   const isStudents = location.pathname === "/alunos";
   const isGroups = location.pathname === "/grupos" || location.pathname.startsWith("/grupos/");
   const isGroupDetail = location.pathname.startsWith("/grupos/");
@@ -48,13 +49,13 @@ export default function PersonalLayout() {
           { id: "evolution", label: "Evolução", icon: "imgIconChart" },
           { id: "reports", label: "Relatórios", icon: "imgIconFile", onClick: () => setReportOpen(true) },
         ]}
-        general={[{ id: "settings", label: "Configurações", icon: "imgIconSliders" }, { id: "terms", label: "Termos e privacidade", icon: "imgIconShield", onClick: () => setTermsOpen(true) }]}
+        general={[{ id: "settings", label: "Configurações", icon: "imgIconSliders", to: "/configuracoes" }, { id: "terms", label: "Termos e privacidade", icon: "imgIconShield", onClick: () => setTermsOpen(true) }]}
         footer={<div className="personal-layout__strava"><img src="/design-system/imgIconZap1.svg" alt="" /><strong>Sincronize com o Strava</strong><p>Integração disponível em breve.</p><button disabled>Conectar →</button></div>} />
     </div>
     <div className="personal-layout__body">
       <AppTopbar
         title={
-          isGroups
+          isSettings ? "Configurações" : isGroups
             ? isGroupDetail
               ? group?.nome || "Gerenciar turma"
               : "Turmas"
@@ -75,7 +76,7 @@ export default function PersonalLayout() {
             : `Olá, ${name.split(" ")[0]}`
         }
         subtitle={
-          isGroups
+          isSettings ? "Personalize sua experiência no Gymnasion" : isGroups
             ? isGroupDetail
               ? "Turmas / Gerenciar turma"
               : "Organize alunos em grupos por modalidade ou horário"

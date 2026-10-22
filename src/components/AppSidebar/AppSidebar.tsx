@@ -1,3 +1,4 @@
+import { useAccountSettings } from "../../features/settings/useAccountSettings";
 import { NavLink } from "react-router-dom";
 import type { ReactNode } from "react";
 import Avatar from "../Avatar/Avatar";
@@ -16,6 +17,7 @@ type Props = {
   onLogout: () => void;
 };
 export default function AppSidebar({ role = "personal", user, menu, general, activeId, footer, onLogout }: Props) {
+  const { settings } = useAccountSettings();
   const renderItem = (item: SidebarItem) => {
     const content = <><img src={`/design-system/${item.icon}.svg`} alt="" /><span>{item.label}</span>{item.count !== undefined && item.count > 0 && <span className="ds-sidebar__count">{item.count}</span>}</>;
     return item.to
@@ -31,7 +33,7 @@ export default function AppSidebar({ role = "personal", user, menu, general, act
     <div className="ds-sidebar__spacer" />
     {footer}
     <div className="ds-sidebar__user">
-      <Avatar name={user.name} initials={user.initials} src={user.avatar} tone={role === "student" ? "info" : "primary"} />
+      <Avatar name={user.name} initials={user.initials} src={settings.photo || user.avatar} tone={role === "student" ? "info" : "primary"} />
       <div><strong>{user.name}</strong><span>{user.subtitle}</span></div>
       <button type="button" onClick={onLogout} aria-label="Sair da conta"><img src="/design-system/imgIconLogout.svg" alt="" /></button>
     </div>

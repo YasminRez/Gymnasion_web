@@ -21,6 +21,7 @@ import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicOnlyRoute from "./components/PublicOnlyRoute/PublicOnlyRoute";
 import { SESSION_EXPIRED_EVENT } from "./services/session";
 import Metrics from "./pages/Metrics/Metrics";
+import Settings from "./pages/Settings/Settings";
 import Routines from "./pages/Routines/Routines";
 import NewRoutine from "./pages/Routines/NewRoutine";
 import DesignSystem from "./pages/DesignSystem/DesignSystem";
@@ -67,6 +68,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<StudentProvider><StudentLayout /></StudentProvider>}>
             <Route path="/conta" element={<AccountHome />} />
+            <Route path="/conta/configuracoes" element={<Settings />} />
             <Route path="/conta/treinos" element={<StudentWorkouts />} />
             <Route path="/conta/evolucao" element={<StudentEvolutionPage />} />
           </Route>
@@ -83,6 +85,7 @@ function App() {
             <Route path="/alunos/:studentId/sessoes/:sessionId" element={<StudentSessionDetail />} />
             <Route path="/alunos/:studentId/sessoes/:sessionId/editar" element={<StudentSessionEdit />} />
             <Route path="/home" element={<Dashboard />} />
+            <Route path="/configuracoes" element={<Settings />} />
             <Route path="/rotinas" element={<Routines />} />
             <Route path="/rotinas/nova" element={<NewRoutine />} />
             <Route path="/rotinas/:routineId/editar" element={<NewRoutine />} />

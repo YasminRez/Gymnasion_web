@@ -63,13 +63,13 @@ export default function StudentLayout() {
   const isWorkouts = location.pathname.startsWith("/conta/treinos");
   const isEvolution = location.pathname.startsWith("/conta/evolucao");
 
-  const title = isWorkouts
+  const title = location.pathname === "/conta/configuracoes" ? "Configurações" : isWorkouts
     ? "Meus treinos"
     : isEvolution
     ? "Minha evolução"
     : `Olá, ${student.firstName}`;
 
-  const subtitle = isWorkouts
+  const subtitle = location.pathname === "/conta/configuracoes" ? "Personalize sua experiência no Gymnasion" : isWorkouts
     ? "Sua rotina ativa, organizada por semanas"
     : isEvolution
     ? "Os mesmos gráficos que seu personal acompanha"
@@ -126,7 +126,7 @@ export default function StudentLayout() {
               icon: "imgIconZap",
               onClick: () => setStravaModalOpen?.(true),
             },
-            { id: "settings", label: "Configurações", icon: "imgIconSliders" },
+            { id: "settings", label: "Configurações", icon: "imgIconSliders", to: "/conta/configuracoes" },
             {
               id: "terms",
               label: "Termos e privacidade",
