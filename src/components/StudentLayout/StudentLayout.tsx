@@ -10,6 +10,7 @@ import Badge from "../Badge/Badge";
 import Button from "../Button/Button";
 import StudentRpeModal from "../StudentRpeModal/StudentRpeModal";
 import ReportDialog from "../ReportDialog/ReportDialog";
+import StravaModal from "../StravaModal/StravaModal";
 import { useStudentArea } from "../../features/studentArea/StudentContext";
 import { authService } from "../../services/authService";
 import { relatorioService } from "../../services/relatorioService";
@@ -37,6 +38,8 @@ export default function StudentLayout() {
     setInspectedRoutine,
     messageModalOpen,
     setMessageModalOpen,
+    stravaModalOpen,
+    setStravaModalOpen,
     sendObservationToPersonal,
     notifications,
     readNotification,
@@ -117,7 +120,12 @@ export default function StudentLayout() {
             { id: "reports", label: "Meus relatórios", icon: "imgIconFile", onClick: () => setReportOpen(true) },
           ]}
           general={[
-            { id: "integrations", label: "Integrações", icon: "imgIconZap" },
+            {
+              id: "integrations",
+              label: "Integrações (Strava)",
+              icon: "imgIconZap",
+              onClick: () => setStravaModalOpen?.(true),
+            },
             { id: "settings", label: "Configurações", icon: "imgIconSliders" },
             {
               id: "terms",
@@ -367,6 +375,7 @@ export default function StudentLayout() {
       )}
 
       {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}
+      {stravaModalOpen && <StravaModal onClose={() => setStravaModalOpen?.(false)} />}
     </div>
   );
 }

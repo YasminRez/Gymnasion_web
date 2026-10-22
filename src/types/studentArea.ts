@@ -1,4 +1,4 @@
-import type { TipoMetrica } from "./metric";
+import type { CampoStrava, TipoMetrica } from "./metric";
 
 export type StudentSessionStatus = "PLANEJADA" | "CONCLUIDA" | "VALIDADA";
 
@@ -143,6 +143,7 @@ export interface StudentExecutionMetricDTO {
   unidade?: string | null;
   obrigatoria: boolean;
   quemPreenche: "ALUNO" | "PERSONAL" | "AMBOS";
+  campoStrava?: CampoStrava | null;
 }
 
 export interface StudentExecutionFormDTO {

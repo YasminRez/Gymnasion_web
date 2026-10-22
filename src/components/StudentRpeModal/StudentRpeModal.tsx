@@ -1,13 +1,16 @@
 import { useContext, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 import Badge from "../Badge/Badge";
 import Button from "../Button/Button";
 import { StudentContext, type StudentExecutionConfirmDetails } from "../../features/studentArea/StudentContext";
 import { getBorgInfo } from "../../features/studentArea/studentAreaModel";
 import { localDateKey } from "../../features/personal/dashboardModel";
 import { alunoService } from "../../services/alunoService";
+import { stravaService } from "../../services/stravaService";
 import { authError } from "../../utils/authError";
 import type { StudentExecutionMetricDTO, StudentSessionMetricResult } from "../../types/studentArea";
+import type { StravaAtividade } from "../../types/strava";
 import "./StudentRpeModal.css";
 
 interface StudentRpeModalProps {
@@ -100,6 +103,126 @@ function serializeStudentMetricValue(rawType: string, rawValue: string): string 
     return trimmed.replace(",", ".");
   }
   return trimmed;
+}
+
+function formatStravaDate(isoDate?: string): string {
+  if (!isoDate) return "";
+  const parts = isoDate.split("-");
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return isoDate;
+}
+
+function mapStravaActivityToMetrics(
+  act: StravaAtividade,
+  allMetrics: StudentExecutionMetricDTO[]
+): {
+  dateReal: string;
+  duration: string;
+  metricValues: Record<string, string>;
+  stravaFilled: Record<string, boolean>;
+} {
+  const metricValues: Record<string, string> = {};
+  const stravaFilled: Record<string, boolean> = {};
+
+  for (const m of allMetrics) {
+    let val: string | null = null;
+    const campo = m.campoStrava;
+
+    // 1. Prioridade: Campo Strava explícito
+    if (campo && campo !== "NENHUM") {
+      switch (campo) {
+        case "DISTANCIA_KM":
+          if (act.distanciaKm != null) val = String(act.distanciaKm);
+          break;
+        case "DISTANCIA_METROS":
+          if (act.distanciaMetros != null) val = String(Math.round(act.distanciaMetros));
+          break;
+        case "TEMPO_MOVIMENTO":
+          if (act.tempoFormatado) val = act.tempoFormatado;
+          break;
+        case "TEMPO_TOTAL":
+          if (act.tempoTotalFormatado || act.tempoFormatado) val = act.tempoTotalFormatado || act.tempoFormatado || "";
+          break;
+        case "DURACAO_MINUTOS":
+          if (act.duracaoMinutos != null) val = String(act.duracaoMinutos);
+          break;
+        case "FREQUENCIA_CARDIACA_MEDIA":
+          if (act.frequenciaCardiacaMedia != null) val = String(act.frequenciaCardiacaMedia);
+          break;
+        case "FREQUENCIA_CARDIACA_MAXIMA":
+          if (act.frequenciaCardiacaMaxima != null) val = String(act.frequenciaCardiacaMaxima);
+          break;
+        case "CADENCIA_MEDIA":
+          if (act.cadenciaMedia != null) val = String(Math.round(act.cadenciaMedia));
+          break;
+        case "POTENCIA_MEDIA_WATTS":
+          if (act.potenciaMediaWatts != null) val = String(Math.round(act.potenciaMediaWatts));
+          break;
+        case "POTENCIA_MAXIMA_WATTS":
+          if (act.potenciaMaximaWatts != null) val = String(Math.round(act.potenciaMaximaWatts));
+          break;
+        case "ELEVACAO_GANHO_METROS":
+          if (act.elevacaoGanhoMetros != null) val = String(Math.round(act.elevacaoGanhoMetros));
+          break;
+        case "VELOCIDADE_MEDIA_KMH":
+          if (act.velocidadeMediaKmh != null) val = String(act.velocidadeMediaKmh);
+          break;
+        case "VELOCIDADE_MAXIMA_KMH":
+          if (act.velocidadeMaximaKmh != null) val = String(act.velocidadeMaximaKmh);
+          break;
+        case "CALORIAS":
+          if (act.calorias != null) val = String(Math.round(act.calorias));
+          break;
+        case "RITMO_MEDIO":
+          if (act.ritmoMedio) val = act.ritmoMedio;
+          break;
+      }
+    } else {
+      // 2. Fallback Heurístico para métricas legadas sem campo_strava
+      const norm = normalizeMetricType(m.tipo);
+      const titleLower = (m.titulo || "").toLowerCase();
+
+      if (norm === "FREQUENCIA_CARDIACA") {
+        if (act.frequenciaCardiacaMedia != null) val = String(act.frequenciaCardiacaMedia);
+      } else if (norm === "TEMPO") {
+        if (act.tempoFormatado) val = act.tempoFormatado;
+      } else if (norm === "NUMERICO") {
+        if (titleLower.includes("dist") || titleLower.includes("km") || titleLower.includes("quilometr")) {
+          if (act.distanciaKm != null) val = String(act.distanciaKm);
+        } else if (titleLower.includes("metro") && !titleLower.includes("km")) {
+          if (act.distanciaMetros != null) val = String(Math.round(act.distanciaMetros));
+        } else if (titleLower.includes("cadenc") || titleLower.includes("passo") || titleLower.includes("spm")) {
+          if (act.cadenciaMedia != null) val = String(Math.round(act.cadenciaMedia));
+        } else if (titleLower.includes("potenc") || titleLower.includes("watt")) {
+          if (act.potenciaMediaWatts != null) val = String(Math.round(act.potenciaMediaWatts));
+        } else if (titleLower.includes("calori") || titleLower.includes("kcal") || titleLower.includes("gasto")) {
+          if (act.calorias != null) val = String(Math.round(act.calorias));
+        } else if (titleLower.includes("elevac") || titleLower.includes("altimetri")) {
+          if (act.elevacaoGanhoMetros != null) val = String(Math.round(act.elevacaoGanhoMetros));
+        } else if (titleLower.includes("velocidad") || titleLower.includes("km/h")) {
+          if (act.velocidadeMediaKmh != null) val = String(act.velocidadeMediaKmh);
+        }
+      } else if (norm === "TEXTO") {
+        if (titleLower.includes("ritmo") || titleLower.includes("pace")) {
+          if (act.ritmoMedio) val = act.ritmoMedio;
+        }
+      }
+    }
+
+    if (val != null && val !== "") {
+      metricValues[m.id] = val;
+      stravaFilled[m.id] = true;
+    }
+  }
+
+  return {
+    dateReal: act.data || "",
+    duration: act.duracaoMinutos != null ? String(act.duracaoMinutos) : "",
+    metricValues,
+    stravaFilled
+  };
 }
 
 export default function StudentRpeModal({
@@ -196,6 +319,88 @@ export default function StudentRpeModal({
     [metrics]
   );
 
+  const [stravaConnected, setStravaConnected] = useState<boolean>(false);
+  const [stravaActivities, setStravaActivities] = useState<StravaAtividade[]>([]);
+  const [loadingStrava, setLoadingStrava] = useState<boolean>(false);
+  const [selectedStravaId, setSelectedStravaId] = useState<string | null>(null);
+  const [stravaFilledMap, setStravaFilledMap] = useState<Record<string, boolean>>({});
+  const [connectingStrava, setConnectingStrava] = useState<boolean>(false);
+
+  async function handleConnectStravaFromModal() {
+    try {
+      setConnectingStrava(true);
+      const res = await stravaService.obterAuthUrl();
+      if (res.authUrl) {
+        window.location.href = res.authUrl;
+      }
+    } catch (err) {
+      setConnectingStrava(false);
+      const parsed = authError(err, "Não foi possível iniciar a conexão com o Strava.");
+      toast.error(parsed.message);
+    }
+  }
+
+  // Carrega status e atividades do Strava (US-14 / US-22)
+  useEffect(() => {
+    let active = true;
+    async function initStrava() {
+      try {
+        setLoadingStrava(true);
+        const status = await stravaService.obterStatus();
+        if (!active) return;
+        if (status.conectado && !status.expirado) {
+          setStravaConnected(true);
+          const acts = await stravaService.listarAtividades(10);
+          if (!active) return;
+          setStravaActivities(acts);
+          if (acts.length > 0) {
+            setSelectedStravaId(acts[0].id);
+          }
+        } else {
+          setStravaConnected(false);
+        }
+      } catch {
+        if (active) setStravaConnected(false);
+      } finally {
+        if (active) setLoadingStrava(false);
+      }
+    }
+    initStrava();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Preenche métricas quando uma atividade é selecionada ou as métricas chegam
+  useEffect(() => {
+    if (!selectedStravaId || stravaActivities.length === 0 || metrics.length === 0) return;
+    const act = stravaActivities.find((a) => a.id === selectedStravaId);
+    if (!act) return;
+
+    const mapped = mapStravaActivityToMetrics(act, metrics);
+    if (mapped.dateReal) setDateReal(mapped.dateReal);
+    if (mapped.duration) setDuration(mapped.duration);
+    setValues((prev) => ({ ...prev, ...mapped.metricValues }));
+    setStravaFilledMap(mapped.stravaFilled);
+  }, [selectedStravaId, stravaActivities, metrics]);
+
+  function handleSelectStravaActivity(actId: string) {
+    if (!actId) {
+      setSelectedStravaId(null);
+      setStravaFilledMap({});
+      return;
+    }
+    setSelectedStravaId(actId);
+    const act = stravaActivities.find((a) => a.id === actId);
+    if (act && metrics.length > 0) {
+      const mapped = mapStravaActivityToMetrics(act, metrics);
+      if (mapped.dateReal) setDateReal(mapped.dateReal);
+      if (mapped.duration) setDuration(mapped.duration);
+      setValues((prev) => ({ ...prev, ...mapped.metricValues }));
+      setStravaFilledMap(mapped.stravaFilled);
+    }
+  }
+
   function validateStepOne(): boolean {
     const nextErrors: Record<string, string> = {};
 
@@ -240,13 +445,18 @@ export default function StudentRpeModal({
 
     const duracaoNum = duration.trim() ? Number(duration.trim()) : null;
     const filledMetrics = studentMetrics.filter((m) => (values[m.id] || "").trim().length > 0);
+    const filledPersonalStravaMetrics = personalOnlyMetrics.filter(
+      (m) => (values[m.id] || "").trim().length > 0
+    );
 
-    const payloadResultados = filledMetrics.map((m) => ({
+    const allMetricsToSave = [...filledMetrics, ...filledPersonalStravaMetrics];
+
+    const payloadResultados = allMetricsToSave.map((m) => ({
       metricaId: m.id,
       valor: serializeStudentMetricValue(m.tipo, values[m.id]),
     }));
 
-    const localResults: StudentSessionMetricResult[] = filledMetrics.map((m) => ({
+    const localResults: StudentSessionMetricResult[] = allMetricsToSave.map((m) => ({
       metricaId: m.id,
       titulo: m.titulo,
       tipo: m.tipo,
@@ -349,6 +559,146 @@ export default function StudentRpeModal({
 
       {step === "metrics" ? (
         <form className="student-rpe-modal__form" onSubmit={handleContinueToRpe} noValidate>
+          {/* Sincronização com Strava (US-14 / US-22) */}
+          {stravaConnected && (
+            <div
+              className="student-rpe-modal__strava-box"
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                padding: "12px 14px",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    color: "#0f172a",
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="#fc5200" aria-hidden="true">
+                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7.008 13.828h4.172" />
+                  </svg>
+                  Sincronizar com atividade do Strava
+                </span>
+                {selectedStravaId && (
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      background: "rgba(252, 82, 0, 0.1)",
+                      color: "#fc5200",
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Atividade vinculada
+                  </span>
+                )}
+              </div>
+
+              {loadingStrava ? (
+                <p style={{ fontSize: "0.8125rem", color: "#64748b", margin: 0 }}>
+                  Carregando atividades recentes do Strava...
+                </p>
+              ) : stravaActivities.length > 0 ? (
+                <div style={{ margin: 0 }}>
+                  <label
+                    htmlFor="strava-activity-select"
+                    style={{
+                      display: "block",
+                      fontSize: "0.75rem",
+                      color: "#64748b",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Escolha a atividade para preencher os dados automaticamente:
+                  </label>
+                  <select
+                    id="strava-activity-select"
+                    value={selectedStravaId || ""}
+                    onChange={(e) => handleSelectStravaActivity(e.target.value)}
+                    disabled={busy}
+                    style={{
+                      width: "100%",
+                      padding: "8px 10px",
+                      borderRadius: "6px",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "0.875rem",
+                      background: "#fff",
+                      color: "#0f172a",
+                    }}
+                  >
+                    {stravaActivities.map((act) => (
+                      <option key={act.id} value={act.id}>
+                        {act.esporte || act.tipo}: {act.nome} — {formatStravaDate(act.data)} ({act.distanciaFormatada || (act.distanciaKm ? `${act.distanciaKm} km` : "")} {act.tempoFormatado ? `· ${act.tempoFormatado}` : ""})
+                      </option>
+                    ))}
+                    <option value="">Não importar do Strava (Preencher manualmente)</option>
+                  </select>
+                </div>
+              ) : (
+                <p style={{ fontSize: "0.8125rem", color: "#64748b", margin: 0 }}>
+                  Nenhuma atividade recente encontrada no Strava.
+                </p>
+              )}
+            </div>
+          )}
+
+          {!stravaConnected && !loadingStrava && (
+            <div
+              className="student-rpe-modal__strava-box"
+              style={{
+                background: "#f8fafc",
+                border: "1px dashed #cbd5e1",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8125rem", color: "#475569" }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="#fc5200" aria-hidden="true" style={{ flexShrink: 0 }}>
+                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7.008 13.828h4.172" />
+                </svg>
+                <span>Conecte o <strong>Strava</strong> para preencher métricas deste treino automaticamente.</span>
+              </div>
+              <button
+                type="button"
+                disabled={connectingStrava}
+                onClick={handleConnectStravaFromModal}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#fc5200",
+                  fontWeight: 600,
+                  fontSize: "0.8125rem",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  textDecoration: "underline",
+                }}
+              >
+                {connectingStrava ? "Conectando..." : "Conectar Strava →"}
+              </button>
+            </div>
+          )}
+
           {/* Data real e duração (US-22 C7) */}
           <div className="student-rpe-modal__row-2">
             <div className="student-rpe-modal__field">
@@ -421,6 +771,26 @@ export default function StudentRpeModal({
                           {metric.obrigatoria ? " *" : ""}
                         </label>
                         <div className="student-rpe-modal__metric-badges">
+                          {stravaFilledMap[metric.id] && (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                background: "rgba(252, 82, 0, 0.1)",
+                                color: "#fc5200",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" width="10" height="10" fill="#fc5200" aria-hidden="true">
+                                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7.008 13.828h4.172" />
+                              </svg>
+                              Strava
+                            </span>
+                          )}
                           <span className="student-rpe-modal__metric-type">
                             {metricTypeLabel(metric.tipo)}
                           </span>
@@ -429,6 +799,12 @@ export default function StudentRpeModal({
                           </Badge>
                         </div>
                       </div>
+
+                      {metric.obrigatoria && !values[metric.id] && selectedStravaId && (
+                        <span style={{ fontSize: "0.75rem", color: "#d97706", display: "block", marginBottom: "6px" }}>
+                          Não detectada no Strava nesta atividade — informe manualmente.
+                        </span>
+                      )}
 
                       {normType === "TEXTO" ? (
                         <textarea
@@ -474,16 +850,60 @@ export default function StudentRpeModal({
             )}
 
             {personalOnlyMetrics.length > 0 && (
-              <div className="student-rpe-modal__personal-metrics-note">
-                <strong>Avaliação do personal trainer:</strong>{" "}
-                <span>
-                  {personalOnlyMetrics
-                    .map((m) => `${m.titulo} (${m.obrigatoria ? "obrigatória" : "opcional"})`)
-                    .join(", ")}{" "}
-                  {personalOnlyMetrics.length === 1
-                    ? "será preenchida pelo seu personal após a conclusão."
-                    : "serão preenchidas pelo seu personal após a conclusão."}
-                </span>
+              <div
+                className="student-rpe-modal__personal-metrics-note"
+                style={{
+                  marginTop: "16px",
+                  padding: "12px",
+                  background: "#f8fafc",
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <strong style={{ display: "block", marginBottom: "6px" }}>
+                  Métricas avaliadas pelo Personal Trainer:
+                </strong>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {personalOnlyMetrics.map((m) => {
+                    const stravaVal = values[m.id];
+                    return (
+                      <div
+                        key={m.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        <span>
+                          {m.titulo} {m.obrigatoria ? <span style={{ color: "#ef4444" }}>*</span> : ""}
+                        </span>
+                        {stravaVal ? (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              background: "#ecfdf5",
+                              color: "#065f46",
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              fontWeight: 600,
+                              fontSize: "0.8125rem",
+                            }}
+                          >
+                            Strava: {stravaVal} (Automático)
+                          </span>
+                        ) : (
+                          <span style={{ color: "#64748b", fontSize: "0.8125rem" }}>
+                            Pendente para o personal
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

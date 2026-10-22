@@ -29,6 +29,7 @@ import PersonalLayout from "./components/PersonalLayout/PersonalLayout";
 import StudentSessionDetail from "./pages/StudentSessionDetail/StudentSessionDetail";
 import StudentSessionEdit from "./pages/StudentSessionEdit/StudentSessionEdit";
 import RoutineSessionPlanner from "./pages/RoutineSessionPlanner/RoutineSessionPlanner";
+import StravaCallbackPage from "./pages/StravaCallback/StravaCallbackPage";
 
 
 function App() {
@@ -56,6 +57,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/recuperar-senha" element={<PasswordRecovery />} />
         <Route path="/cadastro-aluno" element={<SignUpStudent />} />
+        <Route path="/strava/callback" element={<StravaCallbackPage />} />
 
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<SignIn />} />

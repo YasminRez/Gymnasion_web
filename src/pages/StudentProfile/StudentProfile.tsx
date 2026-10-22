@@ -19,11 +19,13 @@ import { localDateKey } from "../../features/personal/dashboardModel";
 import { evolutionSeries, formatMetric, ownHistory, buildActiveRoutineSessions } from "../../features/studentProfile/profileModel";
 import { studentProfileService } from "../../services/studentProfileService";
 import { relatorioService } from "../../services/relatorioService";
+import { stravaService } from "../../services/stravaService";
 import { authError } from "../../utils/authError";
 import { formatPhone } from "../SignUp/validation";
 import type { StudentTracking } from "../../types/studentProfile";
 import type { TrainingSession } from "../../types/personalDashboard";
 import type { RotinaResponse } from "../../types/rotina";
+import type { StravaStatusResponse } from "../../types/strava";
 import "./StudentProfile.css";
 
 export default function StudentProfile() {
@@ -45,11 +47,13 @@ function StudentProfileContent({studentId}:{studentId:string}) {
   const [assign,setAssign]=useState(false);
   const [unlinkRoutine,setUnlinkRoutine]=useState<RotinaResponse | null>(null);
   const [report,setReport]=useState(false);
+  const [stravaStatus,setStravaStatus]=useState<StravaStatusResponse | null>(null);
   const version=useRef(0);
   const authorized=Boolean(student);
   const load=useCallback(async()=>{
     if(!authorized) return;
     const request=++version.current;
+    stravaService.obterStatusAluno(studentId).then(res=>{ if(request===version.current) setStravaStatus(res); }).catch(()=>{});
     const result=await Promise.allSettled([studentProfileService.tracking(studentId),studentProfileService.routines(studentId),studentProfileService.history(studentId)]);
     if(request!==version.current)return;
     const [trackingResult,routineResult,historyResult]=result;
@@ -77,7 +81,7 @@ function StudentProfileContent({studentId}:{studentId:string}) {
   const best=primarySeries.points.length?Math.min(...primarySeries.points.map(p=>p.value)):null;
   const blocked=student.status!=="ATIVO"?"Somente alunos ativos podem receber novos registros.":loading?"Carregando o planejamento do aluno.":errors.tracking||errors.routines?"Não foi possível consultar a rotina. Tente carregar novamente.":!active?"Vincule uma rotina ativa antes de registrar uma sessão.":"";
   return <div className="student-profile">
-    <section className="workspace-card student-profile__header" aria-label="Dados do aluno"><Avatar name={student.usuario.nome} tone="info" className="student-profile__avatar"/><div className="student-profile__identity"><div className="student-profile__name"><h1>{student.usuario.nome}</h1><Badge tone={student.status==="ATIVO"?"success":student.status==="PENDENTE"?"warning":"neutral"}>{student.status==="ATIVO"?"Ativo":student.status==="PENDENTE"?"Pendente":"Inativo"}</Badge><StudentSports student={student}/></div><div className="student-profile__contacts"><span title="A data de nascimento ainda não é fornecida pelo backend." tabIndex={0}><img src="/student-profile/imgIconCal.svg" alt=""/>Nascimento não informado</span><span><img src="/student-profile/imgIconMail.svg" alt=""/>{student.usuario.email}</span><span><img src="/student-profile/imgIconActivity1.svg" alt=""/>{formatPhone(student.usuario.celular)||"Contato não informado"}</span></div></div><div className="student-profile__actions">{["ATIVO","INATIVO"].includes(student.status)?<Button variant="secondary" onClick={()=>setReport(true)}>Gerar relatório</Button>:<UnavailableAction variant="secondary" reason="O relatório fica disponível depois que o aluno aceita o convite e registra treinos.">Gerar relatório</UnavailableAction>}{blocked?<UnavailableAction reason={blocked}>+ Registrar sessão</UnavailableAction>:<Button onClick={()=>setRegister(true)}>+ Registrar sessão</Button>}<details className="student-profile__menu"><summary aria-label="Mais ações do aluno"><img src="/student-profile/imgIconMore.svg" alt=""/></summary><div><Button variant="ghost" disabled={Boolean(busyId)||notificationBusy||!["ATIVO","INATIVO"].includes(student.status)} onClick={()=>setStatus(true)}>{student.status==="INATIVO"?"Reativar aluno":"Desativar aluno"}</Button></div></details></div></section>
+    <section className="workspace-card student-profile__header" aria-label="Dados do aluno"><Avatar name={student.usuario.nome} tone="info" className="student-profile__avatar"/><div className="student-profile__identity"><div className="student-profile__name"><h1>{student.usuario.nome}</h1><Badge tone={student.status==="ATIVO"?"success":student.status==="PENDENTE"?"warning":"neutral"}>{student.status==="ATIVO"?"Ativo":student.status==="PENDENTE"?"Pendente":"Inativo"}</Badge>{stravaStatus?.conectado && <Badge tone={stravaStatus.expirado ? "warning" : "info"} title={stravaStatus.nomeAtleta ? `Strava: ${stravaStatus.nomeAtleta}` : "Strava conectado"}>Strava {stravaStatus.expirado ? "(expirado)" : "ativo"}</Badge>}<StudentSports student={student}/></div><div className="student-profile__contacts"><span title="A data de nascimento ainda não é fornecida pelo backend." tabIndex={0}><img src="/student-profile/imgIconCal.svg" alt=""/>Nascimento não informado</span><span><img src="/student-profile/imgIconMail.svg" alt=""/>{student.usuario.email}</span><span><img src="/student-profile/imgIconActivity1.svg" alt=""/>{formatPhone(student.usuario.celular)||"Contato não informado"}</span></div></div><div className="student-profile__actions">{["ATIVO","INATIVO"].includes(student.status)?<Button variant="secondary" onClick={()=>setReport(true)}>Gerar relatório</Button>:<UnavailableAction variant="secondary" reason="O relatório fica disponível depois que o aluno aceita o convite e registra treinos.">Gerar relatório</UnavailableAction>}{blocked?<UnavailableAction reason={blocked}>+ Registrar sessão</UnavailableAction>:<Button onClick={()=>setRegister(true)}>+ Registrar sessão</Button>}<details className="student-profile__menu"><summary aria-label="Mais ações do aluno"><img src="/student-profile/imgIconMore.svg" alt=""/></summary><div><Button variant="ghost" disabled={Boolean(busyId)||notificationBusy||!["ATIVO","INATIVO"].includes(student.status)} onClick={()=>setStatus(true)}>{student.status==="INATIVO"?"Reativar aluno":"Desativar aluno"}</Button></div></details></div></section>
     <nav className="student-profile__tabs" aria-label="Seções do perfil">{[["overview","Visão geral"],["evolution","Evolução"],["routines","Rotinas"],["history","Histórico"]].map(([key,label])=><button key={key} aria-current={tab===key?"page":undefined} onClick={()=>changeTab(key)}>{label}{key==="routines"&&!loading&&!errors.routines&&<span>{routines.length}</span>}{key==="history"&&!loading&&!errors.history&&<span>{sessions.length}</span>}</button>)}</nav>
     {Object.values(errors).some(Boolean)&&<div className="workspace-error" role="alert">Alguns dados do perfil não puderam ser atualizados. <Button variant="secondary" onClick={()=>void load()}>Tentar novamente</Button></div>}
     {loading?<div className="workspace-card" role="status">Carregando rotinas e sessões...</div>:tab==="overview"?<div className="student-profile__overview"><div className="student-profile__main">

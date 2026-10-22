@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Activity, ArrowRight, CheckCircle2, Info } from "lucide-react";
 import Avatar from "../../components/Avatar/Avatar";
@@ -7,6 +7,8 @@ import Button from "../../components/Button/Button";
 import SportTag from "../../components/SportTag/SportTag";
 import StudentSmoothChart from "../../components/StudentSmoothChart/StudentSmoothChart";
 import { useStudentArea } from "../../features/studentArea/StudentContext";
+import { stravaService } from "../../services/stravaService";
+import type { StravaStatusResponse } from "../../types/strava";
 import { parseAtividades } from "../../utils/activityParser";
 import "./AccountHome.css";
 
@@ -38,7 +40,17 @@ export default function AccountHome() {
     averageRpe,
     openRpeModal,
     setSelectedWeekNum,
+    setStravaModalOpen,
   } = useStudentArea();
+
+  const [stravaStatus, setStravaStatus] = useState<StravaStatusResponse | null>(null);
+
+  useEffect(() => {
+    stravaService
+      .obterStatus()
+      .then(setStravaStatus)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (location.hash) {
@@ -525,6 +537,57 @@ export default function AccountHome() {
               </div>
             </div>
           )}
+
+          {/* Card de Integração Strava (US-14) */}
+          <div
+            className="student-panel__strava-widget"
+            onClick={() => setStravaModalOpen?.(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setStravaModalOpen?.(true);
+              }
+            }}
+          >
+            <div className="student-panel__strava-widget-left">
+              <span className="student-panel__strava-widget-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="#fc5200">
+                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7.008 13.828h4.172" />
+                </svg>
+              </span>
+              <div className="student-panel__strava-widget-info">
+                <strong>
+                  {stravaStatus?.conectado
+                    ? `Strava sincronizado (${stravaStatus.nomeAtleta || "Atleta"})`
+                    : "Conectar com o Strava"}
+                </strong>
+                <p>
+                  {stravaStatus?.conectado
+                    ? stravaStatus.expirado
+                      ? "Conexão expirada. Clique para reconectar."
+                      : "Treinos recentes preenchem suas métricas automaticamente."
+                    : "Importe distâncias, tempos e FC dos seus treinos gravados."}
+                </p>
+              </div>
+            </div>
+            <Badge
+              tone={
+                stravaStatus?.conectado
+                  ? stravaStatus.expirado
+                    ? "warning"
+                    : "success"
+                  : "neutral"
+              }
+            >
+              {stravaStatus?.conectado
+                ? stravaStatus.expirado
+                  ? "Expirado"
+                  : "Conectado"
+                : "Conectar"}
+            </Badge>
+          </div>
         </section>
       </div>
     </div>

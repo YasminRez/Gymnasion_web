@@ -13,7 +13,14 @@ export interface RotinaResponse {
   status?: RoutineStatus;
   ativo?: boolean;
   alunos: { id: string; nome: string | null }[];
-  metricas: { id: string; titulo: string; tipo: TipoMetrica; obrigatoria?: boolean; quemPreenche?: "ALUNO" | "PERSONAL" | "AMBOS" }[];
+  metricas: {
+    id: string;
+    titulo: string;
+    tipo: TipoMetrica;
+    obrigatoria?: boolean;
+    quemPreenche?: "ALUNO" | "PERSONAL" | "AMBOS";
+    campoStrava?: import("./strava").CampoStrava | null;
+  }[];
 }
 
 export interface CriarRotinaPayload {

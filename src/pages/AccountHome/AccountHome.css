@@ -517,6 +517,62 @@
   color: var(--color-ink-800, #1e293b);
 }
 
+.student-panel__strava-widget {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-neutral-200, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.student-panel__strava-widget:hover {
+  border-color: #fc5200;
+  box-shadow: 0 4px 12px rgba(252, 82, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.student-panel__strava-widget-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.student-panel__strava-widget-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(252, 82, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.student-panel__strava-widget-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.student-panel__strava-widget-info strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink-900, #0f172a);
+}
+
+.student-panel__strava-widget-info p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-ink-500, #64748b);
+  line-height: 1.3;
+}
+
 @media (max-width: 1100px) {
   .student-panel__stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
