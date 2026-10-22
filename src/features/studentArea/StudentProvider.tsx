@@ -42,6 +42,7 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
   const [inspectedSession, setInspectedSession] = useState<StudentWorkoutSession | null>(null);
   const [inspectedRoutine, setInspectedRoutine] = useState<StudentHistoricalRoutine | null>(null);
   const [messageModalOpen, setMessageModalOpen] = useState<boolean>(false);
+  const [stravaModalOpen, setStravaModalOpen] = useState<boolean>(false);
 
   const [student, setStudent] = useState<StudentIdentityInfo>({
     name: "Aluno",
@@ -497,6 +498,8 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
         setInspectedRoutine,
         messageModalOpen,
         setMessageModalOpen,
+        stravaModalOpen,
+        setStravaModalOpen,
         sendObservationToPersonal,
         markFeedbacksRead,
         notifications,

@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import axios from "axios";
 import WorkspaceDialog from "../WorkspaceDialog/WorkspaceDialog";
 import FormField from "../FormField/FormField";
@@ -8,11 +8,13 @@ import { StudentSports } from "../StudentIdentity/StudentIdentity";
 import { localDateKey } from "../../features/personal/dashboardModel";
 import { metricError, serializeMetric, sessionCandidates } from "../../features/studentProfile/profileModel";
 import { studentProfileService } from "../../services/studentProfileService";
+import { stravaService } from "../../services/stravaService";
 import { authError } from "../../utils/authError";
 import { parseAtividades } from "../../utils/activityParser";
 import type { AlunoResponse } from "../../types/student";
 import type { RotinaResponse } from "../../types/rotina";
 import type { StudentTracking } from "../../types/studentProfile";
+import type { StravaAtividade } from "../../types/strava";
 import "./SessionRegisterDialog.css";
 
 function formatCandidateOption(s: { dataPlanejada: string; semana: number; atividades: string }, idx: number) {
@@ -38,6 +40,80 @@ export default function SessionRegisterDialog({ student, routine, tracking, onCl
   const blocked = !candidates.length ? "Não há sessão planejada disponível nesta rotina. Cadastre o planejamento antes de registrar os resultados." : !allowed.length ? "Esta rotina não possui métricas que o personal possa preencher." : "";
   const selected = candidates.find(s=>s.sessaoId===sessionId);
   const selectedParsed = selected ? parseAtividades(selected.atividades) : null;
+
+  const [stravaActivities, setStravaActivities] = useState<StravaAtividade[]>([]);
+  useEffect(() => {
+    if (student.id) {
+      stravaService.listarAtividadesAluno(student.id, 5).then(setStravaActivities).catch(() => {});
+    }
+  }, [student.id]);
+
+  function handleSelectStrava(actId: string) {
+    if (!actId) return;
+    const act = stravaActivities.find((a) => a.id === actId);
+    if (!act) return;
+    if (act.data) setDate(act.data);
+    if (act.duracaoMinutos) setDuration(String(act.duracaoMinutos));
+    const nextValues: Record<string, string> = { ...values };
+    allowed.forEach((metric) => {
+      const campo = metric.campoStrava;
+      let val: string | null = null;
+      if (campo && campo !== "NENHUM") {
+        switch (campo) {
+          case "DISTANCIA_KM":
+            if (act.distanciaKm != null) val = String(act.distanciaKm);
+            break;
+          case "DISTANCIA_METROS":
+            if (act.distanciaMetros != null) val = String(Math.round(act.distanciaMetros));
+            break;
+          case "TEMPO_MOVIMENTO":
+            if (act.tempoFormatado) val = act.tempoFormatado;
+            break;
+          case "TEMPO_TOTAL":
+            if (act.tempoTotalFormatado || act.tempoFormatado) val = act.tempoTotalFormatado || act.tempoFormatado || "";
+            break;
+          case "FREQUENCIA_CARDIACA_MEDIA":
+            if (act.frequenciaCardiacaMedia != null) val = String(act.frequenciaCardiacaMedia);
+            break;
+          case "FREQUENCIA_CARDIACA_MAXIMA":
+            if (act.frequenciaCardiacaMaxima != null) val = String(act.frequenciaCardiacaMaxima);
+            break;
+          case "CADENCIA_MEDIA":
+            if (act.cadenciaMedia != null) val = String(Math.round(act.cadenciaMedia));
+            break;
+          case "POTENCIA_MEDIA_WATTS":
+            if (act.potenciaMediaWatts != null) val = String(Math.round(act.potenciaMediaWatts));
+            break;
+          case "POTENCIA_MAXIMA_WATTS":
+            if (act.potenciaMaximaWatts != null) val = String(Math.round(act.potenciaMaximaWatts));
+            break;
+          case "ELEVACAO_GANHO_METROS":
+            if (act.elevacaoGanhoMetros != null) val = String(Math.round(act.elevacaoGanhoMetros));
+            break;
+          case "VELOCIDADE_MEDIA_KMH":
+            if (act.velocidadeMediaKmh != null) val = String(act.velocidadeMediaKmh);
+            break;
+          case "CALORIAS":
+            if (act.calorias != null) val = String(Math.round(act.calorias));
+            break;
+          case "RITMO_MEDIO":
+            if (act.ritmoMedio) val = act.ritmoMedio;
+            break;
+        }
+      } else {
+        const titleLower = metric.titulo.toLowerCase();
+        if (metric.tipo === "FREQUENCIA_CARDIACA" && act.frequenciaCardiacaMedia) {
+          val = String(act.frequenciaCardiacaMedia);
+        } else if (metric.tipo === "TEMPO" && act.tempoFormatado) {
+          val = act.tempoFormatado;
+        } else if (titleLower.includes("dist") && act.distanciaKm) {
+          val = String(act.distanciaKm);
+        }
+      }
+      if (val != null) nextValues[metric.id] = val;
+    });
+    setValues(nextValues);
+  }
 
   function continueForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,6 +149,26 @@ export default function SessionRegisterDialog({ student, routine, tracking, onCl
       <footer className="workspace-dialog__actions"><Button variant="ghost" disabled={busy} onClick={()=>setRpeStep(false)}>Voltar</Button><Button variant="ghost" disabled={busy} onClick={()=>void save(null)}>Pular</Button><Button loading={busy} onClick={()=>void save(rpe)}>Salvar sessão</Button></footer>
     </> : <form className="session-register__form" onSubmit={continueForm} noValidate>
       <FormField id="session-choice" label="Sessão planejada (priorizando não realizadas)" value={sessionId} options={candidates.map((s,idx)=>({value:s.sessaoId,label:formatCandidateOption(s,idx)}))} onChange={(e: ChangeEvent<HTMLSelectElement>)=>setSessionId(e.target.value)} error={errors.session} disabled={!candidates.length} required />
+      {stravaActivities.length > 0 && (
+        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "10px 12px", marginBottom: "12px" }}>
+          <label htmlFor="personal-strava-select" style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#fc5200", marginBottom: "4px" }}>
+            Preencher com dados do Strava do aluno
+          </label>
+          <select
+            id="personal-strava-select"
+            defaultValue=""
+            onChange={(e) => handleSelectStrava(e.target.value)}
+            style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.8125rem", background: "#fff" }}
+          >
+            <option value="">Selecione uma atividade para preencher automaticamente...</option>
+            {stravaActivities.map((act) => (
+              <option key={act.id} value={act.id}>
+                {act.esporte || act.tipo}: {act.nome} — {act.data} ({act.distanciaFormatada || (act.distanciaKm ? `${act.distanciaKm} km` : "")} {act.tempoFormatado ? `· ${act.tempoFormatado}` : ""})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {selectedParsed && selectedParsed.activities.length > 0 && (
         <div className="session-register__preview" aria-label="Atividades da sessão selecionada">
           <strong>{selectedParsed.sessionName || "Atividades planejadas nesta sessão"}</strong>

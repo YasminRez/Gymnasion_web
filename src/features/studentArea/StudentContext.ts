@@ -67,6 +67,8 @@ export interface StudentContextValue {
   setInspectedRoutine: (routine: StudentHistoricalRoutine | null) => void;
   messageModalOpen: boolean;
   setMessageModalOpen: (open: boolean) => void;
+  stravaModalOpen?: boolean;
+  setStravaModalOpen?: (open: boolean) => void;
   sendObservationToPersonal: (text: string) => Promise<void>;
   markFeedbacksRead: () => void;
   notifications?: {

@@ -27,7 +27,9 @@ export default function ValidateSessionModal({
   const [notifyStudent, setNotifyStudent] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const pendingCount = session.metricas.filter((m) => m.inclusaoPermitida && !m.valor).length;
+  const pendingCount = session.metricas.filter(
+    (m) => m.inclusaoPermitida && !m.valor && (m.quemPreenche === "PERSONAL" || m.obrigatoria)
+  ).length;
 
   const formatDate = (iso?: string | null) => {
     if (!iso) return "—";
@@ -92,16 +94,24 @@ export default function ValidateSessionModal({
               <strong className="validate-modal__value">{formatDate(session.dataReal)}</strong>
             </div>
 
-            {session.metricas.map((m) => (
-              <div key={m.metricaId} className="validate-modal__row">
-                <span className="validate-modal__label">{m.titulo}</span>
-                {m.valor ? (
-                  <strong className="validate-modal__value">{m.valor}</strong>
-                ) : (
-                  <Badge tone="warning">Pendente · personal</Badge>
-                )}
-              </div>
-            ))}
+            {session.metricas.map((m) => {
+              const isPersonalPending =
+                m.inclusaoPermitida && !m.valor && (m.quemPreenche === "PERSONAL" || m.obrigatoria);
+              return (
+                <div key={m.metricaId} className="validate-modal__row">
+                  <span className="validate-modal__label">
+                    {m.titulo} ({m.obrigatoria ? "Obrigatória" : "Opcional"})
+                  </span>
+                  {m.valor ? (
+                    <strong className="validate-modal__value">{m.valor}</strong>
+                  ) : isPersonalPending ? (
+                    <Badge tone="warning">Pendente · personal</Badge>
+                  ) : (
+                    <Badge tone="neutral">Não informada (opcional)</Badge>
+                  )}
+                </div>
+              );
+            })}
 
             {session.nivelCansaco !== null && session.nivelCansaco !== undefined && (
               <div className="validate-modal__row">

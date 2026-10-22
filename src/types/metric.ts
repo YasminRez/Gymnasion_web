@@ -1,3 +1,7 @@
+import type { CampoStrava } from './strava';
+
+export type { CampoStrava };
+
 export type TipoMetrica =
   | 'NUMERICO'
   | 'TEMPO'
@@ -17,6 +21,7 @@ export interface MetricaResponseDTO {
   modalidade?: { id: number; nome: string };
   obrigatoria?: boolean;
   quemPreenche?: ResponsavelPreenchimento;
+  campoStrava?: CampoStrava | null;
   ativo?: boolean;
   descontinuada?: boolean;
   quantidadeAlunosComRegistros?: number;
@@ -29,6 +34,7 @@ export interface CriarMetricaRequestDTO {
   tipo: TipoMetrica;
   obrigatoria?: boolean;
   quemPreenche?: ResponsavelPreenchimento;
+  campoStrava?: CampoStrava | null;
 }
 
 export interface AtualizarMetricaRequestDTO {
@@ -36,6 +42,7 @@ export interface AtualizarMetricaRequestDTO {
   tipo: TipoMetrica;
   obrigatoria?: boolean;
   quemPreenche?: ResponsavelPreenchimento;
+  campoStrava?: CampoStrava | null;
 }
 
 export interface MensagemResponseDTO {

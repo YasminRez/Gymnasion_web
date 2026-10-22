@@ -6,6 +6,7 @@ import type {
   ResponsavelPreenchimento,
   TipoMetrica,
 } from "../../types/metric";
+import { CampoStrava, CAMPO_STRAVA_OPTIONS } from "../../types/strava";
 import type { ModalidadeResponseDTO } from "../../types/modalidade";
 import {
   METRIC_TYPE_OPTIONS,
@@ -67,6 +68,10 @@ export default function MetricFormModal({
     return "AMBOS";
   });
 
+  const [campoStrava, setCampoStrava] = useState<CampoStrava>(() => {
+    return isEdit && metricToEdit?.campoStrava ? metricToEdit.campoStrava : "NENHUM";
+  });
+
   const [titleError, setTitleError] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -83,12 +88,14 @@ export default function MetricFormModal({
         setTipo(metricToEdit.tipo);
         setObrigatoria(metricToEdit.obrigatoria !== false);
         setQuemPreenche(metricToEdit.quemPreenche || "AMBOS");
+        setCampoStrava(metricToEdit.campoStrava || "NENHUM");
       } else {
         setModalidadeId(defaultModalidadeId || modalidades[0]?.id || 1);
         setTitulo("");
         setTipo("TEMPO");
         setObrigatoria(true);
         setQuemPreenche("AMBOS");
+        setCampoStrava("NENHUM");
       }
       setTitleError("");
     }
@@ -137,6 +144,7 @@ export default function MetricFormModal({
 
     setSubmitting(true);
     const backendTipo = toBackendTipoMetrica(tipo);
+    const campoStravaPayload = campoStrava === "NENHUM" ? null : campoStrava;
     try {
       if (isEdit && metricToEdit) {
         const updated = await metricaService.atualizarMetrica(metricToEdit.id, {
@@ -144,6 +152,7 @@ export default function MetricFormModal({
           tipo: backendTipo,
           obrigatoria,
           quemPreenche,
+          campoStrava: campoStravaPayload,
         });
         toast.success("Métrica atualizada com sucesso!");
         onSuccess({
@@ -153,6 +162,7 @@ export default function MetricFormModal({
           tipo: backendTipo,
           obrigatoria,
           quemPreenche,
+          campoStrava: campoStravaPayload,
           modalidadeId,
           nomeModalidade: currentModalityName,
         });
@@ -163,6 +173,7 @@ export default function MetricFormModal({
           tipo: backendTipo,
           obrigatoria,
           quemPreenche,
+          campoStrava: campoStravaPayload,
         });
         toast.success("Métrica cadastrada com sucesso!");
         onSuccess({
@@ -171,6 +182,7 @@ export default function MetricFormModal({
           tipo: backendTipo,
           obrigatoria,
           quemPreenche,
+          campoStrava: campoStravaPayload,
           modalidadeId,
           nomeModalidade: currentModalityName,
           quantidadeAlunosComRegistro: 0,
@@ -500,6 +512,31 @@ export default function MetricFormModal({
                 Aluno e personal
               </button>
             </div>
+          </div>
+
+          {/* Vínculo com o Strava (opcional) */}
+          <div className="metric-form-modal__field">
+            <label htmlFor="metric-strava-select" className="metric-form-modal__label">
+              Vincular a dado do Strava (opcional)
+            </label>
+            <select
+              id="metric-strava-select"
+              className="metric-form-modal__select"
+              value={campoStrava || "NENHUM"}
+              onChange={(e) => setCampoStrava(e.target.value as CampoStrava)}
+              disabled={submitting}
+            >
+              {CAMPO_STRAVA_OPTIONS.filter(
+                (opt) => opt.value === "NENHUM" || opt.tiposValidos.includes(normalizeTipo(tipo))
+              ).map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500, #64748b)", marginTop: "4px" }}>
+              Ao importar um treino do Strava, este campo será preenchido automaticamente com o dado selecionado.
+            </p>
           </div>
 
           {/* Footer actions */}

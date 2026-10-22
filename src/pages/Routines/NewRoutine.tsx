@@ -11,6 +11,7 @@ import {
   validateCreateRoutinePayload,
   WEEK_DAYS,
 } from "../../features/routines/routineModel";
+import { getPreenchimentoLabel } from "../../features/metrics/metricModel";
 import { modalidadeService } from "../../services/modalidadeService";
 import { metricaService } from "../../services/metricaService";
 import { rotinaService } from "../../services/rotinaService";
@@ -941,8 +942,9 @@ export default function NewRoutine() {
                         <div className="new-routine-metric-info">
                           <h4>{item.titulo}</h4>
                           <p>
-                            {metricLabels[item.tipo] || item.tipo} · Obrigatória
-                            · aluno
+                            {metricLabels[item.tipo] || item.tipo} ·{" "}
+                            {item.obrigatoria !== false ? "Obrigatória" : "Opcional"} · preenche:{" "}
+                            {getPreenchimentoLabel(item.quemPreenche)}
                           </p>
                         </div>
                       </div>

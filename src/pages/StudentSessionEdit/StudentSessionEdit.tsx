@@ -19,6 +19,8 @@ import Avatar from "../../components/Avatar/Avatar";
 import Checkbox from "../../components/Checkbox/Checkbox";
 import { sessionDetailService } from "../../services/sessionDetailService";
 import { rotinaService } from "../../services/rotinaService";
+import { metricLabels } from "../../features/routines/routineModel";
+import { getPreenchimentoLabel } from "../../features/metrics/metricModel";
 import { authError } from "../../utils/authError";
 import { parseAtividades, serializeAtividades } from "../../utils/activityParser";
 import type { TrainingSession } from "../../types/personalDashboard";
@@ -471,22 +473,13 @@ export default function StudentSessionEdit() {
                     />
                     <div className="metric-check-text">
                       <strong>{m.titulo}</strong>
-                      <span className="metric-type-hint">{m.tipo}</span>
+                      <span className="metric-type-hint">
+                        {metricLabels[m.tipo] || m.tipo} · preenche:{" "}
+                        {getPreenchimentoLabel(m.quemPreenche)}
+                      </span>
                     </div>
-                    <Badge
-                      tone={
-                        m.obrigatoria
-                          ? "danger"
-                          : m.quemPreenche === "PERSONAL"
-                          ? "neutral"
-                          : "info"
-                      }
-                    >
-                      {m.obrigatoria
-                        ? "Obrigatória"
-                        : m.quemPreenche === "PERSONAL"
-                        ? "Personal preenche"
-                        : "Opcional"}
+                    <Badge tone={m.obrigatoria !== false ? "danger" : "info"}>
+                      {m.obrigatoria !== false ? "Obrigatória" : "Opcional"}
                     </Badge>
                   </div>
                 ))

@@ -72,11 +72,12 @@ export default function ProfileRoutineCard({
       <div className="profile-routine__metrics">
         {routine.metricas.map((metric) => {
           const filler = metric.quemPreenche ? fillerLabel[metric.quemPreenche] || metric.quemPreenche : "";
+          const obrigLabel = metric.obrigatoria !== false ? "Obrigatória" : "Opcional";
           return (
-            <span key={metric.id} title={filler ? `Preenchido por: ${filler}${metric.obrigatoria ? " (obrigatória)" : ""}` : undefined}>
+            <span key={metric.id} title={filler ? `Preenchido por: ${filler} (${obrigLabel.toLowerCase()})` : undefined}>
               <img src={"/student-profile/" + metricIcons[metric.tipo] + ".svg"} alt="" />
-              <strong>{metric.titulo}{metric.obrigatoria ? " *" : ""}</strong>
-              <small>· {metricLabels[metric.tipo]}{filler ? ` · ${filler}` : ""}</small>
+              <strong>{metric.titulo}{metric.obrigatoria !== false ? " *" : ""}</strong>
+              <small>· {metricLabels[metric.tipo]} · {obrigLabel}{filler ? ` · ${filler}` : ""}</small>
             </span>
           );
         })}
