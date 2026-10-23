@@ -8,8 +8,11 @@ import type {
 } from "../types/student";
 
 export const personalTrainerService = {
-  async gerarConvite(modalidadeId: number): Promise<ConviteAlunoResponse> {
-    const payload: ConviteAlunoPayload = { modalidadeId };
+  async gerarConvite(modalidadeId: number, emailAluno?: string): Promise<ConviteAlunoResponse> {
+    const payload: ConviteAlunoPayload = {
+      modalidadeId,
+      emailAluno: emailAluno?.trim() || undefined,
+    };
     const { data } = await api.post<ConviteAlunoResponse>(
       "/api/personal-trainers/convites",
       payload

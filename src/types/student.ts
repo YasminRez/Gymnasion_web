@@ -22,8 +22,10 @@ export type AlunoPendente = AlunoResponse;
 
 export interface ConviteAlunoPayload {
   modalidadeId: number;
+  emailAluno?: string;
 }
 
 export interface ConviteAlunoResponse {
   url: string;
+  emailEnviado?: string;
 }

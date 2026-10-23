@@ -45,8 +45,6 @@ export default function PersonalLayout() {
           { id: "groups", label: "Turmas", icon: "imgIconLayers", to: "/grupos" },
           { id: "routines", label: "Rotinas de treino", icon: "imgIconDumbbell", to: "/rotinas" },
           { id: "metrics", label: "Métricas", icon: "imgIconActivity", to: "/metricas" },
-          { id: "modalities", label: "Modalidades", icon: "imgIconGrid" },
-          { id: "evolution", label: "Evolução", icon: "imgIconChart" },
           { id: "reports", label: "Relatórios", icon: "imgIconFile", onClick: () => setReportOpen(true) },
         ]}
         general={[{ id: "settings", label: "Configurações", icon: "imgIconSliders", to: "/configuracoes" }, { id: "terms", label: "Termos e privacidade", icon: "imgIconShield", onClick: () => setTermsOpen(true) }]}

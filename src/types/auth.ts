@@ -4,6 +4,7 @@ export interface SignUpAlunoPayload {
   password: string;
   cpf: string;
   celular: string;
+  aceitouTermos: boolean;
 }
 
 export interface SignUpAlunoResponse {
@@ -22,6 +23,7 @@ export interface SignUpPersonalPayload {
   cpf: string;       
   celular: string;   
   modalidade: number; 
+  aceitouTermos: boolean;
 }
 
 export interface SignUpPersonalResponse {

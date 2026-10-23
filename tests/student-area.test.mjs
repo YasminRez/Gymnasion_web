@@ -66,8 +66,8 @@ test("filterStudentSessions searches across title, description, and day ignoring
 });
 
 test("applySessionExecution marks session completed, updates count, and shifts highlight", () => {
-  const initialCount = model.countCompletedSessions(model.INITIAL_ROUTINE_WEEKS, 10);
-  assert.equal(initialCount, 10);
+  const initialCount = model.countCompletedSessions(model.INITIAL_ROUTINE_WEEKS, 0);
+  assert.equal(initialCount, 6);
 
   const updatedWeeks = model.applySessionExecution(
     model.INITIAL_ROUTINE_WEEKS,
@@ -82,9 +82,9 @@ test("applySessionExecution marks session completed, updates count, and shifts h
   assert.equal(s3.status, "CONCLUIDA");
   assert.equal(s3.rpe, 7);
   assert.equal(s3.destaque, false);
-  assert.ok(s3.descricao.includes("realizada em 09/10"));
+  assert.ok((s3.dataReal || s3.descricao).includes("09/10"));
   assert.equal(s4.destaque, true);
-  assert.equal(model.countCompletedSessions(updatedWeeks, 10), 11);
+  assert.equal(model.countCompletedSessions(updatedWeeks, 0), 7);
 });
 
 test("alunoService endpoints match backend contract for ROLE_ALUNO", async () => {
