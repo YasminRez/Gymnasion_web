@@ -100,7 +100,7 @@ export default function StravaCallbackPage() {
       if (res.authUrl) {
         window.location.href = res.authUrl;
       }
-    } catch (err) {
+    } catch {
       toast.error("Não foi possível gerar nova URL de autorização.");
       setRetrying(false);
     }
