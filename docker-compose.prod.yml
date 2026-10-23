@@ -1,0 +1,52 @@
+# Compose de produção do front (mesma VPS do back-end). Usa a imagem publicada no GHCR.
+#
+# Pré-requisitos na VPS:
+#   - Traefik na rede externa "web" com o entrypoint "websecure" e um certresolver
+#   - Back-end (repo gymnasion) rodando, com o container "gymnasion_app" na rede "web"
+#   - DNS de APP_DOMAIN apontando para a VPS
+#
+# Na VPS:
+#   1. docker login ghcr.io -u <usuario> --password-stdin   (PAT com read:packages)
+#   2. cp .env.prod.example .env && preencha os valores
+#   3. docker compose -f docker-compose.prod.yml pull
+#   4. docker compose -f docker-compose.prod.yml up -d
+#
+# Fluxo: https://APP_DOMAIN -> Traefik -> nginx (front)
+#        https://APP_DOMAIN/api/... -> Traefik -> nginx -> gymnasion_app:8080
+# Front e API ficam na mesma origem, então não há CORS no navegador.
+
+name: gymnasion-web
+
+services:
+  web:
+    image: ghcr.io/yasminrez/gymnasion_web:${IMAGE_TAG:-latest}
+    container_name: gymnasion_web
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-http://gymnasion_app:8080}
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.gymnasion-web.rule=Host(`${APP_DOMAIN:?defina APP_DOMAIN}`)"
+      - "traefik.http.routers.gymnasion-web.entrypoints=websecure"
+      - "traefik.http.routers.gymnasion-web.tls=true"
+      - "traefik.http.routers.gymnasion-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}"
+      - "traefik.http.services.gymnasion-web.loadbalancer.server.port=80"
+    deploy:
+      resources:
+        limits:
+          cpus: "${WEB_CPUS:-0.25}"
+          memory: ${WEB_MEM_LIMIT:-64m}
+          pids: 100
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Rede do Traefik (a mesma em que o back-end está)
+  web:
+    external: true

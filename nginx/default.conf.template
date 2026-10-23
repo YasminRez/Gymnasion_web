@@ -1,0 +1,51 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    server_tokens off;
+    client_max_body_size 10m;
+
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # DNS interno do Docker: resolve o back-end a cada requisição,
+    # assim o nginx sobe mesmo se a API ainda estiver iniciando
+    resolver 127.0.0.11 valid=30s ipv6=off;
+    set $api_upstream ${API_UPSTREAM};
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok";
+    }
+
+    # API (o back-end usa context-path /api, então o caminho segue inteiro)
+    location /api/ {
+        proxy_pass $api_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        # Front e API estão na mesma origem; sem Origin o Spring não aplica CORS
+        proxy_set_header Origin "";
+        # Relatórios em PDF podem levar até 60s
+        proxy_read_timeout 90s;
+    }
+
+    # Arquivos com hash do Vite: cache longo
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA: qualquer rota do React Router cai no index.html (sem cache)
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri $uri/ /index.html;
+    }
+}

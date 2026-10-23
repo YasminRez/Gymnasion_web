@@ -1,0 +1,13 @@
+.env
+.env.*
+.git
+.github
+.vscode
+.idea
+node_modules
+dist
+docs
+tests
+desktop.ini
+docker-compose*.yml
+*.md
