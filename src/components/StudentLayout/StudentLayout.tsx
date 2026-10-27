@@ -176,7 +176,7 @@ export default function StudentLayout() {
           }}
         />
 
-        <main id="student-content" className="student-layout__main">
+        <main id="student-content" className="student-layout__main" tabIndex={-1}>
           <Outlet />
         </main>
       </div>

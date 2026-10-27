@@ -16,7 +16,23 @@ function StudentActionModal({ action, loading = false, onClose, onConfirm }: { a
     document.body.style.overflow = "hidden";
     return () => { dialog?.close(); document.body.style.overflow = overflow; if (focus instanceof HTMLElement && focus.isConnected) focus.focus(); };
   }, []);
-  return <dialog ref={ref} className={`student-action-modal ${warning ? "student-action-modal--warning" : rejected ? "student-action-modal--rejected" : "student-action-modal--success"}`} aria-labelledby="student-action-title" aria-describedby="student-action-description" onCancel={(event) => { event.preventDefault(); if (!loading) onClose(); }}>
+
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
+    if (loading) return;
+    const dialog = ref.current;
+    if (!dialog || event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const isInside =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!isInside) {
+      onClose();
+    }
+  };
+
+  return <dialog ref={ref} className={`student-action-modal ${warning ? "student-action-modal--warning" : rejected ? "student-action-modal--rejected" : "student-action-modal--success"}`} aria-labelledby="student-action-title" aria-describedby="student-action-description" closedby="any" onClick={handleBackdropClick} onCancel={(event) => { event.preventDefault(); if (!loading) onClose(); }}>
     <div className="student-action-modal__icon" aria-hidden="true">{rejected ? "×" : warning ? "⚠" : action.type === "reactivate" ? "↻" : "✓"}</div>
     <h2 id="student-action-title">{title}</h2>
     <p id="student-action-description">

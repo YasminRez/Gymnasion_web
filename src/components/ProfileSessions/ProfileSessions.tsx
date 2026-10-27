@@ -365,15 +365,15 @@ export default function ProfileSessions({
             <table>
               <thead>
                 <tr>
-                  <th>Sessão / Atividades</th>
-                  <th>Data</th>
-                  <th>Duração</th>
+                  <th scope="col">Sessão / Atividades</th>
+                  <th scope="col">Data</th>
+                  <th scope="col">Duração</th>
                   {metrics.map((m) => (
-                    <th key={m.metricaId}>{m.tituloMetrica}</th>
+                    <th scope="col" key={m.metricaId}>{m.tituloMetrica}</th>
                   ))}
-                  <th>RPE</th>
-                  <th>Status</th>
-                  <th>Fonte</th>
+                  <th scope="col">RPE</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Fonte</th>
                 </tr>
               </thead>
               <tbody>

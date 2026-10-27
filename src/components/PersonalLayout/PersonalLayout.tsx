@@ -111,7 +111,7 @@ export default function PersonalLayout() {
         notificationBusy={notificationBusy}
         onRefreshNotifications={() => void refresh()}
       />
-      <main id="personal-content"><Outlet /></main>
+      <main id="personal-content" tabIndex={-1}><Outlet /></main>
     </div>
     {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}
     {/* US-16: pelo menu o personal escolhe o aluno; inativos mantêm o histórico (RN-014). */}

@@ -28,7 +28,7 @@ export function EvolutionCard({ series, color = "blue", compact = false }: { ser
         {points.map((p,index)=><circle key={index} cx={p.x} cy={p.y} r="4" fill="white" stroke="var(--chart-color)" strokeWidth="2"><title>{displayDate(p.date)+": "+formatMetric(p.value,series.type)}</title></circle>)}
         <text x="10" y="161">{displayDate(firstDate!)}</text><text x="490" y="161" textAnchor="end">{displayDate(lastDate!)}</text>
       </svg>
-      <details><summary>Ver valores</summary><table><thead><tr><th>Data</th><th>Valor</th></tr></thead><tbody>{series.points.map((p,index)=><tr key={index}><td>{displayDate(p.date)}</td><td>{formatMetric(p.value,series.type)}</td></tr>)}</tbody></table></details>
+      <details><summary>Ver valores</summary><table><thead><tr><th scope="col">Data</th><th scope="col">Valor</th></tr></thead><tbody>{series.points.map((p,index)=><tr key={index}><td>{displayDate(p.date)}</td><td>{formatMetric(p.value,series.type)}</td></tr>)}</tbody></table></details>
     </>}
   </section>;
 }

@@ -20,7 +20,7 @@ export default function DashboardEvolution() {
         {points.map(item=><circle key={item.date} cx={item.x} cy={item.y} r="4" fill="var(--color-surface)" stroke="var(--color-primary-500)" strokeWidth="2"><title>{displayDate(item.date)+": "+item.value.toFixed(1)+" RPE · "+item.count+" sessões"}</title></circle>)}
         <text x="40" y="225">{days} dias atrás</text><text x="580" y="225" textAnchor="end">Hoje</text>
       </svg>
-      <details><summary>Ver valores do gráfico</summary><table><thead><tr><th>Data</th><th>RPE médio</th><th>Sessões</th></tr></thead><tbody>{data.map(item=><tr key={item.date}><td>{displayDate(item.date)}</td><td>{item.value.toFixed(1)}</td><td>{item.count}</td></tr>)}</tbody></table></details>
+      <details><summary>Ver valores do gráfico</summary><table><thead><tr><th scope="col">Data</th><th scope="col">RPE médio</th><th scope="col">Sessões</th></tr></thead><tbody>{data.map(item=><tr key={item.date}><td>{displayDate(item.date)}</td><td>{item.value.toFixed(1)}</td><td>{item.count}</td></tr>)}</tbody></table></details>
     </>}
   </DashboardPanel>;
 }

@@ -53,7 +53,7 @@ export default function StravaModal({ onClose, onStatusChanged }: StravaModalPro
             if (active) setLoadingActivities(false);
           }
         }
-      } catch (err) {
+      } catch {
         if (active) {
           setStatus({ conectado: false, expirado: false, mock: false });
         }

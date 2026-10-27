@@ -12,9 +12,28 @@ function FormField({ id, label, error, hint, selectPlaceholder = "Selecionar", .
   const errorId = `${id}-error`;
   const accessibilityProps = {
     "aria-invalid": error ? true : props["aria-invalid"],
+    "aria-errormessage": error ? errorId : props["aria-errormessage"],
     "aria-describedby": [props["aria-describedby"], error ? errorId : hint ? `${id}-hint` : undefined]
       .filter(Boolean).join(" ") || undefined,
   };
+
+  const inputType = !props.options ? props.type : undefined;
+  const isIdentifier =
+    inputType === "email" ||
+    inputType === "password" ||
+    inputType === "search" ||
+    props.name === "cpf" ||
+    props.name === "phone" ||
+    props.name === "email" ||
+    props.name === "username";
+
+  const defaultTextControlProps = isIdentifier
+    ? {
+        autoCorrect: "off",
+        autoCapitalize: "off",
+        spellCheck: false,
+      }
+    : {};
 
   return (
     <div
@@ -39,6 +58,7 @@ function FormField({ id, label, error, hint, selectPlaceholder = "Selecionar", .
         props.type === "password" ? (
           <div className="form-field__password">
             <input
+              {...defaultTextControlProps}
               {...props}
               {...accessibilityProps}
               id={id}
@@ -60,7 +80,12 @@ function FormField({ id, label, error, hint, selectPlaceholder = "Selecionar", .
             </button>
           </div>
         ) : (
-          <input {...props} {...accessibilityProps} id={id} />
+          <input
+            {...defaultTextControlProps}
+            {...props}
+            {...accessibilityProps}
+            id={id}
+          />
         )
       )}
       {!error && hint && <p className="form-field__hint" id={`${id}-hint`}>{hint}</p>}

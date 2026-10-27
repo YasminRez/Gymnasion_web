@@ -18,6 +18,7 @@ import { rotinaService } from "../../services/rotinaService";
 import type { Modalidade } from "../../types/modalidade";
 import type { MetricaResponseDTO, TipoMetrica } from "../../types/metric";
 import type { RotinaResponse } from "../../types/rotina";
+import WorkspaceDialog from "../../components/WorkspaceDialog/WorkspaceDialog";
 import "./NewRoutine.css";
 
 export default function NewRoutine() {
@@ -984,42 +985,27 @@ export default function NewRoutine() {
 
       {/* Modal para escolher modelo */}
       {modelModalOpen && (
-        <div
-          className="new-routine-model-modal-overlay"
-          onClick={() => setModelModalOpen(false)}
+        <WorkspaceDialog
+          title="Selecione uma rotina existente como modelo"
+          onClose={() => setModelModalOpen(false)}
         >
-          <div
-            className="new-routine-model-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="new-routine-model-modal__header">
-              <h3>Selecione uma rotina existente como modelo</h3>
+          <div className="new-routine-model-modal__list">
+            {routines.data.map((r) => (
               <button
+                key={r.id}
                 type="button"
-                className="new-routine-chip__remove"
-                onClick={() => setModelModalOpen(false)}
+                className="new-routine-model-modal__item"
+                onClick={() => applyRoutineAsModel(r)}
               >
-                ×
+                <strong>{r.titulo}</strong>
+                <span>
+                  {r.nomeModalidade} · {r.frequenciaSemanal}x/sem ·{" "}
+                  {r.metricas?.length || 0} métricas
+                </span>
               </button>
-            </div>
-            <div className="new-routine-model-modal__list">
-              {routines.data.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  className="new-routine-model-modal__item"
-                  onClick={() => applyRoutineAsModel(r)}
-                >
-                  <strong>{r.titulo}</strong>
-                  <span>
-                    {r.nomeModalidade} · {r.frequenciaSemanal}x/sem ·{" "}
-                    {r.metricas?.length || 0} métricas
-                  </span>
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
-        </div>
+        </WorkspaceDialog>
       )}
     </div>
   );
