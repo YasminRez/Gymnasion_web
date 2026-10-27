@@ -174,9 +174,15 @@
   border-radius: 8px;
   font-family: inherit;
   font-size: 13px;
+  color: #0f172a;
   outline: none;
-  background: #fff;
+  background: #ffffff;
   box-sizing: border-box;
+}
+
+.act-input-title::placeholder,
+.act-input-desc::placeholder {
+  color: #94a3b8;
 }
 
 .act-input-title:focus,
@@ -324,11 +330,16 @@
   border-radius: 10px;
   font-family: inherit;
   font-size: 14px;
+  background-color: #ffffff;
   color: #0f172a;
   outline: none;
   resize: vertical;
   min-height: 80px;
   box-sizing: border-box;
+}
+
+.session-edit__orientations-box textarea::placeholder {
+  color: #94a3b8;
 }
 
 .session-edit__orientations-box textarea:focus {
