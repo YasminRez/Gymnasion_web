@@ -141,3 +141,112 @@ test("filterMetrics filters by modality and search text", () => {
   assert.equal(model.filterMetrics(metrics, 1, "rally").length, 0);
   assert.equal(model.filterMetrics(metrics, null, "rally")[0].id, "3");
 });
+
+test("hasStravaSync, getStravaFieldLabel, getMetricTypeBadgeStyle and extended filterMetrics work accurately", () => {
+  const m1 = {
+    ...makeMetric("1", "Tempo 100m Livre", 1, "TEMPO", 8),
+    campoStrava: "TEMPO_MOVIMENTO",
+  };
+  const m2 = {
+    ...makeMetric("2", "FC Média", 1, "FREQUENCIA_CARDIACA", 12),
+    campoStrava: "FREQUENCIA_CARDIACA_MEDIA",
+  };
+  const m3 = {
+    ...makeMetric("3", "Observação Técnica", 1, "TEXTO", 2),
+    campoStrava: "NENHUM",
+  };
+
+  assert.equal(model.hasStravaSync(m1), true);
+  assert.equal(model.hasStravaSync(m3), false);
+  assert.equal(model.getStravaFieldLabel("TEMPO_MOVIMENTO"), "Tempo em movimento");
+  assert.equal(model.getStravaFieldLabel("NENHUM"), "Preenchimento manual");
+
+  const tempoStyle = model.getMetricTypeBadgeStyle("TEMPO");
+  assert.equal(tempoStyle.color, "#175cd3");
+  const fcStyle = model.getMetricTypeBadgeStyle("FREQUENCIA_CARDIACA");
+  assert.equal(fcStyle.color, "#e11d48");
+
+  // Filtro por integração Strava
+  const stravaOnly = model.filterMetrics([m1, m2, m3], null, "", { typeFilter: "STRAVA" });
+  assert.equal(stravaOnly.length, 2);
+
+  // Ordenação por mais alunos com registro
+  const sortedByStudents = model.filterMetrics([m1, m2, m3], null, "", {
+    sortBy: "students_desc",
+  });
+  assert.equal(
+    JSON.stringify(sortedByStudents.map((m) => m.id)),
+    JSON.stringify(["2", "1", "3"])
+  );
+});
+
+test("filterMetrics filters by statusFilter (active vs discontinued)", () => {
+  const activeMetric = makeMetric("1", "Ritmo 100m", 1, "TEMPO", 4, true, false);
+  const discMetric = makeMetric("2", "Pace antigo", 1, "TEMPO", 5, false, true);
+
+  const onlyActive = model.filterMetrics([activeMetric, discMetric], null, "", {
+    statusFilter: "active",
+  });
+  assert.equal(onlyActive.length, 1);
+  assert.equal(onlyActive[0].id, "1");
+
+  const onlyDisc = model.filterMetrics([activeMetric, discMetric], null, "", {
+    statusFilter: "discontinued",
+  });
+  assert.equal(onlyDisc.length, 1);
+  assert.equal(onlyDisc[0].id, "2");
+});
+
+test("paginateMetrics slices items, clamps page bounds and computes start/end indices", () => {
+  const items = Array.from({ length: 10 }, (_, idx) => ({ id: String(idx + 1) }));
+
+  const page1 = model.paginateMetrics(items, 1, 4);
+  assert.equal(page1.currentPage, 1);
+  assert.equal(page1.totalPages, 3);
+  assert.equal(page1.totalItems, 10);
+  assert.equal(page1.startIndex, 1);
+  assert.equal(page1.endIndex, 4);
+  assert.equal(page1.items.length, 4);
+
+  // Página 3 (última página com 2 itens)
+  const page3 = model.paginateMetrics(items, 99, 4);
+  assert.equal(page3.currentPage, 3);
+  assert.equal(page3.startIndex, 9);
+  assert.equal(page3.endIndex, 10);
+  assert.equal(page3.items.length, 2);
+
+  // Lista vazia
+  const emptyPage = model.paginateMetrics([], 1, 8);
+  assert.equal(emptyPage.currentPage, 1);
+  assert.equal(emptyPage.totalPages, 1);
+  assert.equal(emptyPage.startIndex, 0);
+  assert.equal(emptyPage.endIndex, 0);
+  assert.equal(emptyPage.items.length, 0);
+});
+
+test("getMarketMetricPresets maps sport presets to modalities and flags alreadyExists", () => {
+  const modalities = [
+    { id: 1, nome: "Natação" },
+    { id: 2, nome: "Corrida de Rua" },
+    { id: 3, nome: "Academia" },
+  ];
+  const existing = [makeMetric("10", "Ritmo médio 100m", 1, "TEMPO")];
+
+  const allPresets = model.getMarketMetricPresets(modalities, existing, null, "");
+  assert.equal(allPresets.length > 0, true);
+
+  const swimPace = allPresets.find((p) => p.titulo === "Ritmo médio 100m");
+  assert.equal(Boolean(swimPace), true);
+  assert.equal(swimPace.modalidadeId, 1);
+  assert.equal(swimPace.alreadyExists, true);
+
+  const swimSwolf = allPresets.find((p) => p.titulo.includes("SWOLF"));
+  assert.equal(Boolean(swimSwolf), true);
+  assert.equal(swimSwolf.alreadyExists, false);
+
+  // Filtro por modalidade (apenas Corrida de Rua = id 2)
+  const runPresets = model.getMarketMetricPresets(modalities, existing, 2, "");
+  assert.equal(runPresets.every((p) => p.modalidadeId === 2), true);
+});
+
+

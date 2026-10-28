@@ -328,3 +328,28 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+@media (max-width: 520px) {
+  .metric-form-modal {
+    padding: 18px;
+    max-height: 92dvh;
+  }
+
+  .metric-form-modal__segmented {
+    flex-wrap: wrap;
+  }
+
+  .metric-form-modal__segment-btn {
+    min-width: calc(50% - 4px);
+    font-size: 12.5px;
+  }
+
+  .metric-form-modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .metric-form-modal__btn-cancel,
+  .metric-form-modal__btn-submit {
+    width: 100%;
+  }
+}

@@ -8,6 +8,7 @@ import { isSessionError } from "../../services/api";
 import Toast, { type ToastProps } from "../../components/Toast/Toast";
 import { PersonalContext, type Activity, type Resource } from "./PersonalContext";
 import { applyStudentMutation, type StudentMutation } from "./studentModel";
+import { normalizeNotification, sortNotificationsByPriority } from "../notifications/notificationModel";
 import type { AlunoResponse } from "../../types/student";
 import type { RotinaResponse } from "../../types/rotina";
 import type { TurmaResponse } from "../../types/turma";
@@ -51,7 +52,13 @@ export default function PersonalProvider({ children }: { children: ReactNode }) 
       setStudents(previous => resultState(alunos,previous,"Não foi possível carregar os alunos."));
       setRoutines(previous => resultState(rotinas,previous,"Não foi possível carregar as rotinas."));
       setGroups(previous => resultState(turmas,previous,"Não foi possível carregar as turmas."));
-      setNotifications(previous => resultState(alerts,previous,"Não foi possível carregar as notificações."));
+      setNotifications(previous => {
+        const res = resultState(alerts, previous, "Não foi possível carregar as notificações.");
+        return {
+          ...res,
+          data: sortNotificationsByPriority(res.data.map(item => normalizeNotification(item))),
+        };
+      });
       if (alunos.status === "fulfilled") {
         try {
           const alunoList = unpackPage(alunos.value);
@@ -110,10 +117,22 @@ export default function PersonalProvider({ children }: { children: ReactNode }) 
     try {
       if (id) {
         const updated = await personalDashboardService.readNotification(id);
-        if (mounted.current) setNotifications(previous=>({...previous,data:previous.data.map(item=>item.id===id?updated:item)}));
+        if (mounted.current) {
+          setNotifications(previous => ({
+            ...previous,
+            data: sortNotificationsByPriority(
+              previous.data.map(item => (item.id === id ? { ...item, ...updated, lida: true } : item))
+            ),
+          }));
+        }
       } else {
         await personalDashboardService.readAllNotifications();
-        if (mounted.current) setNotifications(previous=>({...previous,data:previous.data.map(item=>({...item,lida:true}))}));
+        if (mounted.current) {
+          setNotifications(previous => ({
+            ...previous,
+            data: sortNotificationsByPriority(previous.data.map(item => ({ ...item, lida: true }))),
+          }));
+        }
       }
       return true;
     } catch(error) {showError(error);return false;}

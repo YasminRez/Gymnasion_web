@@ -263,3 +263,26 @@
   background: #f8fafc;
 }
 
+@media (max-width: 640px) {
+  .profile-sessions__header,
+  .profile-sessions__filters {
+    padding: 14px 16px;
+  }
+
+  .profile-sessions__pills--weeks {
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .profile-sessions__search {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .profile-sessions td,
+  .profile-sessions th {
+    padding: 12px 14px;
+  }
+}
+

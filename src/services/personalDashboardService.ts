@@ -16,7 +16,11 @@ export const personalDashboardService = {
     return data;
   },
   async readAllNotifications(): Promise<void> {
-    await api.patch(base + "/notificacoes/ler-todas");
+    try {
+      await api.patch(base + "/notificacoes/marcar-como-lidas");
+    } catch {
+      await api.patch(base + "/notificacoes/ler-todas");
+    }
   },
   async history(alunoId: string, params?: { page?: number; size?: number }): Promise<StudentHistory> {
     const { data } = await api.get<PaginatedOrArray<TrainingSession>>(base + "/rotinas/aluno/" + alunoId + "/historico", {

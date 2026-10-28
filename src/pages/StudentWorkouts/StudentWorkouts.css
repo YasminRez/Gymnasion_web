@@ -588,9 +588,58 @@
 }
 
 @media (max-width: 640px) {
+  .student-workouts__banner,
+  .student-workouts__sessions-card,
+  .student-workouts__session-card {
+    padding: 16px;
+  }
+
+  .student-workouts__banner-main h2,
+  .student-workouts__session-heading h3,
+  .student-workouts__activity-body strong,
+  .student-workouts__activity-body p {
+    overflow-wrap: anywhere;
+  }
+
+  .student-workouts__week-tabs {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .student-workouts__week-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .student-workouts__week-tab {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+  }
+
+  .student-workouts__filter-pills--days {
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .student-workouts__search-box {
+    min-width: 100%;
+    max-width: 100%;
+  }
+
   .student-workouts__session-top {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .student-workouts__session-actions {
+    width: 100%;
+  }
+
+  .student-workouts__session-actions > * {
+    flex: 1;
+    justify-content: center;
   }
 }
 

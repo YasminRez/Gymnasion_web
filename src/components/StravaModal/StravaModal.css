@@ -367,3 +367,15 @@
   opacity: 0.65;
   cursor: not-allowed;
 }
+
+@media (max-width: 520px) {
+  .strava-modal__status-header,
+  .strava-modal__activity-item {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .strava-modal__btn-strava {
+    width: 100%;
+  }
+}

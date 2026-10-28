@@ -1,26 +1,233 @@
-.personal-layout { display: flex; min-height: 100dvh; background: var(--color-background); }
-.personal-layout__sidebar { width: 264px; flex: none; }
-.personal-layout__sidebar .ds-sidebar { position: sticky; top: 0; height: 100dvh; min-height: 760px; }
-.personal-layout__body { padding: 28px 32px 32px; flex: 1; min-width: 0; }
-.personal-layout__body > header { margin-bottom: 24px; }
-.personal-layout__skip { position: fixed; top: -100px; z-index: 100; padding: 12px; background: white; }
-.personal-layout__skip:focus { top: 8px; left: 8px; }
-.personal-layout__menu { display: none; }
-.personal-layout__strava { border-radius: 16px; padding: 16px; background: var(--color-primary-50); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.personal-layout__strava > img { padding: 6px; box-sizing: content-box; background: white; border-radius: 8px; }
-.personal-layout__strava strong { font-size: 14px; }
-.personal-layout__strava p { color: var(--color-ink-500); font-size: 12px; }
-.personal-layout__strava button { color: var(--color-primary-600); font-weight: 700; background: none; border: 0; opacity: .6; }
-.personal-notice { position: fixed; top: 24px; right: 24px; z-index: 100; max-width: calc(100vw - 32px); }
-.personal-notice .ds-toast { max-width: 100%; }
-.workspace-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 20px; min-width: 0; }
-.workspace-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.workspace-card h2 { font-size: 16px; line-height: 24px; }
-.workspace-card__subtitle { font-size: 13px; color: var(--color-ink-500); }
-.workspace-link { color: var(--color-primary-600); border: 0; background: none; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
-.workspace-empty { color: var(--color-ink-500); font-size: 13px; padding: 20px 0; }
-.workspace-error { color: var(--color-danger-700); background: var(--color-danger-50); padding: 14px; border-radius: 10px; margin-bottom: 16px; }
-.workspace-error button { margin-left: 8px; }
-@media (max-width: 1200px) { .personal-layout__body { padding: 24px; } }
-@media (max-width: 960px) { .personal-layout { flex-direction: column; } .personal-layout__sidebar { display: none; width: 100%; } .personal-layout__sidebar--open { display: block; } .personal-layout__sidebar .ds-sidebar { position: static; width: 100%; min-height: 0; height: auto; } .personal-layout__sidebar .ds-sidebar nav { display: grid; grid-template-columns: repeat(2, 1fr); } .personal-layout__sidebar .ds-sidebar__section { grid-column: 1 / -1; } .personal-layout__menu { display: block; margin: 16px 24px 0; padding: 10px 14px; align-self: flex-start; border: 1px solid var(--color-border); border-radius: 10px; background: white; color: var(--color-ink-700); } .personal-layout__strava { display: none; } }
-@media (max-width: 520px) { .personal-layout__body { padding: 20px 16px; } .workspace-card__heading { flex-wrap: wrap; } .personal-notice { top: 16px; right: 16px; } }
+.personal-layout {
+  display: flex;
+  min-height: 100dvh;
+  max-width: 100vw;
+  overflow-x: clip;
+  background: var(--color-background);
+}
+
+.personal-layout__sidebar {
+  width: 264px;
+  flex: none;
+}
+
+.personal-layout__sidebar .ds-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  min-height: 760px;
+}
+
+.personal-layout__backdrop {
+  display: none;
+}
+
+.personal-layout__body {
+  padding: 28px 32px 32px;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.personal-layout__body > header {
+  margin-bottom: 24px;
+}
+
+.personal-layout__skip {
+  position: fixed;
+  top: -100px;
+  z-index: 100;
+  padding: 12px;
+  background: white;
+}
+
+.personal-layout__skip:focus {
+  top: 8px;
+  left: 8px;
+}
+
+.personal-layout__strava {
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--color-primary-50);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.personal-layout__strava > img {
+  padding: 6px;
+  box-sizing: content-box;
+  background: white;
+  border-radius: 8px;
+}
+
+.personal-layout__strava strong {
+  font-size: 14px;
+}
+
+.personal-layout__strava p {
+  color: var(--color-ink-500);
+  font-size: 12px;
+}
+
+.personal-layout__strava button {
+  color: var(--color-primary-600);
+  font-weight: 700;
+  background: none;
+  border: 0;
+  opacity: 0.6;
+}
+
+.personal-notice {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+}
+
+.personal-notice .ds-toast {
+  max-width: 100%;
+}
+
+.workspace-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  min-width: 0;
+}
+
+.workspace-card__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.workspace-card h2 {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.workspace-card__subtitle {
+  font-size: 13px;
+  color: var(--color-ink-500);
+}
+
+.workspace-link {
+  color: var(--color-primary-600);
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.workspace-empty {
+  color: var(--color-ink-500);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.workspace-error {
+  color: var(--color-danger-700);
+  background: var(--color-danger-50);
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.workspace-error button {
+  margin-left: 8px;
+}
+
+@media (max-width: 1200px) {
+  .personal-layout__body {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 960px) {
+  .personal-layout {
+    flex-direction: column;
+  }
+
+  .personal-layout__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 940;
+    animation: personalDrawerFadeIn 0.2s ease-out;
+  }
+
+  .personal-layout__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(288px, 85vw);
+    height: 100%;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    background: var(--color-surface);
+    z-index: 950;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  .personal-layout__sidebar--open {
+    transform: translateX(0);
+    pointer-events: auto;
+    box-shadow: 0 20px 32px -4px rgba(15, 23, 42, 0.24);
+  }
+
+  .personal-layout__sidebar .ds-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+  }
+}
+
+@keyframes personalDrawerFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 520px) {
+  .personal-layout__body {
+    padding: 18px 14px 28px;
+  }
+
+  .personal-layout__body > header {
+    margin-bottom: 18px;
+  }
+
+  .workspace-card {
+    padding: 16px;
+  }
+
+  .workspace-card__heading {
+    flex-wrap: wrap;
+  }
+
+  .personal-notice {
+    top: 16px;
+    right: 16px;
+  }
+}

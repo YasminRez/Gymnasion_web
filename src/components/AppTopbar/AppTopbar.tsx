@@ -25,6 +25,9 @@ type Props = {
   onReadNotification?: (id?: string) => Promise<boolean | void> | void;
   notificationBusy?: boolean;
   onRefreshNotifications?: () => void;
+  menuOpen?: boolean;
+  sidebarId?: string;
+  onToggleMenu?: () => void;
 };
 
 export default function AppTopbar({
@@ -43,6 +46,9 @@ export default function AppTopbar({
   onReadNotification,
   notificationBusy,
   onRefreshNotifications,
+  menuOpen = false,
+  sidebarId,
+  onToggleMenu,
 }: Props) {
   const { settings } = useAccountSettings();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -71,11 +77,57 @@ export default function AppTopbar({
   return (
     <header className="ds-topbar">
       <div className="ds-topbar__titles">
-        <h1>{title}</h1>
-        {subtitle && <p>{subtitle}</p>}
+        {onToggleMenu && (
+          <button
+            type="button"
+            className="ds-topbar__menu-btn"
+            aria-label={menuOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"}
+            aria-expanded={menuOpen}
+            aria-controls={sidebarId}
+            onClick={onToggleMenu}
+          >
+            {menuOpen ? (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="15" y2="18" />
+              </svg>
+            )}
+          </button>
+        )}
+        <div className="ds-topbar__titles-text">
+          <h1>{title}</h1>
+          {subtitle && <p>{subtitle}</p>}
+        </div>
       </div>
+
       <div className="ds-topbar__actions">
-        <search>
+        <search className="ds-topbar__search-container">
           <form
             className="ds-topbar__search"
             onSubmit={(event) => {
@@ -99,43 +151,53 @@ export default function AppTopbar({
           </form>
         </search>
 
-        <div className="ds-topbar__notification-wrapper">
-          <button
-            type="button"
-            className="ds-topbar__notifications"
-            aria-label={
-              settings.showNotificationBadge && notificationCount
-                ? `Abrir notificações: ${notificationCount} não lidas`
-                : "Abrir notificações"
-            }
-            aria-expanded={popoverOpen}
-            aria-haspopup="dialog"
-            onClick={handleNotificationsClick}
-          >
-            <img src="/design-system/imgBellQuiet.svg" alt="" />
-            {settings.showNotificationBadge && (notificationDot ? (
-              <span className="ds-topbar__notification-dot" />
-            ) : (
-              Boolean(notificationCount) && (
-                <span className="ds-topbar__notification-count">{notificationCount}</span>
-              )
-            ))}
-          </button>
+        <div className="ds-topbar__user-controls">
+          <div className="ds-topbar__notification-wrapper">
+            <button
+              type="button"
+              className="ds-topbar__notifications"
+              aria-label={
+                settings.showNotificationBadge && notificationCount
+                  ? `Abrir notificações: ${notificationCount} não lidas`
+                  : "Abrir notificações"
+              }
+              aria-expanded={popoverOpen}
+              aria-haspopup="dialog"
+              onClick={handleNotificationsClick}
+            >
+              <img src="/design-system/imgBellQuiet.svg" alt="" />
+              {settings.showNotificationBadge &&
+                (notificationDot ? (
+                  <span className="ds-topbar__notification-dot" />
+                ) : (
+                  Boolean(notificationCount) && (
+                    <span className="ds-topbar__notification-count">
+                      {notificationCount}
+                    </span>
+                  )
+                ))}
+            </button>
 
-          {popoverOpen && (
-            <NotificationPopover
-              notifications={notifications?.data || []}
-              loading={notifications?.loading}
-              error={notifications?.error}
-              busy={notificationBusy}
-              onClose={() => setPopoverOpen(false)}
-              onRead={onReadNotification || (() => {})}
-              onRetry={onRefreshNotifications}
-            />
-          )}
+            {popoverOpen && (
+              <NotificationPopover
+                notifications={notifications?.data || []}
+                loading={notifications?.loading}
+                error={notifications?.error}
+                busy={notificationBusy}
+                onClose={() => setPopoverOpen(false)}
+                onRead={onReadNotification || (() => {})}
+                onRetry={onRefreshNotifications}
+              />
+            )}
+          </div>
+
+          <Avatar
+            name={userName}
+            initials={userInitials}
+            src={settings.photo || avatar}
+            tone={avatarTone}
+          />
         </div>
-
-        <Avatar name={userName} initials={userInitials} src={settings.photo || avatar} tone={avatarTone} />
       </div>
     </header>
   );

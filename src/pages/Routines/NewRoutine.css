@@ -795,15 +795,29 @@
 }
 
 @media (max-width: 600px) {
+  .new-routine-card {
+    padding: 16px;
+  }
+
+  .new-routine-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   .new-routine-form-row {
     grid-template-columns: 1fr;
   }
+
   .new-routine-frequency-group {
     grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
   }
+
   .new-routine-footer {
     flex-direction: column-reverse;
   }
+
   .new-routine-footer__btn-cancel,
   .new-routine-footer__btn-submit {
     width: 100%;
