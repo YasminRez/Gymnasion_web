@@ -505,11 +505,28 @@ export default function StudentRpeModal({
 
   const borgInfo = getBorgInfo(selectedRpe);
 
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
+    if (busy) return;
+    const dialog = dialogRef.current;
+    if (!dialog || event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const isInside =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!isInside) {
+      onClose();
+    }
+  };
+
   return (
     <dialog
       ref={dialogRef}
       className="student-rpe-modal"
       aria-labelledby={titleId}
+      closedby="any"
+      onClick={handleBackdropClick}
       onCancel={(event) => {
         event.preventDefault();
         if (!busy) onClose();

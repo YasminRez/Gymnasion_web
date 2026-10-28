@@ -52,6 +52,9 @@ export default function SignUpStudent() {
     setNotice("");
     const firstInvalid = Object.keys(errors)[0];
     if (firstInvalid || !accepted) {
+      if (!firstInvalid && !accepted) {
+        setNotice("É obrigatório aceitar os Termos de Uso e Política de Privacidade para criar sua conta");
+      }
       const field = event.currentTarget.elements.namedItem(firstInvalid || "terms");
       if (field instanceof HTMLElement) field.focus();
       return;
@@ -62,6 +65,7 @@ export default function SignUpStudent() {
       await authService.registroAlunoConvite(token, {
         nome: values.name.trim(), email: values.email.trim().toLowerCase(),
         password: values.password, cpf: values.cpf.replace(/\D/g, ""), celular: values.phone.replace(/\D/g, ""),
+        aceitouTermos: true,
       });
       setSuccess(true);
       setValues(initialValues);
@@ -96,7 +100,7 @@ export default function SignUpStudent() {
       </div>
       <PasswordRules password={values.password} />
       <div className="student-signup__terms"><Checkbox name="terms" label="Li e aceito os" checked={accepted} disabled={busy} onChange={event => setAccepted(event.target.checked)} aria-invalid={submitted && !accepted || undefined} aria-describedby={submitted && !accepted ? "student-terms-error" : undefined} /><button type="button" className="auth-form__link" onClick={() => setTermsOpen(true)}>Termos de Uso e Política de Privacidade</button></div>
-      {submitted && !accepted && <p className="auth-form__error" id="student-terms-error" role="alert">Aceite os termos para continuar.</p>}
+      {submitted && !accepted && <p className="auth-form__error" id="student-terms-error" role="alert">É obrigatório aceitar os Termos de Uso e Política de Privacidade para criar sua conta</p>}
       <Button type="submit" className="auth-form__submit" loading={busy}>{busy ? "Cadastrando..." : "Criar minha conta"}</Button>
     </form>}
     {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} onAccept={() => { setAccepted(true); setTermsOpen(false); }} />}

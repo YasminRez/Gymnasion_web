@@ -78,7 +78,7 @@ export default function SignUp() {
       return;
     }
     if (!accepted) {
-      setNotice("É obrigatório aceitar os Termos de Uso e Política de Privacidade para criar sua conta.");
+      setNotice("É obrigatório aceitar os Termos de Uso e Política de Privacidade para criar sua conta");
       const field = event.currentTarget.elements.namedItem("terms");
       if (field instanceof HTMLElement) field.focus();
       return;
@@ -90,6 +90,7 @@ export default function SignUp() {
         nome: values.name.trim(), email: values.email.trim().toLowerCase(),
         password: values.password, cpf: values.cpf.replace(/\D/g, ""),
         celular: values.phone.replace(/\D/g, ""), modalidade: Number(values.modality),
+        aceitouTermos: true,
       });
       navigate("/login", { replace: true, state: { registered: true, email: values.email.trim().toLowerCase() } });
     } catch (err) {

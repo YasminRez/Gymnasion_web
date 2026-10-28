@@ -12,7 +12,7 @@ import AppTopbar from "../../components/AppTopbar/AppTopbar";
 import SidebarCallout from "../../components/SidebarCallout/SidebarCallout";
 import "./DesignSystem.css";
 
-const personalItems = [["home", "Início", "imgIconHome"], ["students", "Alunos", "imgIconUsers"], ["groups", "Turmas", "imgIconLayers"], ["routines", "Rotinas de treino", "imgIconDumbbell"], ["metrics", "Métricas", "imgIconActivity"], ["sports", "Modalidades", "imgIconGrid"], ["progress", "Evolução", "imgIconChart"], ["reports", "Relatórios", "imgIconFile"]];
+const personalItems = [["home", "Início", "imgIconHome"], ["students", "Alunos", "imgIconUsers"], ["groups", "Turmas", "imgIconLayers"], ["routines", "Rotinas de treino", "imgIconDumbbell"], ["metrics", "Métricas", "imgIconActivity"], ["reports", "Relatórios", "imgIconFile"]];
 const studentItems = [["panel", "Meu painel", "imgIconHome"], ["workouts", "Meus treinos", "imgIconDumbbell"], ["evolution", "Minha evolução", "imgIconChart"], ["my-reports", "Meus relatórios", "imgIconFile"]];
 const generalItems = [["settings", "Configurações", "imgIconSliders"], ["terms", "Termos e privacidade", "imgIconShield"]];
 const options = [{ value: "natacao", label: "Natação" }, { value: "academia", label: "Academia" }, { value: "tenis", label: "Tênis" }];

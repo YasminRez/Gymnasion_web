@@ -12,7 +12,23 @@ export default function WorkspaceDialog({ title, description, icon, tone = "prim
     document.body.style.overflow = "hidden";
     return () => { dialog?.close(); document.body.style.overflow = overflow; if (previous instanceof HTMLElement && previous.isConnected) previous.focus(); };
   }, []);
-  return <dialog ref={ref} className={`workspace-dialog workspace-dialog--${tone}${wide ? " workspace-dialog--wide" : ""} ${className}`} aria-labelledby={id} onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}>
+
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
+    if (busy) return;
+    const dialog = ref.current;
+    if (!dialog || event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    const isInside =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!isInside) {
+      onClose();
+    }
+  };
+
+  return <dialog ref={ref} className={`workspace-dialog workspace-dialog--${tone}${wide ? " workspace-dialog--wide" : ""} ${className}`} aria-labelledby={id} closedby="any" onClick={handleBackdropClick} onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}>
     <header className="workspace-dialog__header">
       {icon && <span className="workspace-dialog__icon"><img src={icon} alt="" /></span>}
       <div><h2 id={id}>{title}</h2>{description && <p>{description}</p>}</div>

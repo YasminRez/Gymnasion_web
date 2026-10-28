@@ -20,7 +20,22 @@ export default function TermsModal({ onClose, onAccept }: { onClose: () => void;
     document.body.style.overflow = "hidden";
     return () => { element?.close(); document.body.style.overflow = overflow; previousFocus?.focus(); };
   }, []);
-  return <dialog ref={dialog} className="terms-modal" aria-labelledby="terms-title" onCancel={event => { event.preventDefault(); onClose(); }}>
+
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDialogElement>) => {
+    const element = dialog.current;
+    if (!element || event.target !== element) return;
+    const rect = element.getBoundingClientRect();
+    const isInside =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!isInside) {
+      onClose();
+    }
+  };
+
+  return <dialog ref={dialog} className="terms-modal" aria-labelledby="terms-title" closedby="any" onClick={handleBackdropClick} onCancel={event => { event.preventDefault(); onClose(); }}>
     <header className="terms-modal__header">
       <span className="terms-modal__icon"><img src="/auth/shield.svg" alt="" /></span>
       <div><h2 id="terms-title">Termos de Uso e Política de Privacidade</h2><p>Informações sobre o uso da plataforma</p></div>

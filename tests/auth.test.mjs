@@ -161,9 +161,36 @@ test("student invitation registration passes token as a query parameter without 
     "./api": { api: { post: async (...args) => { request = args; return { data: response }; } } },
     "./session": { session: { save: () => { throw new Error("Student registration must not sign in"); } } },
   });
-  const payload = { nome: "Aluno Teste", email: "teste@example.com", password: "Teste123!", cpf: "12345678900", celular: "11999999999" };
+  const payload = { nome: "Aluno Teste", email: "teste@example.com", password: "Teste123!", cpf: "12345678900", celular: "11999999999", aceitouTermos: true };
   assert.equal(await authService.registroAlunoConvite("invite-test", payload), response);
   assert.equal(request[0], "/api/auth/registro-aluno-convite");
   assert.equal(request[1], payload);
   assert.equal(request[2].params.token, "invite-test");
+});
+
+test("personal registration sends aceitouTermos to satisfy US-17 and RN-013", async () => {
+  let request;
+  const response = { id: "personal-test", role: "PERSONAL_TRAINER" };
+  const { authService } = loadModule("services/authService.ts", {}, {
+    "./api": { api: { post: async (...args) => { request = args; return { data: response }; } } },
+    "./session": { session: {} },
+  });
+  const payload = { nome: "Amanda Souza", email: "amanda@example.com", password: "SenhaForte@2026", cpf: "12345678900", celular: "11999999999", modalidade: 1, aceitouTermos: true };
+  assert.equal(await authService.registroPersonal(payload), response);
+  assert.equal(request[0], "/api/auth/registro-personal");
+  assert.equal(request[1].aceitouTermos, true);
+});
+
+test("invitation generation can include student email for direct dispatch", async () => {
+  let request;
+  const response = { url: "http://localhost:5173/cadastro-aluno?token=xyz", emailEnviado: "aluno@example.com" };
+  const { personalTrainerService } = loadModule("services/personalTrainerService.ts", {}, {
+    "./api": { api: { post: async (...args) => { request = args; return { data: response }; } } },
+    "../types/api": { unpackPage: d => d },
+  });
+  const result = await personalTrainerService.gerarConvite(1, " aluno@example.com ");
+  assert.equal(result.emailEnviado, "aluno@example.com");
+  assert.equal(request[0], "/api/personal-trainers/convites");
+  assert.equal(request[1].modalidadeId, 1);
+  assert.equal(request[1].emailAluno, "aluno@example.com");
 });

@@ -3,6 +3,18 @@ import type { CriarRotinaPayload, ReutilizarRotinaPayload, RotinaResponse } from
 import type { TipoMetrica } from "../../types/metric";
 
 export type RoutineFilter = "all" | "active" | "ended";
+export type RoutineWorkspaceTab = "active" | "templates" | "ended";
+
+export interface RoutineTemplateItem {
+  key: string;
+  displayTitle: string;
+  baseRoutine: RotinaResponse;
+  instances: RotinaResponse[];
+  cyclesCount: number;
+  activeCyclesCount: number;
+  students: { id: string; nome: string | null }[];
+  totalStudentsCount: number;
+}
 
 export function normalize(text: string): string {
   return text
@@ -226,7 +238,49 @@ export function getModalityBadgeStyle(nome: string): { bg: string; color: string
   if (lower.includes("academia") || lower.includes("musculacao") || lower.includes("musculação")) {
     return { bg: "#f4f3ff", color: "#5925dc", icon: "/design-system/imgIconDumbbell.svg" };
   }
+  if (lower.includes("corrida") || lower.includes("atletismo")) {
+    return { bg: "#fff1f3", color: "#e11d48", icon: "/design-system/imgIconRun.svg" };
+  }
+  if (lower.includes("ciclismo") || lower.includes("bike")) {
+    return { bg: "#f0fdf9", color: "#0e9384", icon: "/design-system/imgIconBike.svg" };
+  }
+  if (lower.includes("crossfit") || lower.includes("funcional") || lower.includes("calistenia")) {
+    return { bg: "#fef6ee", color: "#dc6803", icon: "/design-system/imgIconZap.svg" };
+  }
+  if (lower.includes("pilates") || lower.includes("yoga") || lower.includes("mobilidade")) {
+    return { bg: "#ecfdf3", color: "#027a48", icon: "/design-system/imgIconActivity.svg" };
+  }
   return { bg: "#f2f4f7", color: "#344054", icon: "/design-system/imgIconGrid.svg" };
+}
+
+export function getRoutineStructureTag(frequenciaSemanal: number, modalidadeNome?: string): string {
+  const lower = normalize(modalidadeNome || "");
+  const isSplitModality =
+    lower.includes("academia") ||
+    lower.includes("musculacao") ||
+    lower.includes("calistenia") ||
+    lower.includes("forca");
+
+  if (isSplitModality) {
+    switch (frequenciaSemanal) {
+      case 1:
+        return "Full Body (A)";
+      case 2:
+        return "Divisão A/B";
+      case 3:
+        return "Divisão A/B/C";
+      case 4:
+        return "Divisão A/B/C/D";
+      case 5:
+        return "Divisão A–E";
+      case 6:
+        return "Divisão A–F";
+      default:
+        return `Ciclo ${frequenciaSemanal} dias`;
+    }
+  }
+
+  return `Microciclo · ${frequenciaSemanal} ${frequenciaSemanal === 1 ? "sessão" : "sessões"}`;
 }
 
 export function routineModalityCounts(
@@ -281,4 +335,85 @@ export function extractProblemDetail(err: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+export function stripCycleSuffix(title: string): string {
+  return (title || "")
+    .replace(/\s*\((?:ciclo|cópia|copia)\s*\d*\)\s*$/i, "")
+    .replace(/\s*-\s*ciclo\s*\d+\s*$/i, "")
+    .trim();
+}
+
+export function getRoutineScopeLabel(routine: RotinaResponse): string {
+  const students = routine.alunos || [];
+  if (students.length === 0) return "Sem vínculo";
+  if (students.length === 1) {
+    const firstName = (students[0].nome || "Aluno").trim().split(/\s+/)[0];
+    return `Individual · ${firstName}`;
+  }
+  return `Turma / Coletivo · ${students.length} alunos`;
+}
+
+export function buildRoutineTemplates(routines: RotinaResponse[]): RoutineTemplateItem[] {
+  const groups = new Map<string, RotinaResponse[]>();
+
+  for (const r of routines) {
+    const cleanTitle = stripCycleSuffix(r.titulo) || r.titulo;
+    const modId = r.modalidadeId ?? r.modalidade?.id ?? 0;
+    const key = `${normalize(cleanTitle)}::${modId}`;
+    const list = groups.get(key) || [];
+    list.push(r);
+    groups.set(key, list);
+  }
+
+  const result: RoutineTemplateItem[] = [];
+
+  for (const [key, instances] of groups.entries()) {
+    // Escolhe a rotina base mais completa (ativa primeiro, depois maior número de métricas e alunos)
+    const sortedInstances = [...instances].sort((a, b) => {
+      const aAct = isRoutineActive(a) ? 1 : 0;
+      const bAct = isRoutineActive(b) ? 1 : 0;
+      if (aAct !== bAct) return bAct - aAct;
+      const metricDiff = (b.metricas?.length || 0) - (a.metricas?.length || 0);
+      if (metricDiff !== 0) return metricDiff;
+      return (b.alunos?.length || 0) - (a.alunos?.length || 0);
+    });
+
+    const baseRoutine = sortedInstances[0];
+    const displayTitle = stripCycleSuffix(baseRoutine.titulo) || baseRoutine.titulo;
+    const activeCyclesCount = instances.filter(isRoutineActive).length;
+
+    const studentMap = new Map<string, { id: string; nome: string | null }>();
+    for (const inst of instances) {
+      for (const aluno of inst.alunos || []) {
+        if (aluno.id && !studentMap.has(aluno.id)) {
+          studentMap.set(aluno.id, aluno);
+        }
+      }
+    }
+
+    const students = Array.from(studentMap.values());
+
+    result.push({
+      key,
+      displayTitle,
+      baseRoutine,
+      instances,
+      cyclesCount: instances.length,
+      activeCyclesCount,
+      students,
+      totalStudentsCount: students.length,
+    });
+  }
+
+  return result.sort((a, b) => {
+    if (b.activeCyclesCount !== a.activeCyclesCount) {
+      return b.activeCyclesCount - a.activeCyclesCount;
+    }
+    if (b.cyclesCount !== a.cyclesCount) {
+      return b.cyclesCount - a.cyclesCount;
+    }
+    return a.displayTitle.localeCompare(b.displayTitle, "pt-BR");
+  });
+}
+
 

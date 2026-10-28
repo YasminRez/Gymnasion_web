@@ -9,8 +9,14 @@
   box-sizing: border-box;
 }
 
+:root {
+  color-scheme: light;
+  scrollbar-color: var(--color-ink-300) transparent;
+}
+
 html {
   scroll-behavior: smooth;
+  accent-color: var(--color-primary-500);
 }
 
 body {
@@ -46,9 +52,70 @@ input,
 textarea,
 select {
   font: inherit;
+  color: inherit;
+}
+
+input,
+textarea,
+select {
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 img {
   max-width: 100%;
   display: block;
+}
+
+search {
+  display: contents;
+}
+
+/* Modern top-layer native dialog entry and exit transitions */
+dialog {
+  opacity: 0;
+  transform: scale(0.96);
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-behavior: allow-discrete;
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+dialog::backdrop {
+  background-color: rgb(15 23 42 / 0%);
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-behavior: allow-discrete;
+}
+
+dialog[open]::backdrop {
+  background-color: rgb(15 23 42 / 40%);
+
+  @starting-style {
+    background-color: rgb(15 23 42 / 0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog {
+    transform: none;
+    transition-duration: 0.05s;
+  }
+
+  @starting-style {
+    dialog[open] {
+      transform: none;
+    }
+  }
 }

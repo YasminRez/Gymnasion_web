@@ -341,4 +341,89 @@ test("studentRoutines filters student active routines by modality when specified
   assert.equal(natacaoRoutines[0].id, "r1");
 });
 
+test("getRoutineStructureTag and extended getModalityBadgeStyle return division and sport colors", () => {
+  assert.equal(model.getRoutineStructureTag(3, "Academia"), "Divisão A/B/C");
+  assert.equal(model.getRoutineStructureTag(4, "Musculação"), "Divisão A/B/C/D");
+  assert.equal(model.getRoutineStructureTag(3, "Natação"), "Microciclo · 3 sessões");
+  assert.equal(model.getRoutineStructureTag(1, "Corrida de Rua"), "Microciclo · 1 sessão");
+
+  const corrida = model.getModalityBadgeStyle("Corrida de Rua");
+  assert.equal(corrida.color, "#e11d48");
+
+  const crossfit = model.getModalityBadgeStyle("Crossfit");
+  assert.equal(crossfit.color, "#dc6803");
+
+  const pilates = model.getModalityBadgeStyle("Pilates");
+  assert.equal(pilates.color, "#027a48");
+});
+
+test("buildRoutineTemplates consolidates duplicate and cycle routines into unique models", () => {
+  const r1 = makeRoutine(
+    "r1",
+    "Periodização Aquática - Velocidade e Endurance",
+    1,
+    3,
+    true,
+    "ATIVA",
+    [{ id: "s1", nome: "Mikael Torres" }],
+    [{ id: "m1", titulo: "Tempo 100m", tipo: "TEMPO" }]
+  );
+  const r2 = makeRoutine(
+    "r2",
+    "Periodização Aquática - Velocidade e Endurance",
+    1,
+    3,
+    true,
+    "ATIVA",
+    [
+      { id: "s1", nome: "Mikael Torres" },
+      { id: "s2", nome: "Carlos Dias" },
+      { id: "s3", nome: "Ana Martins" },
+    ],
+    [
+      { id: "m1", titulo: "Tempo 100m", tipo: "TEMPO" },
+      { id: "m2", titulo: "FC Máxima", tipo: "FREQUENCIA_CARDIACA" },
+    ]
+  );
+  const r3 = makeRoutine(
+    "r3",
+    "Periodização Aquática - Velocidade e Endurance (Ciclo 2)",
+    1,
+    3,
+    false,
+    "ENCERRADA",
+    [{ id: "s4", nome: "Beatriz Lima" }],
+    [{ id: "m1", titulo: "Tempo 100m", tipo: "TEMPO" }]
+  );
+  const r4 = makeRoutine(
+    "r4",
+    "Hipertrofia e Força Pura",
+    2,
+    4,
+    true,
+    "ATIVA",
+    [{ id: "s5", nome: "Lucas Ferreira" }],
+    [{ id: "m3", titulo: "Carga Supino", tipo: "NUMERICO" }]
+  );
+
+  const templates = model.buildRoutineTemplates([r1, r2, r3, r4]);
+  assert.equal(templates.length, 2);
+
+  // O modelo com mais ciclos ativos (Periodização Aquática: 2 ativos de 3 totais) vem primeiro
+  const aquaticTemplate = templates[0];
+  assert.equal(aquaticTemplate.displayTitle, "Periodização Aquática - Velocidade e Endurance");
+  assert.equal(aquaticTemplate.cyclesCount, 3);
+  assert.equal(aquaticTemplate.activeCyclesCount, 2);
+  // Alunos únicos somados sem duplicar s1 (s1, s2, s3, s4 = 4 alunos)
+  assert.equal(aquaticTemplate.totalStudentsCount, 4);
+  // Escolhe r2 como baseRoutine por ser ativa e ter mais métricas/alunos
+  assert.equal(aquaticTemplate.baseRoutine.id, "r2");
+
+  // Escopo individual vs coletivo
+  assert.equal(model.getRoutineScopeLabel(r1), "Individual · Mikael");
+  assert.equal(model.getRoutineScopeLabel(r2), "Turma / Coletivo · 3 alunos");
+});
+
+
+
 

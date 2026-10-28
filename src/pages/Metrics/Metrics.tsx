@@ -263,12 +263,12 @@ export const Metrics: React.FC = () => {
           <table className="metrics-page__table">
             <thead>
               <tr>
-                <th>Métrica</th>
-                <th>Tipo</th>
-                <th>Modalidade</th>
-                <th>Alunos c/ Registros</th>
-                <th>Status</th>
-                <th aria-label="Ações" className="metrics-page__col-actions" />
+                <th scope="col">Métrica</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Modalidade</th>
+                <th scope="col">Alunos c/ Registros</th>
+                <th scope="col">Status</th>
+                <th scope="col" aria-label="Ações" className="metrics-page__col-actions" />
               </tr>
             </thead>
             <tbody>

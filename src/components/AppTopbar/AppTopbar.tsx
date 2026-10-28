@@ -75,25 +75,29 @@ export default function AppTopbar({
         {subtitle && <p>{subtitle}</p>}
       </div>
       <div className="ds-topbar__actions">
-        <form
-          className="ds-topbar__search"
-          role="search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onSearch(query.trim());
-          }}
-        >
-          <img src="/design-system/imgIconSearch.svg" alt="" />
-          <input
-            ref={searchRef}
-            type="search"
-            aria-label={searchLabel}
-            placeholder={`${searchLabel}…`}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <kbd title="Control ou Command + K">⌘K</kbd>
-        </form>
+        <search>
+          <form
+            className="ds-topbar__search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSearch(query.trim());
+            }}
+          >
+            <img src="/design-system/imgIconSearch.svg" alt="" />
+            <input
+              ref={searchRef}
+              type="search"
+              aria-label={searchLabel}
+              placeholder={`${searchLabel}…`}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+            />
+            <kbd title="Control ou Command + K">⌘K</kbd>
+          </form>
+        </search>
 
         <div className="ds-topbar__notification-wrapper">
           <button
