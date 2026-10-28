@@ -455,3 +455,36 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .session-detail-page {
+    padding: 4px 0 32px;
+    gap: 18px;
+  }
+
+  .session-detail__title-section h1 {
+    font-size: 22px;
+  }
+
+  .session-detail__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .session-detail__actions > * {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .session-detail__card,
+  .session-detail__pending-box,
+  .session-detail__feedback-card {
+    padding: 16px;
+  }
+
+  .session-detail__pending-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}

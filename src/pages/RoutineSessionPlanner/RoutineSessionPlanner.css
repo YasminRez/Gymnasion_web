@@ -167,7 +167,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 300px;
+  min-width: min(280px, 100%);
+  flex: 1;
 }
 
 .freq-summary-text {
@@ -561,7 +562,36 @@
 }
 
 @media (max-width: 640px) {
+  .session-planner-page {
+    padding: 4px 0 32px;
+    gap: 18px;
+  }
+
+  .session-planner__title-section h1 {
+    font-size: 22px;
+  }
+
+  .session-planner__actions {
+    width: 100%;
+  }
+
+  .session-planner__actions > * {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .session-planner__weeks-bar,
+  .session-planner__card {
+    padding: 16px;
+  }
+
   .session-planner__form-row {
     grid-template-columns: 1fr;
+  }
+
+  .session-planner__activities-header,
+  .orientations-footer {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

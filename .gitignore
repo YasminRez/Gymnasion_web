@@ -1,4 +1,8 @@
 .agent
+.agents
+.claude
+.testsprite
+testsprite-plans
 .env
 # Logs
 logs
