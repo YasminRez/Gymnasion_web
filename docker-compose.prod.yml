@@ -19,7 +19,7 @@ name: gymnasion-web
 
 services:
   web:
-    image: ghcr.io/yasminrez/gymnasion_web:${IMAGE_TAG:-latest}
+    image: ghcr.io/gymnasion-app/gymnasion-web:${IMAGE_TAG:-latest}
     container_name: gymnasion_web
     restart: unless-stopped
     environment:
