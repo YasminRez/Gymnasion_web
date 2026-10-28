@@ -1,4 +1,102 @@
-.dashboard-notifications__actions { display: flex; gap: 12px; justify-content: space-between; margin-top: 12px; }
-.dashboard-notifications__actions button { font-size: 11px; }
-.dashboard-notifications__actions button:disabled { opacity: .5; cursor: default; }
-.dashboard-v2__notification time { display: block; font-size: 10px; color: var(--color-ink-400); margin-top: 4px; }
+.dashboard-notifications__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.dashboard-notifications__actions button {
+  font-size: 11px;
+}
+
+.dashboard-notifications__actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dashboard-v2__notification.is-unread {
+  background: rgba(240, 90, 40, 0.04);
+  border-left: 2.5px solid var(--color-primary-500);
+  padding: 10px 10px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 4px;
+}
+
+.dashboard-v2__notification.is-unread strong {
+  color: var(--color-ink-900);
+  font-weight: 700;
+}
+
+.dashboard-notifications__item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-notifications__item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+
+.dashboard-notifications__item-meta time {
+  margin-left: auto;
+  margin-top: 0 !important;
+  font-size: 10px;
+  color: var(--color-ink-400);
+}
+
+.dashboard-notifications__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9.5px !important;
+  font-weight: 700;
+  margin-top: 0 !important;
+}
+
+.dashboard-notifications__pill--warning {
+  background: #ffedd5;
+  color: #c2410c !important;
+}
+
+.dashboard-notifications__pill--success {
+  background: #d1fae5;
+  color: #047857 !important;
+}
+
+.dashboard-notifications__pill--info {
+  background: #dbeafe;
+  color: #1d4ed8 !important;
+}
+
+.dashboard-notifications__pill--primary {
+  background: var(--color-primary-50);
+  color: var(--color-primary-600) !important;
+}
+
+.dashboard-notifications__pill--neutral {
+  background: var(--color-background);
+  color: var(--color-ink-600) !important;
+}
+
+.dashboard-notifications__unread-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--color-primary-500);
+  color: #ffffff !important;
+  font-size: 9px !important;
+  font-weight: 700;
+  margin-top: 0 !important;
+}
+
+.dashboard-v2__notification time {
+  display: block;
+  font-size: 10px;
+  color: var(--color-ink-400);
+  margin-top: 4px;
+}

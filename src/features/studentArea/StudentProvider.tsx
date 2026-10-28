@@ -12,6 +12,7 @@ import {
   formatDataPlanejadaDdMm,
 } from "./studentAreaModel";
 import { parseAtividades } from "../../utils/activityParser";
+import { sortNotificationsByPriority } from "../notifications/notificationModel";
 import type {
   StudentFeedbackItem,
   StudentHistoricalRoutine,
@@ -100,22 +101,25 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
         .listarNotificacoes()
         .then((items) => {
           if (Array.isArray(items) && items.length > 0) {
-            setNotifications({ data: items, loading: false, error: "" });
-            setUnreadNotifications(items.filter((i) => !i.lida).length);
+            const sorted = sortNotificationsByPriority(items);
+            setNotifications({ data: sorted, loading: false, error: "" });
+            setUnreadNotifications(sorted.filter((i) => !i.lida).length);
           } else {
             alunoService
               .listarFeedbacks()
               .then((fbs) => {
                 if (Array.isArray(fbs) && fbs.length > 0) {
-                  const synched: PersonalNotification[] = fbs.map((fb, idx) => ({
-                    id: fb.id,
-                    titulo: `Feedback de ${fb.autorNome || "Personal"}`,
-                    mensagem: fb.conteudo,
-                    tipo: "FEEDBACK",
-                    lida: idx >= 2,
-                    referenciaId: null,
-                    dataCriacao: new Date().toISOString(),
-                  }));
+                  const synched: PersonalNotification[] = sortNotificationsByPriority(
+                    fbs.map((fb, idx) => ({
+                      id: fb.id,
+                      titulo: `Feedback de ${fb.autorNome || "Personal"}`,
+                      mensagem: fb.conteudo,
+                      tipo: "FEEDBACK",
+                      lida: idx >= 2,
+                      referenciaId: null,
+                      dataCriacao: new Date().toISOString(),
+                    }))
+                  );
                   setNotifications({ data: synched, loading: false, error: "" });
                   setUnreadNotifications(synched.filter((i) => !i.lida).length);
                 }
@@ -128,15 +132,17 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
             .listarFeedbacks()
             .then((fbs) => {
               if (Array.isArray(fbs) && fbs.length > 0) {
-                const synched: PersonalNotification[] = fbs.map((fb, idx) => ({
-                  id: fb.id,
-                  titulo: `Feedback de ${fb.autorNome || "Personal"}`,
-                  mensagem: fb.conteudo,
-                  tipo: "FEEDBACK",
-                  lida: idx >= 2,
-                  referenciaId: null,
-                  dataCriacao: new Date().toISOString(),
-                }));
+                const synched: PersonalNotification[] = sortNotificationsByPriority(
+                  fbs.map((fb, idx) => ({
+                    id: fb.id,
+                    titulo: `Feedback de ${fb.autorNome || "Personal"}`,
+                    mensagem: fb.conteudo,
+                    tipo: "FEEDBACK",
+                    lida: idx >= 2,
+                    referenciaId: null,
+                    dataCriacao: new Date().toISOString(),
+                  }))
+                );
                 setNotifications({ data: synched, loading: false, error: "" });
                 setUnreadNotifications(synched.filter((i) => !i.lida).length);
               }
@@ -423,14 +429,16 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
         await alunoService.lerNotificacao(id);
         setNotifications((prev) => ({
           ...prev,
-          data: prev.data.map((item) => (item.id === id ? { ...item, lida: true } : item)),
+          data: sortNotificationsByPriority(
+            prev.data.map((item) => (item.id === id ? { ...item, lida: true } : item))
+          ),
         }));
         setUnreadNotifications((prev) => Math.max(0, prev - 1));
       } else {
         await alunoService.lerTodasNotificacoes();
         setNotifications((prev) => ({
           ...prev,
-          data: prev.data.map((item) => ({ ...item, lida: true })),
+          data: sortNotificationsByPriority(prev.data.map((item) => ({ ...item, lida: true }))),
         }));
         setUnreadNotifications(0);
       }
@@ -438,13 +446,15 @@ export default function StudentProvider({ children }: { children: ReactNode }) {
       if (id) {
         setNotifications((prev) => ({
           ...prev,
-          data: prev.data.map((item) => (item.id === id ? { ...item, lida: true } : item)),
+          data: sortNotificationsByPriority(
+            prev.data.map((item) => (item.id === id ? { ...item, lida: true } : item))
+          ),
         }));
         setUnreadNotifications((prev) => Math.max(0, prev - 1));
       } else {
         setNotifications((prev) => ({
           ...prev,
-          data: prev.data.map((item) => ({ ...item, lida: true })),
+          data: sortNotificationsByPriority(prev.data.map((item) => ({ ...item, lida: true }))),
         }));
         setUnreadNotifications(0);
       }

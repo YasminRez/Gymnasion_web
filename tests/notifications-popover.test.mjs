@@ -1,5 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {
+  filterNotifications,
+  getNotificationCategoryMeta,
+  normalizeNotification,
+  sortNotificationsByPriority,
+  splitNotificationsByReadState,
+} from "../src/features/notifications/notificationModel.ts";
 
 test("notification popover calculates unread count accurately", () => {
   const notifications = [
@@ -8,22 +15,53 @@ test("notification popover calculates unread count accurately", () => {
     { id: "3", titulo: "Feedback", mensagem: "Você recebeu uma nota", tipo: "FEEDBACK", lida: false, dataCriacao: "2026-10-19T11:00:00Z", referenciaId: null },
   ];
 
-  const unread = notifications.filter((n) => !n.lida).length;
-  assert.equal(unread, 2);
+  const { unreadCount } = splitNotificationsByReadState(notifications);
+  assert.equal(unreadCount, 2);
 });
 
-test("marking single notification as read updates only target item", () => {
+test("sortNotificationsByPriority always prioritizes unread notifications above read ones", () => {
   const notifications = [
-    { id: "1", titulo: "Aviso 1", mensagem: "Msg 1", lida: false, dataCriacao: "2026-10-19T10:00:00Z", referenciaId: null, tipo: "TREINO" },
+    { id: "read-newest", titulo: "Pendências de Métricas - Beatriz Lima", mensagem: "O aluno Beatriz Lima possui 2 métrica(s) pendente(s)", tipo: "PENDENCIA", lida: true, dataCriacao: "2026-10-28T15:00:00Z", referenciaId: null },
+    { id: "read-second", titulo: "Pendências de Métricas - Mikael teste", mensagem: "O aluno Mikael teste possui 1 métrica(s) pendente(s)", tipo: "PENDENCIA", lida: true, dataCriacao: "2026-10-28T14:55:00Z", referenciaId: null },
+    { id: "unread-older", titulo: "Treino Concluído", mensagem: "Lucas concluiu o treino", tipo: "TREINO", lida: false, dataCriacao: "2026-10-27T09:00:00Z", referenciaId: null },
+    { id: "unread-newer", titulo: "Pendências de Métricas - Isabelly Regetz", mensagem: "O aluno Isabelly Regetz possui 2 métrica(s) pendente(s)", tipo: "PENDENCIA", lida: false, dataCriacao: "2026-10-28T12:00:00Z", referenciaId: null },
+  ];
+
+  const sorted = sortNotificationsByPriority(notifications);
+  assert.deepEqual(
+    sorted.map((item) => item.id),
+    ["unread-newer", "unread-older", "read-newest", "read-second"],
+    "Unread notifications must appear at the top ordered newest-first, followed by read notifications"
+  );
+});
+
+test("sortNotificationsByPriority prioritizes operational urgency when timestamps are within the same minute", () => {
+  const sameTime = "2026-10-28T13:00:00Z";
+  const notifications = [
+    { id: "fb", titulo: "Feedback recebido", mensagem: "Nota registrada", tipo: "FEEDBACK", lida: false, dataCriacao: sameTime, referenciaId: null },
+    { id: "pend", titulo: "Pendências de Métricas - Beatriz", mensagem: "2 métricas pendentes", tipo: "PENDENCIA", lida: false, dataCriacao: sameTime, referenciaId: null },
+    { id: "treino", titulo: "Treino concluído", mensagem: "Sessão finalizada", tipo: "TREINO", lida: false, dataCriacao: sameTime, referenciaId: null },
+  ];
+
+  const sorted = sortNotificationsByPriority(notifications);
+  assert.deepEqual(sorted.map((item) => item.id), ["pend", "treino", "fb"]);
+});
+
+test("marking single notification as read updates target item and moves it below remaining unread items", () => {
+  const notifications = [
+    { id: "1", titulo: "Aviso 1", mensagem: "Msg 1", lida: false, dataCriacao: "2026-10-19T12:00:00Z", referenciaId: null, tipo: "PENDENCIA" },
     { id: "2", titulo: "Aviso 2", mensagem: "Msg 2", lida: false, dataCriacao: "2026-10-19T10:00:00Z", referenciaId: null, tipo: "TREINO" },
   ];
 
   const targetId = "1";
-  const updated = notifications.map((item) => (item.id === targetId ? { ...item, lida: true } : item));
+  const updated = sortNotificationsByPriority(
+    notifications.map((item) => (item.id === targetId ? { ...item, lida: true } : item))
+  );
 
-  assert.equal(updated.find((i) => i.id === "1")?.lida, true);
-  assert.equal(updated.find((i) => i.id === "2")?.lida, false);
-  assert.equal(updated.filter((n) => !n.lida).length, 1);
+  assert.equal(updated[0].id, "2", "Remaining unread item moves to top position");
+  assert.equal(updated[0].lida, false);
+  assert.equal(updated[1].id, "1", "Newly read item moves below unread items");
+  assert.equal(updated[1].lida, true);
 });
 
 test("marking all notifications as read updates all items and sets unread to 0", () => {
@@ -37,6 +75,41 @@ test("marking all notifications as read updates all items and sets unread to 0",
   assert.equal(allRead.filter((i) => !i.lida).length, 0);
 });
 
+test("filterNotifications isolates unread and pendencia categories accurately", () => {
+  const notifications = [
+    { id: "1", titulo: "Pendências de Métricas - Ana", mensagem: "1 métrica pendente", lida: true, dataCriacao: "2026-10-19T10:00:00Z", referenciaId: null, tipo: "PENDENCIA" },
+    { id: "2", titulo: "Treino concluído", mensagem: "Pedro concluiu", lida: false, dataCriacao: "2026-10-19T11:00:00Z", referenciaId: null, tipo: "TREINO" },
+    { id: "3", titulo: "Pendências de Métricas - João", mensagem: "2 métricas pendentes", lida: false, dataCriacao: "2026-10-19T09:00:00Z", referenciaId: null, tipo: "PENDENCIA" },
+  ];
+
+  const unreadOnly = filterNotifications(notifications, "unread");
+  assert.deepEqual(unreadOnly.map((i) => i.id), ["2", "3"]);
+
+  const pendenciasOnly = filterNotifications(notifications, "pendencia");
+  assert.deepEqual(
+    pendenciasOnly.map((i) => i.id),
+    ["3", "1"],
+    "Within pendencias filter, unread pendencia (#3) still comes before read pendencia (#1)"
+  );
+});
+
+test("normalizeNotification maps backend dataHora and infers title when missing", () => {
+  const normalized = normalizeNotification({
+    id: "n-10",
+    alunoId: "stu-1",
+    alunoNome: "Mariana Atleta",
+    tipo: "TREINO_CONCLUIDO",
+    mensagem: "Mariana concluiu o treino de Natação.",
+    dataHora: "2026-10-21T18:30:00Z",
+    lida: false,
+  });
+
+  assert.equal(normalized.titulo, "Treino concluído - Mariana Atleta");
+  assert.equal(normalized.dataCriacao, "2026-10-21T18:30:00Z");
+  assert.equal(normalized.referenciaId, "stu-1");
+  assert.equal(getNotificationCategoryMeta(normalized).category, "treino");
+});
+
 test("bell click in topbar opens popover locally instead of redirecting to main screen", () => {
   let popoverOpen = false;
   let redirectedTo = "";
@@ -45,7 +118,6 @@ test("bell click in topbar opens popover locally instead of redirecting to main 
     redirectedTo = to;
   };
 
-  // Simulates user clicking bell: toggles popoverOpen without calling fakeNavigate
   const handleBellClick = () => {
     popoverOpen = !popoverOpen;
   };
