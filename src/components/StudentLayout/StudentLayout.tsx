@@ -56,6 +56,24 @@ export default function StudentLayout() {
     setMenuOpen(false);
   }, [location.pathname, location.search]);
 
+  useEffect(() => {
+    if (!menuOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+    document.body.style.overflow = "hidden";
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
+
   if (user?.role === "PERSONAL_TRAINER") {
     return <Navigate to="/home" replace />;
   }
@@ -92,15 +110,14 @@ export default function StudentLayout() {
       <a className="student-layout__skip" href="#student-content">
         Ir para o conteúdo
       </a>
-      <button
-        type="button"
-        className="student-layout__menu-toggle"
-        aria-expanded={menuOpen}
-        aria-controls="student-sidebar"
-        onClick={() => setMenuOpen((prev) => !prev)}
-      >
-        {menuOpen ? "Fechar menu" : "Abrir menu"}
-      </button>
+
+      {menuOpen && (
+        <div
+          className="student-layout__backdrop"
+          aria-hidden="true"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
       <div
         id="student-sidebar"
@@ -108,6 +125,7 @@ export default function StudentLayout() {
       >
         <AppSidebar
           role="student"
+          onCloseMobile={() => setMenuOpen(false)}
           user={{
             name: student.name,
             subtitle: student.roleLabel,
@@ -151,6 +169,9 @@ export default function StudentLayout() {
 
       <div className="student-layout__body">
         <AppTopbar
+          menuOpen={menuOpen}
+          sidebarId="student-sidebar"
+          onToggleMenu={() => setMenuOpen((prev) => !prev)}
           title={title}
           subtitle={subtitle}
           userName={student.name}

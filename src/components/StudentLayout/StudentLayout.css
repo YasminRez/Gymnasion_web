@@ -1,6 +1,8 @@
 .student-layout {
   display: flex;
   min-height: 100dvh;
+  max-width: 100vw;
+  overflow-x: clip;
   background: var(--color-background);
 }
 
@@ -19,6 +21,8 @@
 .student-layout__body {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
   padding: 28px 32px 36px;
 }
 
@@ -28,6 +32,7 @@
 
 .student-layout__main {
   min-width: 0;
+  max-width: 100%;
 }
 
 .student-layout__skip {
@@ -43,7 +48,7 @@
   left: 8px;
 }
 
-.student-layout__menu-toggle {
+.student-layout__backdrop {
   display: none;
 }
 
@@ -221,34 +226,54 @@
   .student-layout {
     flex-direction: column;
   }
-  .student-layout__sidebar {
-    display: none;
-    width: 100%;
-  }
-  .student-layout__sidebar--open {
+
+  .student-layout__backdrop {
     display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 940;
   }
+
+  .student-layout__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(288px, 85vw);
+    height: 100%;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    background: var(--color-surface);
+    z-index: 950;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  .student-layout__sidebar--open {
+    transform: translateX(0);
+    pointer-events: auto;
+    box-shadow: 0 20px 32px -4px rgba(15, 23, 42, 0.24);
+  }
+
   .student-layout__sidebar .ds-sidebar {
     position: static;
     width: 100%;
     height: auto;
-    min-height: 0;
-  }
-  .student-layout__menu-toggle {
-    display: block;
-    margin: 16px 24px 0;
-    padding: 10px 14px;
-    align-self: flex-start;
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    background: var(--color-surface);
-    color: var(--color-ink-700);
-    font-weight: 600;
+    min-height: 100%;
   }
 }
 
 @media (max-width: 520px) {
   .student-layout__body {
-    padding: 20px 16px;
+    padding: 18px 14px 28px;
+  }
+
+  .student-layout__body > header {
+    margin-bottom: 18px;
   }
 }
