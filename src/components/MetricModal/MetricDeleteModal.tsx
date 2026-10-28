@@ -46,7 +46,7 @@ export default function MetricDeleteModal({
 
   return (
     <WorkspaceDialog
-      title={`Excluir “${metric.titulo}”?`}
+      title={hasHistory ? `Descontinuar “${metric.titulo}”?` : `Excluir “${metric.titulo}”?`}
       description={description}
       tone="danger"
       busy={submitting}

@@ -25,6 +25,7 @@ interface MetricFormModalProps {
   defaultModalidadeId?: number | null;
   existingMetrics: MetricaResponseDTO[];
   metricToEdit?: MetricaResponseDTO | null;
+  templateMetric?: MetricaResponseDTO | null;
   onSuccess: (metric: MetricaResponseDTO) => void;
 }
 
@@ -36,40 +37,49 @@ export default function MetricFormModal({
   defaultModalidadeId,
   existingMetrics,
   metricToEdit,
+  templateMetric,
   onSuccess,
 }: MetricFormModalProps) {
   const isEdit = mode === "edit" && Boolean(metricToEdit);
+  const sourceMetric = isEdit ? metricToEdit : templateMetric;
 
   // Form states
   const [modalidadeId, setModalidadeId] = useState<number>(() => {
     if (isEdit && metricToEdit) return metricToEdit.modalidadeId;
+    if (templateMetric) {
+      if (templateMetric.id) {
+        const otherMod = modalidades.find((m) => m.id !== templateMetric.modalidadeId);
+        return otherMod?.id || templateMetric.modalidadeId;
+      }
+      return templateMetric.modalidadeId;
+    }
     if (defaultModalidadeId) return defaultModalidadeId;
     return modalidades[0]?.id || 1;
   });
 
   const [titulo, setTitulo] = useState<string>(() => {
-    return isEdit && metricToEdit ? metricToEdit.titulo : "";
+    return sourceMetric ? sourceMetric.titulo : "";
   });
 
   const [tipo, setTipo] = useState<TipoMetrica>(() => {
-    if (isEdit && metricToEdit) return metricToEdit.tipo;
+    if (sourceMetric) return sourceMetric.tipo;
     return "TEMPO";
   });
 
   const [obrigatoria, setObrigatoria] = useState<boolean>(() => {
-    if (isEdit && metricToEdit) return metricToEdit.obrigatoria !== false;
+    if (sourceMetric) return sourceMetric.obrigatoria !== false;
     return true;
   });
 
   const [quemPreenche, setQuemPreenche] = useState<ResponsavelPreenchimento>(() => {
-    if (isEdit && metricToEdit && metricToEdit.quemPreenche) {
-      return metricToEdit.quemPreenche;
+    if (sourceMetric && sourceMetric.quemPreenche) {
+      return sourceMetric.quemPreenche;
     }
     return "AMBOS";
   });
 
   const [campoStrava, setCampoStrava] = useState<CampoStrava>(() => {
-    return isEdit && metricToEdit?.campoStrava ? metricToEdit.campoStrava : "NENHUM";
+    return sourceMetric?.campoStrava ? sourceMetric.campoStrava : "NENHUM";
   });
 
   const [titleError, setTitleError] = useState<string>("");
@@ -89,6 +99,18 @@ export default function MetricFormModal({
         setObrigatoria(metricToEdit.obrigatoria !== false);
         setQuemPreenche(metricToEdit.quemPreenche || "AMBOS");
         setCampoStrava(metricToEdit.campoStrava || "NENHUM");
+      } else if (templateMetric) {
+        if (templateMetric.id) {
+          const otherMod = modalidades.find((m) => m.id !== templateMetric.modalidadeId);
+          setModalidadeId(otherMod?.id || templateMetric.modalidadeId);
+        } else {
+          setModalidadeId(templateMetric.modalidadeId);
+        }
+        setTitulo(templateMetric.titulo);
+        setTipo(templateMetric.tipo);
+        setObrigatoria(templateMetric.obrigatoria !== false);
+        setQuemPreenche(templateMetric.quemPreenche || "AMBOS");
+        setCampoStrava(templateMetric.campoStrava || "NENHUM");
       } else {
         setModalidadeId(defaultModalidadeId || modalidades[0]?.id || 1);
         setTitulo("");
@@ -99,7 +121,7 @@ export default function MetricFormModal({
       }
       setTitleError("");
     }
-  }, [isOpen, isEdit, metricToEdit, defaultModalidadeId, modalidades]);
+  }, [isOpen, isEdit, metricToEdit, templateMetric, defaultModalidadeId, modalidades]);
 
   // Keyboard shortcut: Escape
   useEffect(() => {

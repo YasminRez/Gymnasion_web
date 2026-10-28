@@ -136,3 +136,18 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+@media (max-width: 520px) {
+  .metric-delete-modal {
+    padding: 18px;
+  }
+
+  .metric-delete-modal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .metric-delete-modal__btn-cancel,
+  .metric-delete-modal__btn-confirm {
+    width: 100%;
+  }
+}
