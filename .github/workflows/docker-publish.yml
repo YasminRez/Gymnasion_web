@@ -1,7 +1,7 @@
 name: Docker Image (GHCR)
 
 # Publica a imagem do front no GitHub Container Registry (ghcr.io).
-# - push na branch prod: tags latest e sha-<commit>
+# - push na branch main: tags latest e sha-<commit>
 # - manual: Actions > Docker Image (GHCR) > Run workflow
 #
 # Pacotes novos no GHCR nascem PRIVADOS. Para baixar na VPS:
@@ -10,7 +10,7 @@ name: Docker Image (GHCR)
 on:
   push:
     branches:
-      - prod
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -54,7 +54,7 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/prod' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=sha-
 
       - name: Build e push
