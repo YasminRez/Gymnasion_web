@@ -1,15 +1,15 @@
 .form-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.form-field label { align-self: flex-start; color: var(--color-text-secondary); font-size: 13px; font-weight: 600; line-height: 1.5; }
-.form-field input, .form-field select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text); font: 400 var(--font-size-body)/1.5 var(--font-family); }
+.form-field label { align-self: flex-start; color: var(--color-text-secondary); font-size: 14.5px; font-weight: 600; line-height: 1.5; }
+.form-field input, .form-field select { width: 100%; height: 46px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text); font: 400 15px/1.5 var(--font-family); }
 .form-field input::placeholder { color: var(--color-ink-400); opacity: 1; }
 .form-field input:focus, .form-field select:focus { outline: none; border-color: var(--color-primary-500); box-shadow: var(--shadow-focus); }
 .form-field input:focus-visible, .form-field select:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; border-color: var(--color-primary-500); }
 .form-field__select, .form-field__password { position: relative; }
 .form-field select { appearance: none; padding-right: 42px; cursor: pointer; }
-.form-field__select::after { content: ''; position: absolute; right: 14px; top: 13px; width: 18px; height: 18px; background: url('/design-system/imgChevron.svg') center no-repeat; pointer-events: none; }
+.form-field__select::after { content: ''; position: absolute; right: 14px; top: 14px; width: 18px; height: 18px; background: url('/design-system/imgChevron.svg') center no-repeat; pointer-events: none; }
 .form-field--invalid input, .form-field--invalid select,
 .form-field input:user-invalid, .form-field select:user-invalid { border-color: var(--color-danger); }
-.form-field__error, .form-field__hint { margin: 0; font-size: 12px; font-weight: 500; line-height: 1.5; color: var(--color-danger); }
+.form-field__error, .form-field__hint { margin: 0; font-size: 13.5px; font-weight: 500; line-height: 1.5; color: var(--color-danger); }
 .form-field__hint { color: var(--color-text-muted); }
 .form-field__password input { padding-right: 44px; }
 .form-field__password input::-ms-reveal { display: none; }
