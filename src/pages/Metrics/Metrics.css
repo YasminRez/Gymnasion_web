@@ -4,6 +4,54 @@
   margin: 0 auto;
 }
 
+.metrics-page__return-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  background: #fff4ef;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+}
+
+.metrics-page__return-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metrics-page__return-banner-info strong {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #9a3412;
+}
+
+.metrics-page__return-banner-info span {
+  font-size: 13.5px;
+  color: #c2410c;
+}
+
+.metrics-page__return-banner-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #fdba74;
+  background: #ffffff;
+  color: #c2410c;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.metrics-page__return-banner-btn:hover {
+  background: #ffedd5;
+  border-color: #fb923c;
+}
+
 /* Abas de Workspace (Etapa 2): Métricas Ativas, Catálogo de Presets e Descontinuadas */
 .metrics-page__workspace-tabs {
   display: flex;
@@ -23,7 +71,7 @@
   border: none;
   background: transparent;
   color: #475467;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -52,13 +100,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 20px;
+  min-width: 24px;
+  height: 22px;
   padding: 0 7px;
   border-radius: 999px;
   background: #f2f4f7;
   color: #475467;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
 }
 
@@ -94,8 +142,8 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 7px 12px;
-  font-size: 13px;
+  padding: 8px 13px;
+  font-size: 14px;
   font-weight: 500;
   color: #475467;
   cursor: pointer;
@@ -114,13 +162,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 18px;
+  min-width: 22px;
+  height: 20px;
   padding: 0 6px;
   border-radius: 999px;
   background: #eaecf0;
   color: #475467;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -154,13 +202,13 @@
 }
 
 .metrics-page__filter-chip {
-  height: 34px;
-  padding: 0 12px;
+  height: 36px;
+  padding: 0 13px;
   border-radius: 999px;
   border: 1px solid #e4e7ec;
   background: #ffffff;
   color: #475467;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
@@ -221,12 +269,12 @@
 }
 
 .metrics-page__search-input {
-  height: 38px;
+  height: 42px;
   width: 250px;
   padding: 0 12px 0 36px;
   border: 1px solid #d0d5dd;
   border-radius: 8px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   color: #101828;
   background-color: #ffffff;
   outline: none;
@@ -239,13 +287,13 @@
 }
 
 .metrics-page__sort-select {
-  height: 38px;
+  height: 42px;
   padding: 0 12px;
   border: 1px solid #d0d5dd;
   border-radius: 8px;
   background-color: #ffffff;
   color: #344054;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   outline: none;
@@ -257,13 +305,13 @@
 }
 
 .metrics-page__btn-create {
-  height: 38px;
+  height: 42px;
   padding: 0 16px;
   background-color: #f05a28;
   border: none;
   border-radius: 8px;
   color: #ffffff;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -278,13 +326,13 @@
 }
 
 .metrics-page__btn-clear {
-  height: 38px;
+  height: 42px;
   padding: 0 16px;
   background-color: #ffffff;
   border: 1px solid #d0d5dd;
   border-radius: 8px;
   color: #344054;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -319,7 +367,7 @@
 
 .metrics-page__banner p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
   color: #026aa2;
 }
@@ -372,8 +420,8 @@
 }
 
 .metrics-page__table th {
-  padding: 12px 20px;
-  font-size: 11px;
+  padding: 13px 20px;
+  font-size: 12px;
   font-weight: 600;
   color: #475467;
   text-transform: uppercase;
@@ -416,7 +464,7 @@
 }
 
 .metrics-page__table td {
-  padding: 15px 20px;
+  padding: 16px 20px;
   vertical-align: middle;
 }
 
@@ -430,7 +478,7 @@
 
 .metrics-page__col-metric h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 600;
   color: #101828;
   line-height: 1.35;

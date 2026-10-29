@@ -424,6 +424,133 @@ test("buildRoutineTemplates consolidates duplicate and cycle routines into uniqu
   assert.equal(model.getRoutineScopeLabel(r2), "Turma / Coletivo · 3 alunos");
 });
 
+test("new routine draft cache starts without preselected fields and restores after metric creation", () => {
+  const initial = model.createInitialNewRoutineDraft();
+  assert.equal(initial.titulo, "");
+  assert.equal(initial.modalidadeId, null);
+  assert.equal(initial.frequenciaSemanal, 0);
+  assert.equal(JSON.stringify(initial.selectedMetricIds), JSON.stringify([]));
+  assert.equal(JSON.stringify(initial.selectedStudentIds), JSON.stringify([]));
+
+  // Salva rascunho em cache antes de abrir o modal de criar métrica
+  const serialized = model.serializeNewRoutineDraft({
+    titulo: "Resistência 1500m",
+    modalidadeId: 1,
+    frequenciaSemanal: 3,
+    objetivos: "Melhorar ritmo médio em águas abertas",
+    selectedStudentIds: ["s1"],
+    selectedMetricIds: ["m1"],
+    sendToTurma: false,
+  });
+
+  const restored = model.parseNewRoutineDraft(serialized);
+  assert.equal(restored.titulo, "Resistência 1500m");
+  assert.equal(restored.modalidadeId, 1);
+  assert.equal(restored.frequenciaSemanal, 3);
+  assert.equal(JSON.stringify(restored.selectedMetricIds), JSON.stringify(["m1"]));
+
+  // Quando o personal cadastra a nova métrica m2 na modalidade 1, ela já volta selecionada no rascunho
+  const merged = model.mergeCreatedMetricIntoDraft(restored, "m2", 1);
+  assert.equal(merged.titulo, "Resistência 1500m");
+  assert.equal(merged.modalidadeId, 1);
+  assert.equal(JSON.stringify(merged.selectedMetricIds), JSON.stringify(["m1", "m2"]));
+  assert.equal(JSON.stringify(merged.selectedStudentIds), JSON.stringify(["s1"]));
+
+  // URL de redirecionamento vai direto para o modal de criação vinculado à modalidade
+  assert.equal(
+    model.buildMetricCreateRedirectUrl(1, "/rotinas/nova"),
+    "/metricas?modalidadeId=1&acao=nova&retorno=%2Frotinas%2Fnova"
+  );
+  assert.equal(
+    model.buildMetricCreateRedirectUrl(null, "/rotinas/nova"),
+    "/metricas?acao=nova&retorno=%2Frotinas%2Fnova"
+  );
+});
+
+test("filterAndSortRoutineMetrics, classifyStudentsForRoutine and multiple turmas selection work accurately", () => {
+  const metrics = [
+    { id: "m1", titulo: "Tempo 400m Livre", tipo: "TEMPO", obrigatoria: true },
+    { id: "m2", titulo: "Frequência Cardíaca Média", tipo: "FREQUENCIA_CARDIACA", obrigatoria: false },
+    { id: "m3", titulo: "Distância Total Nadada (m)", tipo: "NUMERICO", obrigatoria: true },
+  ];
+
+  // m2 está selecionada -> vem primeiro no topo, seguida pelas obrigatórias em ordem alfabética (m3, m1)
+  const sorted = model.filterAndSortRoutineMetrics(metrics, ["m2"], "");
+  assert.equal(
+    JSON.stringify(sorted.map((m) => m.id)),
+    JSON.stringify(["m2", "m3", "m1"])
+  );
+
+  // Filtro de busca por texto insensível a acentos
+  const filtered = model.filterAndSortRoutineMetrics(metrics, [], "distancia");
+  assert.equal(
+    JSON.stringify(filtered.map((m) => m.id)),
+    JSON.stringify(["m3"])
+  );
+
+  // IDs das métricas obrigatórias
+  assert.equal(
+    JSON.stringify(model.getRequiredMetricIds(metrics)),
+    JSON.stringify(["m1", "m3"])
+  );
+
+  // Classificação de alunos ocupados (RN-012) com título da rotina ativa
+  const s1 = makeStudent("s1", "Mikael Torres", "ATIVO");
+  const s2 = makeStudent("s2", "Beatriz Lima", "ATIVO");
+  const activeRoutines = [
+    makeRoutine("r1", "Periodização Aquática", 1, 3, true, "ATIVA", [{ id: "s1", nome: "Mikael Torres" }]),
+  ];
+  const classified = model.classifyStudentsForRoutine([s1, s2], activeRoutines, undefined, 1);
+  assert.equal(
+    JSON.stringify(classified.eligible.map((s) => s.id)),
+    JSON.stringify(["s2"])
+  );
+  assert.equal(classified.busy.length, 1);
+  assert.equal(classified.busy[0].student.id, "s1");
+  assert.equal(classified.busy[0].activeRoutineTitle, "Periodização Aquática");
+
+  // Suporte a múltiplas turmas por modalidade
+  const groups = [
+    { id: "t1", nome: "Natação Alto Rendimento", modalidadeId: 1, alunos: [{ id: "s1" }, { id: "s2" }] },
+    { id: "t2", nome: "Natação Master", modalidadeId: 1, alunos: [{ id: "s2" }, { id: "s3" }] },
+    { id: "t3", nome: "Funcional Manhã", modalidadeId: 2, alunos: [{ id: "s4" }] },
+  ];
+  const modGroups = model.getModalityGroupsForRoutine(groups, 1);
+  assert.equal(
+    JSON.stringify(modGroups.map((g) => g.id)),
+    JSON.stringify(["t1", "t2"])
+  );
+
+  // Toggle da turma t1 adiciona apenas alunos elegíveis (s2, pois s1 está ocupado)
+  const step1 = model.toggleTurmaStudentsSelection([], [], "t1", modGroups, ["s2", "s3"]);
+  assert.equal(JSON.stringify(step1.nextTurmaIds), JSON.stringify(["t1"]));
+  assert.equal(JSON.stringify(step1.nextStudentIds), JSON.stringify(["s2"]));
+
+  // Toggle da turma t2 adiciona s3 e mantém s2
+  const step2 = model.toggleTurmaStudentsSelection(
+    step1.nextStudentIds,
+    step1.nextTurmaIds,
+    "t2",
+    modGroups,
+    ["s2", "s3"]
+  );
+  assert.equal(JSON.stringify(step2.nextTurmaIds), JSON.stringify(["t1", "t2"]));
+  assert.equal(JSON.stringify(step2.nextStudentIds), JSON.stringify(["s2", "s3"]));
+
+  // Desmarcar t1 mantém s2 porque s2 também pertence à turma t2 que continua marcada
+  const step3 = model.toggleTurmaStudentsSelection(
+    step2.nextStudentIds,
+    step2.nextTurmaIds,
+    "t1",
+    modGroups,
+    ["s2", "s3"]
+  );
+  assert.equal(JSON.stringify(step3.nextTurmaIds), JSON.stringify(["t2"]));
+  assert.equal(JSON.stringify(step3.nextStudentIds), JSON.stringify(["s2", "s3"]));
+});
+
+
+
 
 
 

@@ -1,9 +1,20 @@
 import type { AlunoResponse } from "../../types/student";
 import type { CriarRotinaPayload, ReutilizarRotinaPayload, RotinaResponse } from "../../types/rotina";
-import type { TipoMetrica } from "../../types/metric";
+import type { MetricaResponseDTO, TipoMetrica } from "../../types/metric";
 
 export type RoutineFilter = "all" | "active" | "ended";
 export type RoutineWorkspaceTab = "active" | "templates" | "ended";
+
+export interface BusyStudentForRoutine {
+  student: AlunoResponse;
+  activeRoutineId: string;
+  activeRoutineTitle: string;
+}
+
+export interface ClassifiedStudentsForRoutine {
+  eligible: AlunoResponse[];
+  busy: BusyStudentForRoutine[];
+}
 
 export interface RoutineTemplateItem {
   key: string;
@@ -86,14 +97,17 @@ export function visibleRoutines(
  * - Não podem possuir outra rotina ATIVA simultaneamente (RN-012 / US-11).
  *   (Se currentRoutineId for fornecido, a presença do aluno na própria rotina não o desqualifica).
  */
-export function eligibleStudentsForRoutine(
+export function classifyStudentsForRoutine(
   students: AlunoResponse[],
   routines: RotinaResponse[],
   currentRoutineId?: string,
   modalityId?: number | string | null
-): AlunoResponse[] {
+): ClassifiedStudentsForRoutine {
   const modId = modalityId ? Number(modalityId) : null;
-  const activeStudentIdsWithOtherRoutineInSameModality = new Set<string>();
+  const activeRoutineByStudentId = new Map<
+    string,
+    { activeRoutineId: string; activeRoutineTitle: string }
+  >();
 
   for (const routine of routines) {
     if (routine.id === currentRoutineId) continue;
@@ -104,20 +118,46 @@ export function eligibleStudentsForRoutine(
     }
     if (isRoutineActive(routine)) {
       for (const aluno of routine.alunos || []) {
-        activeStudentIdsWithOtherRoutineInSameModality.add(aluno.id);
+        if (aluno.id && !activeRoutineByStudentId.has(aluno.id)) {
+          activeRoutineByStudentId.set(aluno.id, {
+            activeRoutineId: routine.id,
+            activeRoutineTitle: routine.titulo || "Rotina ativa",
+          });
+        }
       }
     }
   }
 
-  return students.filter((student) => {
+  const busy: BusyStudentForRoutine[] = [];
+
+  const eligible = students.filter((student) => {
     if (student.status !== "ATIVO") return false;
-    if (activeStudentIdsWithOtherRoutineInSameModality.has(student.id)) return false;
     if (modId !== null && Array.isArray(student.modalidades)) {
       const enrolled = student.modalidades.some((m) => m.id === modId);
       if (!enrolled) return false;
     }
+    const busyInfo = activeRoutineByStudentId.get(student.id);
+    if (busyInfo) {
+      busy.push({
+        student,
+        activeRoutineId: busyInfo.activeRoutineId,
+        activeRoutineTitle: busyInfo.activeRoutineTitle,
+      });
+      return false;
+    }
     return true;
   });
+
+  return { eligible, busy };
+}
+
+export function eligibleStudentsForRoutine(
+  students: AlunoResponse[],
+  routines: RotinaResponse[],
+  currentRoutineId?: string,
+  modalityId?: number | string | null
+): AlunoResponse[] {
+  return classifyStudentsForRoutine(students, routines, currentRoutineId, modalityId).eligible;
 }
 
 export function validateCreateRoutinePayload(payload: Partial<CriarRotinaPayload>): Record<string, string> {
@@ -415,5 +455,226 @@ export function buildRoutineTemplates(routines: RotinaResponse[]): RoutineTempla
     return a.displayTitle.localeCompare(b.displayTitle, "pt-BR");
   });
 }
+
+export const NEW_ROUTINE_DRAFT_KEY = "gymnasion_new_routine_draft_v1";
+
+export interface NewRoutineDraft {
+  titulo: string;
+  modalidadeId: number | null;
+  frequenciaSemanal: number;
+  objetivos: string;
+  selectedStudentIds: string[];
+  selectedMetricIds: string[];
+  sendToTurma: boolean;
+  selectedTurmaIds: string[];
+  updatedAt: number;
+}
+
+export function createInitialNewRoutineDraft(): NewRoutineDraft {
+  return {
+    titulo: "",
+    modalidadeId: null,
+    frequenciaSemanal: 0,
+    objetivos: "",
+    selectedStudentIds: [],
+    selectedMetricIds: [],
+    sendToTurma: false,
+    selectedTurmaIds: [],
+    updatedAt: 0,
+  };
+}
+
+export function serializeNewRoutineDraft(draft: Partial<NewRoutineDraft>): string {
+  const base = createInitialNewRoutineDraft();
+  const selectedTurmaIds = Array.isArray(draft.selectedTurmaIds)
+    ? Array.from(
+        new Set(
+          draft.selectedTurmaIds.filter(
+            (id): id is string => typeof id === "string" && Boolean(id)
+          )
+        )
+      )
+    : [];
+  const payload: NewRoutineDraft = {
+    titulo: typeof draft.titulo === "string" ? draft.titulo : base.titulo,
+    modalidadeId:
+      typeof draft.modalidadeId === "number" && Number.isFinite(draft.modalidadeId)
+        ? draft.modalidadeId
+        : null,
+    frequenciaSemanal:
+      typeof draft.frequenciaSemanal === "number" &&
+      Number.isFinite(draft.frequenciaSemanal)
+        ? draft.frequenciaSemanal
+        : 0,
+    objetivos: typeof draft.objetivos === "string" ? draft.objetivos : base.objetivos,
+    selectedStudentIds: Array.isArray(draft.selectedStudentIds)
+      ? draft.selectedStudentIds.filter((id): id is string => typeof id === "string" && Boolean(id))
+      : [],
+    selectedMetricIds: Array.isArray(draft.selectedMetricIds)
+      ? Array.from(
+          new Set(
+            draft.selectedMetricIds.filter(
+              (id): id is string => typeof id === "string" && Boolean(id)
+            )
+          )
+        )
+      : [],
+    sendToTurma: Boolean(draft.sendToTurma || selectedTurmaIds.length > 0),
+    selectedTurmaIds,
+    updatedAt: typeof draft.updatedAt === "number" ? draft.updatedAt : Date.now(),
+  };
+  return JSON.stringify(payload);
+}
+
+export function parseNewRoutineDraft(raw: string | null | undefined): NewRoutineDraft | null {
+  if (!raw || typeof raw !== "string") return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<NewRoutineDraft>;
+    if (!parsed || typeof parsed !== "object") return null;
+    return JSON.parse(serializeNewRoutineDraft(parsed)) as NewRoutineDraft;
+  } catch {
+    return null;
+  }
+}
+
+export function mergeCreatedMetricIntoDraft(
+  draft: NewRoutineDraft | null,
+  metricId: string,
+  modalidadeId?: number | null
+): NewRoutineDraft {
+  const base = draft ? { ...draft } : createInitialNewRoutineDraft();
+  const resolvedModalityId =
+    typeof modalidadeId === "number" && Number.isFinite(modalidadeId)
+      ? modalidadeId
+      : base.modalidadeId;
+
+  const sameModality =
+    base.modalidadeId === null ||
+    resolvedModalityId === null ||
+    base.modalidadeId === resolvedModalityId;
+
+  const baseMetrics = sameModality ? base.selectedMetricIds : [];
+  const nextMetrics = metricId
+    ? Array.from(new Set([...baseMetrics, String(metricId)]))
+    : baseMetrics;
+
+  return {
+    ...base,
+    modalidadeId: resolvedModalityId,
+    selectedStudentIds: sameModality ? base.selectedStudentIds : [],
+    sendToTurma: sameModality ? base.sendToTurma : false,
+    selectedTurmaIds: sameModality ? base.selectedTurmaIds : [],
+    selectedMetricIds: nextMetrics,
+    updatedAt: Date.now(),
+  };
+}
+
+export function buildMetricCreateRedirectUrl(
+  modalidadeId: number | null,
+  returnPath = "/rotinas/nova"
+): string {
+  const parts: string[] = [];
+  if (typeof modalidadeId === "number" && Number.isFinite(modalidadeId) && modalidadeId > 0) {
+    parts.push(`modalidadeId=${encodeURIComponent(String(modalidadeId))}`);
+  }
+  parts.push("acao=nova");
+  if (returnPath) {
+    parts.push(`retorno=${encodeURIComponent(returnPath)}`);
+  }
+  return `/metricas?${parts.join("&")}`;
+}
+
+export function filterAndSortRoutineMetrics(
+  metrics: MetricaResponseDTO[],
+  selectedIds: Iterable<string>,
+  searchQuery = ""
+): MetricaResponseDTO[] {
+  const selectedSet = new Set(selectedIds);
+  const query = normalize(searchQuery.trim());
+
+  return metrics
+    .filter((m) => {
+      if (!query) return true;
+      const titleMatch = normalize(m.titulo || "").includes(query);
+      const typeLabel = metricLabels[m.tipo] || m.tipo || "";
+      const typeMatch = normalize(typeLabel).includes(query);
+      const reqLabel = m.obrigatoria !== false ? "obrigatoria" : "opcional";
+      const reqMatch = reqLabel.includes(query);
+      return titleMatch && true || typeMatch || reqMatch;
+    })
+    .sort((a, b) => {
+      const aSelected = selectedSet.has(a.id) ? 1 : 0;
+      const bSelected = selectedSet.has(b.id) ? 1 : 0;
+      if (aSelected !== bSelected) return bSelected - aSelected;
+
+      const aReq = a.obrigatoria !== false ? 1 : 0;
+      const bReq = b.obrigatoria !== false ? 1 : 0;
+      if (aReq !== bReq) return bReq - aReq;
+
+      return (a.titulo || "").localeCompare(b.titulo || "", "pt-BR");
+    });
+}
+
+export function getRequiredMetricIds(metrics: MetricaResponseDTO[]): string[] {
+  return metrics.filter((m) => m.obrigatoria !== false).map((m) => m.id);
+}
+
+export function getModalityGroupsForRoutine<
+  T extends { id: string; modalidadeId: number; nome?: string; alunos?: { id: string }[] }
+>(groups: T[], modalityId: number | string | null | undefined): T[] {
+  if (modalityId == null || modalityId === "") return [];
+  const modId = Number(modalityId);
+  if (!Number.isFinite(modId) || modId <= 0) return [];
+  return (groups || []).filter((g) => Number(g.modalidadeId) === modId);
+}
+
+export function toggleTurmaStudentsSelection<
+  T extends { id: string; alunos?: { id: string }[] }
+>(
+  currentStudentIds: string[],
+  currentTurmaIds: string[],
+  targetTurmaId: string,
+  modalityTurmas: T[],
+  eligibleStudentIds: Iterable<string>
+): { nextStudentIds: string[]; nextTurmaIds: string[] } {
+  const eligibleSet = new Set(eligibleStudentIds);
+  const targetTurma = modalityTurmas.find((t) => t.id === targetTurmaId);
+  if (!targetTurma) {
+    return { nextStudentIds: currentStudentIds, nextTurmaIds: currentTurmaIds };
+  }
+
+  const isCurrentlySelected = currentTurmaIds.includes(targetTurmaId);
+  const targetEligibleIds = (targetTurma.alunos || [])
+    .map((a) => a.id)
+    .filter((id) => eligibleSet.has(id));
+
+  if (!isCurrentlySelected) {
+    const nextTurmaIds = Array.from(new Set([...currentTurmaIds, targetTurmaId]));
+    const nextStudentIds = Array.from(
+      new Set([...currentStudentIds, ...targetEligibleIds])
+    );
+    return { nextStudentIds, nextTurmaIds };
+  }
+
+  // Ao desmarcar a turma, mantém alunos que pertençam a outra turma que continue marcada
+  const nextTurmaIds = currentTurmaIds.filter((id) => id !== targetTurmaId);
+  const protectedByOtherSelectedTurmas = new Set<string>();
+  for (const turma of modalityTurmas) {
+    if (!nextTurmaIds.includes(turma.id)) continue;
+    for (const aluno of turma.alunos || []) {
+      if (eligibleSet.has(aluno.id)) {
+        protectedByOtherSelectedTurmas.add(aluno.id);
+      }
+    }
+  }
+
+  const removeSet = new Set(
+    targetEligibleIds.filter((id) => !protectedByOtherSelectedTurmas.has(id))
+  );
+  const nextStudentIds = currentStudentIds.filter((id) => !removeSet.has(id));
+
+  return { nextStudentIds, nextTurmaIds };
+}
+
 
 
