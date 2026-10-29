@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { usePersonal } from "../../features/personal/PersonalContext";
 import {
-  eligibleStudentsForRoutine,
+  NEW_ROUTINE_DRAFT_KEY,
+  buildMetricCreateRedirectUrl,
+  classifyStudentsForRoutine,
   extractProblemDetail,
+  filterAndSortRoutineMetrics,
   getAvatarColor,
+  getModalityGroupsForRoutine,
+  getRequiredMetricIds,
   getStudentInitials,
   metricLabels,
+  normalize,
+  parseNewRoutineDraft,
+  serializeNewRoutineDraft,
+  toggleTurmaStudentsSelection,
   validateCreateRoutinePayload,
   WEEK_DAYS,
 } from "../../features/routines/routineModel";
@@ -21,12 +30,25 @@ import type { RotinaResponse } from "../../types/rotina";
 import WorkspaceDialog from "../../components/WorkspaceDialog/WorkspaceDialog";
 import "./NewRoutine.css";
 
+function readInitialDraft(isEditMode: boolean) {
+  if (isEditMode || typeof window === "undefined") return null;
+  try {
+    return parseNewRoutineDraft(window.sessionStorage.getItem(NEW_ROUTINE_DRAFT_KEY));
+  } catch {
+    return null;
+  }
+}
+
 export default function NewRoutine() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
   const { routineId } = useParams<{ routineId?: string }>();
   const isEditMode = Boolean(routineId);
   const { students, routines, groups, refresh } = usePersonal();
+
+  // Rascunho salvo em cache quando o personal sai para cadastrar métrica e retorna
+  const initialDraft = useMemo(() => readInitialDraft(isEditMode), [isEditMode]);
 
   // URL params para pré-preenchimento
   const initialStudentId = params.get("aluno") || "";
@@ -37,20 +59,34 @@ export default function NewRoutine() {
   const [modalities, setModalities] = useState<Modalidade[]>([]);
   const turmas = groups.data;
 
-  // Estados do formulário
-  const [titulo, setTitulo] = useState("");
-  const [modalidadeId, setModalidadeId] = useState<number | null>(null);
-  const [frequenciaSemanal, setFrequenciaSemanal] = useState<number>(4);
-  const [objetivos, setObjetivos] = useState("");
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-  const [selectedMetricIds, setSelectedMetricIds] = useState<Set<string>>(new Set());
+  // Estados do formulário (sem valores pré-selecionados, exceto se houver rascunho em cache)
+  const [titulo, setTitulo] = useState(() => initialDraft?.titulo || "");
+  const [modalidadeId, setModalidadeId] = useState<number | null>(
+    () => initialDraft?.modalidadeId ?? null
+  );
+  const [frequenciaSemanal, setFrequenciaSemanal] = useState<number>(
+    () => initialDraft?.frequenciaSemanal ?? 0
+  );
+  const [objetivos, setObjetivos] = useState(() => initialDraft?.objetivos || "");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(
+    () => initialDraft?.selectedStudentIds || []
+  );
+  const [selectedMetricIds, setSelectedMetricIds] = useState<Set<string>>(
+    () => new Set(initialDraft?.selectedMetricIds || [])
+  );
 
-  // Métricas da modalidade
+  // Métricas da modalidade e busca interna
   const [metrics, setMetrics] = useState<MetricaResponseDTO[]>([]);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [metricSearch, setMetricSearch] = useState("");
 
-  // Turma switch
-  const [sendToTurma, setSendToTurma] = useState(false);
+  // Turmas selecionadas da modalidade
+  const [sendToTurma, setSendToTurma] = useState(
+    () => initialDraft?.sendToTurma ?? false
+  );
+  const [selectedTurmaIds, setSelectedTurmaIds] = useState<string[]>(
+    () => initialDraft?.selectedTurmaIds || []
+  );
 
   // Busca e dropdown de alunos
   const [studentSearch, setStudentSearch] = useState("");
@@ -68,18 +104,12 @@ export default function NewRoutine() {
   const [modelModalOpen, setModelModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Carrega modalidades
+  // Carrega modalidades (sem pré-selecionar nenhuma automaticamente)
   useEffect(() => {
     modalidadeService
       .listarTodas()
       .then((data) => {
         setModalities(data);
-        if (data.length > 0 && !routineId) {
-          const natacao = data.find((m) =>
-            m.nome.toLowerCase().includes("nata")
-          );
-          setModalidadeId((prev) => prev ?? (natacao ? natacao.id : data[0].id));
-        }
       })
       .catch(() => {
         // Fallback para modalidades das rotinas
@@ -95,11 +125,52 @@ export default function NewRoutine() {
           descricao: "",
         }));
         setModalities(fallback);
-        if (fallback.length > 0 && !routineId) {
-          setModalidadeId((prev) => prev ?? fallback[0].id);
-        }
       });
-  }, [routines.data, routineId]);
+  }, [routines.data]);
+
+  // Salva rascunho automaticamente em cache durante a criação da rotina
+  useEffect(() => {
+    if (isEditMode) return;
+    try {
+      const hasAnyData =
+        Boolean(titulo.trim()) ||
+        modalidadeId !== null ||
+        frequenciaSemanal > 0 ||
+        Boolean(objetivos.trim()) ||
+        selectedStudentIds.length > 0 ||
+        selectedMetricIds.size > 0;
+
+      if (hasAnyData) {
+        window.sessionStorage.setItem(
+          NEW_ROUTINE_DRAFT_KEY,
+          serializeNewRoutineDraft({
+            titulo,
+            modalidadeId,
+            frequenciaSemanal,
+            objetivos,
+            selectedStudentIds,
+            selectedMetricIds: Array.from(selectedMetricIds),
+            sendToTurma: sendToTurma || selectedTurmaIds.length > 0,
+            selectedTurmaIds,
+          })
+        );
+      } else {
+        window.sessionStorage.removeItem(NEW_ROUTINE_DRAFT_KEY);
+      }
+    } catch {
+      // Ignora falhas de sessionStorage
+    }
+  }, [
+    isEditMode,
+    titulo,
+    modalidadeId,
+    frequenciaSemanal,
+    objetivos,
+    selectedStudentIds,
+    selectedMetricIds,
+    sendToTurma,
+    selectedTurmaIds,
+  ]);
 
 
   // Carrega dados da rotina para edição quando routineId está presente
@@ -172,7 +243,7 @@ export default function NewRoutine() {
     }
   }, [modelRoutineId, routines.data, routineId]);
 
-  // Carrega métricas sempre que a modalidade muda
+  // Carrega métricas sempre que a modalidade muda (sem pré-selecionar automaticamente)
   useEffect(() => {
     if (!modalidadeId) {
       setMetrics([]);
@@ -188,19 +259,16 @@ export default function NewRoutine() {
         if (!isCurrent) return;
         const active = (data || []).filter((m) => m.ativo);
         setMetrics(active);
-        // Pré-seleciona as métricas encontradas (até 4) apenas se for criação
-        if (!routineId) {
-          if (active.length > 0) {
-            setSelectedMetricIds(new Set(active.slice(0, 4).map((m) => m.id)));
-          } else {
-            setSelectedMetricIds(new Set());
-          }
-        }
+        const validIds = new Set(active.map((m) => m.id));
+        setSelectedMetricIds((prev) => {
+          if (prev.size === 0) return prev;
+          const filtered = Array.from(prev).filter((id) => validIds.has(id));
+          return new Set(filtered);
+        });
       })
       .catch(() => {
         if (!isCurrent) return;
         setMetrics([]);
-        if (!routineId) setSelectedMetricIds(new Set());
       })
       .finally(() => {
         if (isCurrent) setLoadingMetrics(false);
@@ -209,7 +277,7 @@ export default function NewRoutine() {
     return () => {
       isCurrent = false;
     };
-  }, [modalidadeId, routineId]);
+  }, [modalidadeId]);
 
   // Fecha dropdown de alunos ao clicar fora
   useEffect(() => {
@@ -232,11 +300,11 @@ export default function NewRoutine() {
 
   const selectedModalidadeNome = selectedModality?.nome || "a modalidade";
 
-  // Alunos elegíveis para a modalidade
-  const eligibleStudents = useMemo(() => {
+  // Classificação de alunos da modalidade: elegíveis vs ocupados em outra rotina ativa (RN-012)
+  const classifiedStudents = useMemo(() => {
     const studentsList = Array.isArray(students?.data) ? students.data : [];
     const routinesList = Array.isArray(routines?.data) ? routines.data : [];
-    return eligibleStudentsForRoutine(
+    return classifyStudentsForRoutine(
       studentsList,
       routinesList,
       routineId || undefined,
@@ -244,63 +312,95 @@ export default function NewRoutine() {
     );
   }, [students?.data, routines?.data, routineId, modalidadeId]);
 
+  const eligibleStudents = classifiedStudents.eligible;
+  const busyStudents = classifiedStudents.busy;
+
   // Alunos elegíveis que ainda não foram selecionados
   const candidateStudents = useMemo(() => {
     return eligibleStudents.filter((s) => !selectedStudentIds.includes(s.id));
   }, [eligibleStudents, selectedStudentIds]);
 
-  // Filtragem da busca no autocomplete
+  // Filtragem da busca no autocomplete (elegíveis e ocupados)
   const filteredCandidates = useMemo(() => {
     if (!studentSearch.trim()) return candidateStudents;
-    const q = studentSearch.toLowerCase();
+    const q = normalize(studentSearch.trim());
     return candidateStudents.filter((s) =>
-      s.usuario.nome.toLowerCase().includes(q)
+      normalize(s.usuario.nome).includes(q)
     );
   }, [candidateStudents, studentSearch]);
 
-  // Turma da modalidade correspondente
-  const modalityTurma = useMemo(() => {
-    if (!modalidadeId) return null;
-    return (
-      turmas.find(
-        (t) =>
-          t.modalidadeId === modalidadeId
-      ) || null
+  const filteredBusyStudents = useMemo(() => {
+    if (!studentSearch.trim()) return busyStudents;
+    const q = normalize(studentSearch.trim());
+    return busyStudents.filter(
+      (b) =>
+        normalize(b.student.usuario.nome).includes(q) ||
+        normalize(b.activeRoutineTitle).includes(q)
     );
+  }, [busyStudents, studentSearch]);
+
+  // Métricas filtradas por busca e ordenadas com as selecionadas no topo
+  const visibleMetrics = useMemo(() => {
+    return filterAndSortRoutineMetrics(metrics, selectedMetricIds, metricSearch);
+  }, [metrics, selectedMetricIds, metricSearch]);
+
+  const requiredMetricIds = useMemo(() => {
+    return getRequiredMetricIds(metrics);
+  }, [metrics]);
+
+  // Todas as turmas da modalidade selecionada
+  const modalityTurmas = useMemo(() => {
+    return getModalityGroupsForRoutine(turmas, modalidadeId);
   }, [turmas, modalidadeId]);
 
-  const turmaName = modalityTurma?.nome;
-  const turmaCount = modalityTurma?.alunos?.length ?? 0;
+  // Toggle de vínculo por turma (suporta múltiplas turmas na mesma modalidade)
+  function handleToggleTurmaItem(turmaId: string) {
+    if (groups.loading || groups.error) return;
+    const eligibleIds = eligibleStudents.map((s) => s.id);
+    const { nextStudentIds, nextTurmaIds } = toggleTurmaStudentsSelection(
+      selectedStudentIds,
+      selectedTurmaIds,
+      turmaId,
+      modalityTurmas,
+      eligibleIds
+    );
+    setSelectedTurmaIds(nextTurmaIds);
+    setSendToTurma(nextTurmaIds.length > 0);
+    setSelectedStudentIds(nextStudentIds);
 
-  // Toggle do envio para turma
-  function handleToggleTurma() {
-    if (!modalityTurma || groups.loading || groups.error) return;
-    const nextState = !sendToTurma;
-    setSendToTurma(nextState);
-
-    if (nextState) {
-      // Adiciona todos os alunos elegíveis da turma
-      let studentIdsToAdd: string[] = [];
-      if (modalityTurma && modalityTurma.alunos) {
-        const eligibleTurmaStudents = modalityTurma.alunos
-          .map((a) => a.id)
-          .filter((id) => eligibleStudents.some((es) => es.id === id));
-        studentIdsToAdd = eligibleTurmaStudents;
-      }
-
-      setSelectedStudentIds((prev) => {
-        const set = new Set([...prev, ...studentIdsToAdd]);
-        return Array.from(set);
+    if (nextStudentIds.length > 0 && errors.alunosIds) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.alunosIds;
+        return next;
       });
-      // Remove erro de aluno se existia
-      if (errors.alunosIds) {
-        setErrors((prev) => {
-          const next = { ...prev };
-          delete next.alunosIds;
-          return next;
-        });
-      }
     }
+  }
+
+  function handleSelectRequiredMetrics() {
+    setSelectedMetricIds(new Set(requiredMetricIds));
+    if (requiredMetricIds.length > 0 && errors.metricasIds) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.metricasIds;
+        return next;
+      });
+    }
+  }
+
+  function handleSelectAllMetrics() {
+    setSelectedMetricIds(new Set(metrics.map((m) => m.id)));
+    if (metrics.length > 0 && errors.metricasIds) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.metricasIds;
+        return next;
+      });
+    }
+  }
+
+  function handleClearMetrics() {
+    setSelectedMetricIds(new Set());
   }
 
   // Adiciona aluno chip
@@ -436,6 +536,39 @@ export default function NewRoutine() {
     }
   }
 
+  // Salva o estado em cache e redireciona direto para o modal de criação de métrica
+  function handleNavigateToCreateMetric() {
+    const returnPath = `${location.pathname}${location.search}`;
+    if (!isEditMode) {
+      try {
+        window.sessionStorage.setItem(
+          NEW_ROUTINE_DRAFT_KEY,
+          serializeNewRoutineDraft({
+            titulo,
+            modalidadeId,
+            frequenciaSemanal,
+            objetivos,
+            selectedStudentIds,
+            selectedMetricIds: Array.from(selectedMetricIds),
+            sendToTurma: sendToTurma || selectedTurmaIds.length > 0,
+            selectedTurmaIds,
+          })
+        );
+      } catch {
+        // Ignora falhas de sessionStorage
+      }
+    }
+    navigate(buildMetricCreateRedirectUrl(modalidadeId, returnPath));
+  }
+
+  function clearRoutineDraftCache() {
+    try {
+      window.sessionStorage.removeItem(NEW_ROUTINE_DRAFT_KEY);
+    } catch {
+      // Ignora falhas de sessionStorage
+    }
+  }
+
   // Submissão do formulário
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -494,6 +627,7 @@ export default function NewRoutine() {
         navigate(`/rotinas/${routineId}/planejamento`);
       } else {
         const created = await rotinaService.criar(payload);
+        clearRoutineDraftCache();
         toast.success("Treino criado com sucesso!");
         await refresh();
         navigate(created?.id ? `/rotinas/${created.id}/planejamento` : "/rotinas");
@@ -638,7 +772,10 @@ export default function NewRoutine() {
                       const id = Number(e.target.value);
                       setModalidadeId(id || null);
                       setSelectedStudentIds([]);
+                      setSelectedMetricIds(new Set());
+                      setSelectedTurmaIds([]);
                       setSendToTurma(false);
+                      setMetricSearch("");
                       if (errors.modalidadeId) {
                         setErrors((prev) => {
                           const next = { ...prev };
@@ -806,37 +943,86 @@ export default function NewRoutine() {
 
                 {dropdownOpen && (
                   <div className="new-routine-dropdown">
-                    {filteredCandidates.length === 0 ? (
+                    {!modalidadeId ? (
+                      <div className="new-routine-dropdown__empty">
+                        Selecione uma modalidade no passo 1 para listar os alunos elegíveis.
+                      </div>
+                    ) : filteredCandidates.length === 0 && filteredBusyStudents.length === 0 ? (
                       <div className="new-routine-dropdown__empty">
                         {eligibleStudents.length === 0
                           ? `Nenhum aluno ativo em ${selectedModalidadeNome} disponível sem rotina.`
                           : "Nenhum aluno encontrado para a busca."}
                       </div>
                     ) : (
-                      filteredCandidates.map((candidate, idx) => {
-                        const color = getAvatarColor(idx);
-                        return (
-                          <button
-                            key={candidate.id}
-                            type="button"
-                            className="new-routine-dropdown__item"
-                            onClick={() => handleSelectStudent(candidate.id)}
-                          >
-                            <span
-                              className="new-routine-dropdown__avatar"
-                              style={{
-                                backgroundColor: color.bg,
-                                color: color.text,
-                              }}
+                      <>
+                        {filteredCandidates.map((candidate, idx) => {
+                          const color = getAvatarColor(idx);
+                          return (
+                            <button
+                              key={candidate.id}
+                              type="button"
+                              className="new-routine-dropdown__item"
+                              onClick={() => handleSelectStudent(candidate.id)}
                             >
-                              {getStudentInitials(candidate.usuario.nome)}
-                            </span>
-                            <span className="new-routine-dropdown__name">
-                              {candidate.usuario.nome}
-                            </span>
-                          </button>
-                        );
-                      })
+                              <span
+                                className="new-routine-dropdown__avatar"
+                                style={{
+                                  backgroundColor: color.bg,
+                                  color: color.text,
+                                }}
+                              >
+                                {getStudentInitials(candidate.usuario.nome)}
+                              </span>
+                              <span className="new-routine-dropdown__name">
+                                {candidate.usuario.nome}
+                              </span>
+                              <span className="new-routine-dropdown__status-tag">
+                                Disponível
+                              </span>
+                            </button>
+                          );
+                        })}
+
+                        {filteredBusyStudents.length > 0 && (
+                          <div className="new-routine-dropdown__busy-section">
+                            <div className="new-routine-dropdown__section-label">
+                              Já possuem rotina ativa em {selectedModalidadeNome} (RN-012)
+                            </div>
+                            {filteredBusyStudents.map((busyItem, idx) => {
+                              const color = getAvatarColor(idx + 2);
+                              return (
+                                <div
+                                  key={busyItem.student.id}
+                                  className="new-routine-dropdown__item new-routine-dropdown__item--busy"
+                                  aria-disabled="true"
+                                  title={`O aluno já participa da rotina ativa "${busyItem.activeRoutineTitle}"`}
+                                >
+                                  <span
+                                    className="new-routine-dropdown__avatar"
+                                    style={{
+                                      backgroundColor: color.bg,
+                                      color: color.text,
+                                    }}
+                                  >
+                                    {getStudentInitials(busyItem.student.usuario.nome)}
+                                  </span>
+                                  <div className="new-routine-dropdown__busy-info">
+                                    <span className="new-routine-dropdown__name">
+                                      {busyItem.student.usuario.nome}
+                                    </span>
+                                    <span className="new-routine-dropdown__busy-reason">
+                                      Em: {busyItem.activeRoutineTitle}
+                                    </span>
+                                  </div>
+                                  <span className="new-routine-dropdown__busy-pill">
+                                    Em treino ativo
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -847,24 +1033,80 @@ export default function NewRoutine() {
                 </div>
               )}
 
-              <div className="new-routine-turma-box">
-                <div className="new-routine-turma-box__info">
-                  <h3>Enviar também para uma turma</h3>
-                  <p>
-                    {groups.loading ? "Carregando turmas…" : groups.error ? "Não foi possível carregar as turmas." : modalityTurma ? `${turmaName} · ${turmaCount} ${turmaCount === 1 ? "aluno" : "alunos"}` : "Nenhuma turma cadastrada para esta modalidade."}
-                  </p>
-                  {groups.error && <button type="button" className="new-routine-card__manage-link" onClick={() => void refresh()}>Tentar novamente</button>}
+              <div className="new-routine-turmas-section">
+                <div className="new-routine-turmas-section__header">
+                  <h3>Enviar também para turmas</h3>
+                  {modalityTurmas.length > 1 && (
+                    <span>{modalityTurmas.length} turmas na modalidade</span>
+                  )}
                 </div>
-                <label className="new-routine-toggle">
-                  <input
-                    type="checkbox"
-                    aria-label="Enviar também para uma turma"
-                    disabled={groups.loading || Boolean(groups.error) || !modalityTurma}
-                    checked={sendToTurma && Boolean(modalityTurma) && !groups.error}
-                    onChange={handleToggleTurma}
-                  />
-                  <span className="new-routine-toggle__slider" />
-                </label>
+
+                {!modalidadeId ? (
+                  <p className="new-routine-turmas-section__hint">
+                    Selecione uma modalidade no passo 1 para visualizar as turmas disponíveis.
+                  </p>
+                ) : groups.loading ? (
+                  <p className="new-routine-turmas-section__hint">Carregando turmas…</p>
+                ) : groups.error ? (
+                  <div className="new-routine-turmas-section__error">
+                    <p>Não foi possível carregar as turmas.</p>
+                    <button
+                      type="button"
+                      className="new-routine-card__manage-link"
+                      onClick={() => void refresh()}
+                    >
+                      Tentar novamente
+                    </button>
+                  </div>
+                ) : modalityTurmas.length === 0 ? (
+                  <p className="new-routine-turmas-section__hint">
+                    Nenhuma turma cadastrada para {selectedModalidadeNome}.
+                  </p>
+                ) : (
+                  <div className="new-routine-turmas-list">
+                    {modalityTurmas.map((turma) => {
+                      const totalAlunos = turma.alunos?.length ?? 0;
+                      const eligibleCount = (turma.alunos || []).filter((a) =>
+                        eligibleStudents.some((es) => es.id === a.id)
+                      ).length;
+                      const busyCount = totalAlunos - eligibleCount;
+                      const isChecked = selectedTurmaIds.includes(turma.id);
+
+                      return (
+                        <div
+                          key={turma.id}
+                          className={`new-routine-turma-box ${
+                            isChecked ? "is-selected" : ""
+                          }`}
+                        >
+                          <div className="new-routine-turma-box__info">
+                            <h4>{turma.nome}</h4>
+                            <p>
+                              {totalAlunos} {totalAlunos === 1 ? "aluno" : "alunos"} no total ·{" "}
+                              <strong>
+                                {eligibleCount}{" "}
+                                {eligibleCount === 1 ? "disponível" : "disponíveis"}
+                              </strong>
+                              {busyCount > 0
+                                ? ` (${busyCount} já com rotina ativa)`
+                                : ""}
+                            </p>
+                          </div>
+                          <label className="new-routine-toggle">
+                            <input
+                              type="checkbox"
+                              aria-label={`Enviar também para a turma ${turma.nome}`}
+                              disabled={eligibleCount === 0}
+                              checked={isChecked && eligibleCount > 0}
+                              onChange={() => handleToggleTurmaItem(turma.id)}
+                            />
+                            <span className="new-routine-toggle__slider" />
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -875,14 +1117,34 @@ export default function NewRoutine() {
               <div className="new-routine-card__header">
                 <div className="new-routine-card__titles">
                   <h2>2 · Métricas acompanhadas</h2>
-                  <p>Cadastradas para {selectedModalidadeNome}</p>
+                  <p>
+                    {modalidadeId
+                      ? `Cadastradas para ${selectedModalidadeNome} · ${selectedMetricIds.size} ${
+                          selectedMetricIds.size === 1 ? "selecionada" : "selecionadas"
+                        }`
+                      : "Selecione uma modalidade no passo 1"}
+                  </p>
                 </div>
-                <Link to="/metricas" className="new-routine-card__manage-link">
-                  Gerenciar →
-                </Link>
+                <button
+                  type="button"
+                  className="new-routine-card__manage-link"
+                  onClick={handleNavigateToCreateMetric}
+                >
+                  + Cadastrar / Gerenciar →
+                </button>
               </div>
 
-              {loadingMetrics ? (
+              {!modalidadeId ? (
+                <div className="new-routine-empty-metrics new-routine-empty-metrics--neutral">
+                  <div className="new-routine-empty-metrics__icon-wrap new-routine-empty-metrics__icon-wrap--neutral">
+                    2
+                  </div>
+                  <h3>Escolha primeiro a modalidade da rotina</h3>
+                  <p>
+                    Assim que você selecionar uma modalidade no campo ao lado, as métricas correspondentes aparecerão aqui.
+                  </p>
+                </div>
+              ) : loadingMetrics ? (
                 <div className="new-routine-metrics-loading">
                   Carregando métricas...
                 </div>
@@ -895,62 +1157,143 @@ export default function NewRoutine() {
                   <button
                     type="button"
                     className="new-routine-empty-metrics__btn"
-                    onClick={() =>
-                      navigate(
-                        modalidadeId
-                          ? `/metricas?modalidadeId=${modalidadeId}`
-                          : "/metricas"
-                      )
-                    }
+                    onClick={handleNavigateToCreateMetric}
                   >
                     + Cadastrar métrica
                   </button>
                 </div>
               ) : (
-                /* Lista de métricas cadastradas (Screenshot 3) */
-                <div className="new-routine-metrics-list">
-                  {metrics.map((item) => {
-                    const isSelected = selectedMetricIds.has(item.id);
-                    return (
-                      <div
-                        key={item.id}
-                        className={`new-routine-metric-card ${
-                          isSelected ? "is-selected" : ""
-                        }`}
-                        onClick={() => handleToggleMetric(item.id)}
+                /* Toolbar de busca + ações rápidas e lista de métricas com scroll próprio */
+                <>
+                  <div className="new-routine-metrics-toolbar">
+                    <div className="new-routine-metrics-search">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
                       >
-                        <div className="new-routine-metric-checkbox">
-                          {isSelected && (
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#ffffff"
-                              strokeWidth="3.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </div>
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                      <input
+                        type="text"
+                        placeholder="Buscar métrica por nome ou tipo..."
+                        value={metricSearch}
+                        onChange={(e) => setMetricSearch(e.target.value)}
+                        aria-label="Buscar métrica acompanhada"
+                      />
+                      {metricSearch && (
+                        <button
+                          type="button"
+                          className="new-routine-metrics-search__clear"
+                          onClick={() => setMetricSearch("")}
+                          aria-label="Limpar busca de métricas"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
 
-                        <div className="new-routine-metric-icon">
-                          {renderMetricIcon(item.tipo)}
-                        </div>
+                    <div className="new-routine-metrics-quick-actions">
+                      {requiredMetricIds.length > 0 && (
+                        <button
+                          type="button"
+                          className="new-routine-metrics-quick-btn"
+                          onClick={handleSelectRequiredMetrics}
+                        >
+                          Selecionar obrigatórias ({requiredMetricIds.length})
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="new-routine-metrics-quick-btn"
+                        onClick={handleSelectAllMetrics}
+                      >
+                        Todas ({metrics.length})
+                      </button>
+                      {selectedMetricIds.size > 0 && (
+                        <button
+                          type="button"
+                          className="new-routine-metrics-quick-btn new-routine-metrics-quick-btn--clear"
+                          onClick={handleClearMetrics}
+                        >
+                          Limpar ({selectedMetricIds.size})
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                        <div className="new-routine-metric-info">
-                          <h4>{item.titulo}</h4>
-                          <p>
-                            {metricLabels[item.tipo] || item.tipo} ·{" "}
-                            {item.obrigatoria !== false ? "Obrigatória" : "Opcional"} · preenche:{" "}
-                            {getPreenchimentoLabel(item.quemPreenche)}
-                          </p>
-                        </div>
+                  <div className="new-routine-metrics-scroll">
+                    <div
+                      className="new-routine-metrics-scroll__fade new-routine-metrics-scroll__fade--top"
+                      aria-hidden="true"
+                    />
+                    {visibleMetrics.length === 0 ? (
+                      <div className="new-routine-dropdown__empty">
+                        Nenhuma métrica encontrada para “{metricSearch}”.
                       </div>
-                    );
-                  })}
+                    ) : (
+                      <div className="new-routine-metrics-list">
+                        {visibleMetrics.map((item) => {
+                          const isSelected = selectedMetricIds.has(item.id);
+                          return (
+                            <div
+                              key={item.id}
+                              className={`new-routine-metric-card ${
+                                isSelected ? "is-selected" : ""
+                              }`}
+                              onClick={() => handleToggleMetric(item.id)}
+                            >
+                              <div className="new-routine-metric-checkbox">
+                                {isSelected && (
+                                  <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#ffffff"
+                                    strokeWidth="3.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                )}
+                              </div>
+
+                              <div className="new-routine-metric-icon">
+                                {renderMetricIcon(item.tipo)}
+                              </div>
+
+                              <div className="new-routine-metric-info">
+                                <h4>{item.titulo}</h4>
+                                <p>
+                                  {metricLabels[item.tipo] || item.tipo} ·{" "}
+                                  {item.obrigatoria !== false ? "Obrigatória" : "Opcional"} · preenche:{" "}
+                                  {getPreenchimentoLabel(item.quemPreenche)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <div
+                      className="new-routine-metrics-scroll__fade new-routine-metrics-scroll__fade--bottom"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </>
+              )}
+              {errors.metricasIds && (
+                <div className="new-routine-field__error" style={{ marginTop: 10 }}>
+                  {errors.metricasIds}
                 </div>
               )}
             </div>
@@ -962,7 +1305,10 @@ export default function NewRoutine() {
           <button
             type="button"
             className="new-routine-footer__btn-cancel"
-            onClick={() => navigate("/rotinas")}
+            onClick={() => {
+              clearRoutineDraftCache();
+              navigate("/rotinas");
+            }}
             disabled={submitting}
           >
             Cancelar

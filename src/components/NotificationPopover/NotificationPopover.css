@@ -45,7 +45,7 @@
 }
 
 .notification-popover__title {
-  font-size: 15px;
+  font-size: 16.5px;
   font-weight: 800;
   color: var(--color-text);
   line-height: 1.2;
@@ -60,7 +60,7 @@
   background: var(--color-primary-50);
   border: 1px solid var(--color-primary-100);
   color: var(--color-primary-600);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
@@ -76,7 +76,7 @@
   border: 0;
   background: transparent;
   color: var(--color-primary-500);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   padding: 4px 6px;
@@ -389,7 +389,7 @@
 }
 
 .notification-popover__entry-title {
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--color-ink-900);
   line-height: 1.38;
@@ -403,7 +403,7 @@
 
 .notification-popover__entry-msg {
   margin: 3px 0 0;
-  font-size: 12px;
+  font-size: 13.5px;
   color: var(--color-text-secondary);
   line-height: 1.45;
   word-break: break-word;
@@ -414,7 +414,7 @@
 }
 
 .notification-popover__entry-time {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-ink-400);
   line-height: 1.2;
   white-space: nowrap;

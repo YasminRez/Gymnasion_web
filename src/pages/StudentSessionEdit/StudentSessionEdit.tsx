@@ -315,12 +315,12 @@ export default function StudentSessionEdit() {
                     onChange={(e) => setNewTitle(e.target.value)}
                     className="act-input-title"
                   />
-                  <input
-                    type="text"
-                    placeholder="Descrição / séries (ex: 300 m · nado livre · ritmo leve)"
+                  <textarea
+                    rows={3}
+                    placeholder="Descrição / séries em múltiplas linhas (ex: • 300 m nado livre · ritmo leve)"
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
-                    className="act-input-desc"
+                    className="act-input-desc act-textarea-multiline"
                   />
                 </div>
                 <div className="activity-buttons">
@@ -359,11 +359,11 @@ export default function StudentSessionEdit() {
                           onChange={(e) => setEditTitle(e.target.value)}
                           className="act-input-title"
                         />
-                        <input
-                          type="text"
+                        <textarea
+                          rows={3}
                           value={editDesc}
                           onChange={(e) => setEditDesc(e.target.value)}
-                          className="act-input-desc"
+                          className="act-input-desc act-textarea-multiline"
                         />
                         <div className="inline-act-actions">
                           <button

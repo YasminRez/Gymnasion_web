@@ -129,3 +129,48 @@ test("session status and editability rules adhere to DRS v3 (US-10 C2, C6)", () 
   const podeEditarValidada = !sessaoValidada.concluidaAluno && !sessaoValidada.validadaPersonal;
   assert.equal(podeEditarValidada, false);
 });
+
+test("serializeAtividades and parseAtividades preserve multiline activity descriptions and orientations", () => {
+  const parser = load("utils/activityParser.ts");
+
+  const serialized = parser.serializeAtividades({
+    sessionName: "Força & Circuito Metabólico",
+    activities: [
+      {
+        title: "Aquecimento / Mobilidade",
+        description: "• 5 min mobilidade articular\n• 2 × 15 prancha frontal",
+      },
+      {
+        title: "Bloco Metabólico",
+        description:
+          "• 4 Rounds (40s : 20s):\n- Kettlebell Swing (16kg)\n- Corda Naval\n- Burpees",
+      },
+    ],
+    orientations: "Hidratação a cada round.\nManter PSE entre 7 e 8.",
+  });
+
+  const parsed = parser.parseAtividades(serialized);
+  assert.equal(parsed.sessionName, "Força & Circuito Metabólico");
+  assert.equal(parsed.activities.length, 2);
+  assert.equal(parsed.activities[0].title, "Aquecimento / Mobilidade");
+  assert.equal(
+    parsed.activities[0].description,
+    "• 5 min mobilidade articular\n• 2 × 15 prancha frontal"
+  );
+  assert.equal(parsed.activities[1].title, "Bloco Metabólico");
+  assert.ok(parsed.activities[1].description.includes("- Kettlebell Swing (16kg)"));
+  assert.ok(parsed.activities[1].description.includes("- Burpees"));
+  assert.equal(parsed.orientations, "Hidratação a cada round.\nManter PSE entre 7 e 8.");
+});
+
+test("buildSessionCardPreview avoids duplicating long single-line session text in both headline and body", () => {
+  const parser = load("utils/activityParser.ts");
+
+  const longSingleLine =
+    "Ativação de Core + 4 Rounds Circuito Metabólico (Kettlebell Swing, Corda Naval, Escada de Agilidade e Burpees).";
+  const preview = parser.buildSessionCardPreview(longSingleLine, 1);
+
+  assert.equal(preview.headline, "Ativação de Core");
+  assert.equal(preview.blocks.length, 1);
+  assert.equal(preview.blocks[0].description, longSingleLine);
+});

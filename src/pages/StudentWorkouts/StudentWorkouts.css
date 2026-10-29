@@ -28,7 +28,7 @@
 }
 
 .student-workouts__banner-main h2 {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--color-ink-900);
@@ -36,7 +36,7 @@
 
 .student-workouts__banner-main p {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--color-ink-500);
 }
 
@@ -54,7 +54,7 @@
   border-radius: var(--radius-pill);
   background: #f6f7fb;
   border: 1px solid var(--color-border);
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--color-ink-700);
 }
@@ -77,14 +77,14 @@
 }
 
 .student-workouts__sessions-header h2 {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--color-ink-900);
 }
 
 .student-workouts__sessions-subtitle {
   margin-top: 3px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-ink-500);
 }
 

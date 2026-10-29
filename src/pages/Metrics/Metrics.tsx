@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { metricaService } from "../../services/metricaService";
 import { modalidadeService } from "../../services/modalidadeService";
 import type { MetricaResponseDTO } from "../../types/metric";
 import type { ModalidadeResponseDTO } from "../../types/modalidade";
 import { handleApiError } from "../../utils/handleApiError";
+import {
+  NEW_ROUTINE_DRAFT_KEY,
+  mergeCreatedMetricIntoDraft,
+  parseNewRoutineDraft,
+  serializeNewRoutineDraft,
+} from "../../features/routines/routineModel";
 import {
   filterMetrics,
   getMarketMetricPresets,
@@ -30,9 +36,12 @@ import "./Metrics.css";
 const WORKSPACE_TABS: MetricWorkspaceTab[] = ["active", "presets", "discontinued"];
 
 export const Metrics: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const modalityParam = searchParams.get("modalidadeId");
   const tabParam = searchParams.get("aba") as MetricWorkspaceTab | null;
+  const actionParam = searchParams.get("acao");
+  const returnToParam = searchParams.get("retorno");
 
   const [workspaceTab, setWorkspaceTab] = useState<MetricWorkspaceTab>(() => {
     if (tabParam === "presets" || tabParam === "discontinued" || tabParam === "active") {
@@ -62,7 +71,9 @@ export const Metrics: React.FC = () => {
   const [openMenuMetricId, setOpenMenuMetricId] = useState<string | null>(null);
 
   // Modal states
-  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
+  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(
+    () => actionParam === "nova"
+  );
   const [metricToEdit, setMetricToEdit] = useState<MetricaResponseDTO | null>(null);
   const [metricToDuplicate, setMetricToDuplicate] = useState<MetricaResponseDTO | null>(
     null
@@ -156,6 +167,12 @@ export const Metrics: React.FC = () => {
       setSelectedModalidadeId(Number(modalityParam));
     }
   }, [modalityParam]);
+
+  useEffect(() => {
+    if (actionParam === "nova") {
+      setIsCreateOpen(true);
+    }
+  }, [actionParam]);
 
   function handleSelectWorkspaceTab(tab: MetricWorkspaceTab) {
     setWorkspaceTab(tab);
@@ -333,6 +350,26 @@ export const Metrics: React.FC = () => {
   // Callbacks de sucesso dos modais
   function handleMetricCreated(newMetric: MetricaResponseDTO) {
     setAllMetrics((prev) => [newMetric, ...prev]);
+
+    if (returnToParam && returnToParam.startsWith("/")) {
+      try {
+        const existingDraft = parseNewRoutineDraft(
+          window.sessionStorage.getItem(NEW_ROUTINE_DRAFT_KEY)
+        );
+        const updatedDraft = mergeCreatedMetricIntoDraft(
+          existingDraft,
+          newMetric.id,
+          newMetric.modalidadeId
+        );
+        window.sessionStorage.setItem(
+          NEW_ROUTINE_DRAFT_KEY,
+          serializeNewRoutineDraft(updatedDraft)
+        );
+      } catch {
+        // Ignora falhas de sessionStorage em modo privado restrito
+      }
+      navigate(returnToParam);
+    }
   }
 
   function handleMetricUpdated(updated: MetricaResponseDTO) {
@@ -379,6 +416,24 @@ export const Metrics: React.FC = () => {
 
   return (
     <div className="metrics-page">
+      {returnToParam && returnToParam.startsWith("/") && (
+        <div className="metrics-page__return-banner" role="region" aria-label="Retorno para rotina">
+          <div className="metrics-page__return-banner-info">
+            <strong>Criação de rotina em andamento</strong>
+            <span>
+              Seus dados da rotina foram salvos em cache. Ao cadastrar a nova métrica, você voltará automaticamente para concluir a rotina.
+            </span>
+          </div>
+          <button
+            type="button"
+            className="metrics-page__return-banner-btn"
+            onClick={() => navigate(returnToParam)}
+          >
+            ← Voltar para a rotina
+          </button>
+        </div>
+      )}
+
       {/* Abas de Workspace (Etapa 2): Métricas Ativas, Catálogo de Presets e Descontinuadas */}
       <div
         className="metrics-page__workspace-tabs"
@@ -1508,6 +1563,11 @@ export const Metrics: React.FC = () => {
         onClose={() => {
           setIsCreateOpen(false);
           setMetricToDuplicate(null);
+          if (actionParam === "nova") {
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.delete("acao");
+            setSearchParams(nextParams, { replace: true });
+          }
         }}
         modalidades={modalidades}
         defaultModalidadeId={selectedModalidadeId}

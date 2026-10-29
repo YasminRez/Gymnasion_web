@@ -175,9 +175,20 @@
   font-family: inherit;
   font-size: 13px;
   color: #0f172a;
+  color-scheme: light;
   outline: none;
   background: #ffffff;
   box-sizing: border-box;
+}
+
+.session-edit-page .act-textarea-multiline {
+  field-sizing: content;
+  height: auto;
+  width: 100%;
+  min-block-size: 3.5lh;
+  max-block-size: 12lh;
+  line-height: 1.5;
+  resize: vertical;
 }
 
 .act-input-title::placeholder,
@@ -254,6 +265,8 @@
 .activity-desc {
   font-size: 13px;
   color: #64748b;
+  white-space: pre-line;
+  line-height: 1.5;
 }
 
 .activity-actions {

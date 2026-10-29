@@ -91,14 +91,6 @@ export default function PersonalLayout() {
             { id: "settings", label: "Configurações", icon: "imgIconSliders", to: "/configuracoes" },
             { id: "terms", label: "Termos e privacidade", icon: "imgIconShield", onClick: () => setTermsOpen(true) },
           ]}
-          footer={
-            <div className="personal-layout__strava">
-              <img src="/design-system/imgIconZap1.svg" alt="" />
-              <strong>Sincronize com o Strava</strong>
-              <p>Integração disponível em breve.</p>
-              <button disabled>Conectar →</button>
-            </div>
-          }
         />
       </div>
 
