@@ -170,6 +170,7 @@ export default function PersonalLayout() {
             .filter(student => student.status === "ATIVO" || student.status === "INATIVO")
             .map(student => ({ id: student.id, nome: student.usuario.nome, modalidades: student.modalidades }))}
           generate={(filter, signal, studentId) => relatorioService.gerarPeloPersonal(studentId ?? "", filter, signal)}
+          loadAvailability={(signal, studentId) => relatorioService.disponibilidadePeloPersonal(studentId ?? "", signal)}
         />
       )}
     </div>
