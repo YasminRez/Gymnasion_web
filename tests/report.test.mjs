@@ -6,6 +6,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import axios from 'axios';
 function load(path, dependencies={}) {
   const exports={};
   runInNewContext(ts.transpileModule(readFileSync(new URL('../src/'+path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports,require:name=>dependencies[name]});
@@ -155,6 +156,7 @@ test('US16_cenario3_modal_mostra_a_mensagem_e_o_intervalo_alternativo',()=>{
   const html=render(dialog.ReportNoDataDialog,{period,suggested,onBack(){},onUseSuggested(){},onClose(){}});
   assert.match(html,/<h2[^>]*>Não há dados para o período selecionado<\/h2>/);
   assert.match(html,/Período selecionado<\/span><strong>01\/01\/2026 a 31\/01\/2026<\/strong>/);
+  assert.match(render(dialog.ReportNoDataDialog,{period:{...period,datas:['2026-01-05','2026-01-20']},suggested,onBack(){},onUseSuggested(){},onClose(){}}),/01\/01\/2026 a 31\/01\/2026 \(2 datas\)/);
   assert.match(html,/Período com registros<\/span><strong>01\/06\/2026 a 18\/08\/2026<\/strong>/);
   assert.match(html,/>Usar período sugerido<\/button>/);assert.match(html,/>Escolher outro período<\/button>/);
 });
@@ -193,4 +195,195 @@ test('US16_cenario1_menu_do_personal_com_um_aluno_ja_o_seleciona',()=>{
 test('US16_cenario1_menu_do_personal_sem_alunos_explica_o_motivo',()=>{
   const html=render(dialog.default,{students:[],initialPeriod:period,generate:async()=>({}),onClose(){}});
   assert.match(html,/Nenhum aluno ativo ou inativo para gerar relatório\./);
+});
+
+const sport=(id,nome,datas,metricas=[],datasRpe=[])=>({modalidadeId:id,modalidade:nome,dataInicio:datas[0],dataFim:datas[datas.length-1],totalSessoes:datas.length,datas,datasRpe,metricas});
+const metric=(id,titulo,datas,extra={})=>({metricaId:id,titulo,tipo:'NUMERICO',descontinuada:false,statusMetrica:'ATIVA',totalRegistros:datas.length,datas,...extra});
+const availability={dataInicio:'2026-01-12',dataFim:'2026-05-04',totalSessoes:5,modalidades:[
+  sport(1,'Natação',['2026-03-02','2026-03-10','2026-05-04'],[metric('m1','Distância',['2026-03-02','2026-03-10','2026-05-04']),metric('m2','Tempo',['2026-03-02','2026-05-04']),metric('m3','Braçadas',['2026-03-02'],{descontinuada:true,statusMetrica:'métrica descontinuada'})],['2026-03-02']),
+  sport(3,'Tênis',['2026-01-12'],[metric('m4','Saques',['2026-01-12'])]),
+]};
+const march={dataInicio:'2026-03-01',dataFim:'2026-03-31'};
+const allContents=['RESUMO','GRAFICOS','RPE','SESSOES','VALORES'];
+const selection=(extra={})=>({excludedMetrics:[],contents:allContents,...extra});
+
+test('US16_disponibilidade_busca_nos_endpoints_do_personal_e_do_aluno',async()=>{
+  const urls=[];
+  const {relatorioService}=load('services/relatorioService.ts',{'./api':{api:{get:async(url,options)=>{urls.push([url,options]);return {data:availability};}}},'../features/report/reportModel':model});
+  const signal={};
+  assert.equal(await relatorioService.disponibilidadePeloPersonal('aluno/1',signal),availability);
+  assert.equal(await relatorioService.disponibilidadePeloAluno(signal),availability);
+  assert.deepEqual(urls.map(([url])=>url),['/api/personal-trainers/alunos/aluno%2F1/relatorio/disponibilidade','/api/alunos/relatorio/disponibilidade']);
+  assert.equal(urls[0][1].signal,signal);
+});
+
+test('US16_personalizacao_listas_vao_no_formato_lido_pelo_spring',async()=>{
+  let request;
+  const {relatorioService}=load('services/relatorioService.ts',{'./api':{api:{get:async(...args)=>{request=args;return {data:'pdf',headers:{}};}}},'../features/report/reportModel':model});
+  await relatorioService.gerarPeloAluno({...march,datas:['2026-03-02','2026-03-10'],metricaIds:['m1','m2'],conteudos:['RESUMO','VALORES']});
+  const uri=axios.getUri({url:request[0],params:request[1].params,paramsSerializer:request[1].paramsSerializer});
+  assert.equal(uri,'/api/alunos/relatorio?dataInicio=2026-03-01&dataFim=2026-03-31&datas=2026-03-02&datas=2026-03-10&metricaIds=m1&metricaIds=m2&conteudos=RESUMO&conteudos=VALORES');
+});
+
+test('US16_disponibilidade_datas_por_modalidade_e_no_periodo',()=>{
+  assert.deepEqual([...model.reportDates(availability)],['2026-01-12','2026-03-02','2026-03-10','2026-05-04']);
+  assert.deepEqual([...model.reportDates(availability,3)],['2026-01-12']);
+  assert.deepEqual([...model.reportDatesInPeriod(model.reportDates(availability),march)],['2026-03-02','2026-03-10']);
+  assert.deepEqual([...model.reportDatesInPeriod(model.reportDates(availability),{dataInicio:'',dataFim:'2026-03-31'})],[]);
+  assert.deepEqual({...model.reportFullPeriod(model.reportDates(availability))},{dataInicio:'2026-01-12',dataFim:'2026-05-04'});
+  assert.equal(model.reportFullPeriod([]),null);
+});
+
+test('US16_disponibilidade_agrupa_por_mes_do_mais_recente',()=>{
+  const months=model.reportMonths(model.reportDates(availability));
+  assert.deepEqual([...months.map(month=>month.label)],['mai/2026','mar/2026','jan/2026']);
+  assert.deepEqual([...months[1].dates],['2026-03-02','2026-03-10']);
+});
+
+test('US16_datas_marcar_varios_meses_e_dias_sem_perder_os_anteriores',()=>{
+  const dates=model.reportDates(availability);
+  const empty={dataInicio:'2026-07-01',dataFim:'2026-07-31'};
+  const jan=model.reportToggleDates(dates,empty,['2026-01-12']);
+  assert.deepEqual({...jan},{dataInicio:'2026-01-12',dataFim:'2026-01-12'});
+  const janMay=model.reportToggleDates(dates,jan,['2026-05-04']);
+  assert.deepEqual([...janMay.datas],['2026-01-12','2026-05-04'],'março fica de fora mesmo estando entre as datas');
+  assert.equal(janMay.dataInicio,'2026-01-12');assert.equal(janMay.dataFim,'2026-05-04');
+  const plusDay=model.reportToggleDates(dates,janMay,['2026-03-02']);
+  assert.deepEqual([...model.reportDatesInPeriod(dates,plusDay)],['2026-01-12','2026-03-02','2026-05-04']);
+});
+
+test('US16_datas_clicar_de_novo_desmarca_dia_e_mes',()=>{
+  const dates=model.reportDates(availability);
+  const all={dataInicio:'2026-01-12',dataFim:'2026-05-04'};
+  const noDay=model.reportToggleDates(dates,all,['2026-03-10']);
+  assert.deepEqual([...noDay.datas],['2026-01-12','2026-03-02','2026-05-04']);
+  const noMonth=model.reportToggleDates(dates,noDay,['2026-03-02','2026-03-10']);
+  assert.equal(noMonth.datas,undefined,'mês parcial é completado, e a seleção volta a ser contínua');
+  const withoutMarch=model.reportToggleDates(dates,noMonth,['2026-03-02','2026-03-10']);
+  assert.deepEqual([...withoutMarch.datas],['2026-01-12','2026-05-04']);
+});
+
+test('US16_datas_selecao_continua_nao_envia_a_lista',()=>{
+  const dates=model.reportDates(availability);
+  assert.deepEqual({...model.reportPeriodFromDates(dates,['2026-03-10','2026-03-02'],march)},{dataInicio:'2026-03-02',dataFim:'2026-03-10'});
+  assert.deepEqual({...model.reportPeriodFromDates(dates,['2026-03-02','2026-03-02','2026-05-04','2026-03-10'],march)},{dataInicio:'2026-03-02',dataFim:'2026-05-04'});
+});
+
+test('US16_datas_desmarcar_tudo_exige_nova_selecao',()=>{
+  const dates=model.reportDates(availability);
+  const none=model.reportToggleDates(dates,{dataInicio:'2026-01-12',dataFim:'2026-01-12'},['2026-01-12']);
+  assert.deepEqual([...none.datas],[]);
+  assert.equal(model.reportPeriodError(none),model.REPORT_NO_DATES_MESSAGE);
+  assert.deepEqual([...model.reportDatesInPeriod(dates,none)],[]);
+});
+
+test('US16_datas_marcadas_filtram_metricas_e_vao_no_filtro',()=>{
+  const period={dataInicio:'2026-03-02',dataFim:'2026-05-04',datas:['2026-03-10','2026-05-04']};
+  const groups=model.reportMetricsInPeriod(availability,1,period);
+  assert.deepEqual(groups[0].metricas.map(item=>`${item.titulo}:${item.datas.length}`).join(),'Distância:2,Tempo:1');
+  assert.deepEqual([...model.buildReportFilter(period,selection({modalidadeId:1}),availability).datas],['2026-03-10','2026-05-04']);
+});
+
+test('US16_personalizacao_lista_so_as_metricas_com_registros_no_periodo',()=>{
+  const groups=model.reportMetricsInPeriod(availability,undefined,{dataInicio:'2026-03-05',dataFim:'2026-05-31'});
+  assert.deepEqual([...groups.map(group=>group.modalidade)],['Natação']);
+  assert.deepEqual(groups[0].metricas.map(item=>`${item.titulo}:${item.datas.length}`).join(),'Distância:2,Tempo:1');
+  assert.equal(model.reportMetricsInPeriod(availability,3,march).length,0);
+});
+
+test('US16_personalizacao_sem_escolhas_gera_o_relatorio_completo',()=>{
+  assert.deepEqual({...model.buildReportFilter(march,selection(),availability)},march);
+  assert.deepEqual({...model.buildReportFilter(march,selection({modalidadeId:1}),availability)},{...march,modalidadeId:1});
+  assert.deepEqual({...model.buildReportFilter(march,selection(),null)},march,'sem disponibilidade o relatório continua disponível');
+});
+
+test('US16_personalizacao_envia_apenas_o_que_foi_desmarcado_de_verdade',()=>{
+  assert.deepEqual([...model.buildReportFilter(march,selection({excludedMetrics:['m2']}),availability).metricaIds],['m1','m3']);
+  assert.equal(model.buildReportFilter({dataInicio:'2026-03-05',dataFim:'2026-03-31'},selection({excludedMetrics:['m2']}),availability).metricaIds,undefined,'métrica desmarcada fora do período não restringe o relatório');
+  assert.deepEqual([...model.buildReportFilter(march,selection({contents:['VALORES','RESUMO']}),availability).conteudos],['RESUMO','VALORES']);
+});
+
+test('US16_personalizacao_sem_metricas_marcadas_tira_graficos_e_valores',()=>{
+  const filter=model.buildReportFilter(march,selection({excludedMetrics:['m1','m2','m3']}),availability);
+  assert.equal(filter.metricaIds,undefined,'lista vazia significaria todas as métricas no back-end');
+  assert.deepEqual([...filter.conteudos],['RESUMO','RPE','SESSOES']);
+  assert.deepEqual([...model.buildReportFilter(march,selection({excludedMetrics:['m1','m2','m3'],contents:['VALORES']}),availability).conteudos],[]);
+  assert.deepEqual([...model.buildReportFilter(march,selection({contents:[]}),availability).conteudos],[]);
+});
+
+test('US16_disponibilidade_mostra_as_datas_e_destaca_as_do_periodo',()=>{
+  const html=render(dialog.ReportAvailabilityPanel,{state:{status:'ready',data:availability},period:march,disabled:false,onPeriod(){},onRetry(){}});
+  assert.match(html,/Datas com registros/);
+  assert.match(html,/2 de 4 datas selecionadas/);
+  assert.match(html,/aria-pressed="true"[^>]*>mar\/2026<\/button>/);
+  assert.match(html,/aria-label="02\/03\/2026" aria-pressed="true"[^>]*>02<\/button>/);
+  assert.match(html,/aria-label="12\/01\/2026" aria-pressed="false"[^>]*>12<\/button>/);
+  assert.doesNotMatch(html,/Nenhum registro no período selecionado/);
+});
+
+test('US16_disponibilidade_respeita_a_modalidade_e_avisa_periodo_vazio',()=>{
+  const html=render(dialog.ReportAvailabilityPanel,{state:{status:'ready',data:availability},modalidadeId:3,period:march,disabled:false,onPeriod(){},onRetry(){}});
+  assert.match(html,/0 de 1 data selecionada/);
+  assert.match(html,/Nenhum registro no período selecionado\./);
+  assert.doesNotMatch(html,/mar\/2026/);
+});
+
+test('US16_datas_botoes_marcam_todas_limpam_e_alternam_mes_e_dia',()=>{
+  const calls=[];
+  const tree=dialog.ReportAvailabilityPanel({state:{status:'ready',data:availability},period:march,disabled:false,onPeriod:value=>calls.push({...value}),onRetry(){}});
+  findByText(tree,'Marcar todas').props.onClick();
+  findByText(tree,'Limpar').props.onClick();
+  findByText(tree,'jan/2026').props.onClick();
+  findByText(tree,'12').props.onClick();
+  assert.deepEqual(calls.slice(0,1),[{dataInicio:'2026-01-12',dataFim:'2026-05-04'}]);
+  assert.deepEqual([...calls[1].datas],[]);
+  assert.deepEqual({...calls[2]},{dataInicio:'2026-01-12',dataFim:'2026-03-10'},'janeiro entra sem perder março');
+  assert.equal(calls[3].dataInicio,'2026-01-12');
+});
+
+test('US16_datas_mes_parcial_e_nada_selecionado_aparecem_no_painel',()=>{
+  const partial={dataInicio:'2026-03-02',dataFim:'2026-05-04',datas:['2026-03-02','2026-05-04']};
+  const html=render(dialog.ReportAvailabilityPanel,{state:{status:'ready',data:availability},period:partial,disabled:false,onPeriod(){},onRetry(){}});
+  assert.match(html,/aria-pressed="mixed"[^>]*>mar\/2026<\/button>/);
+  assert.match(html,/aria-pressed="true"[^>]*>mai\/2026<\/button>/);
+  assert.match(html,/aria-label="10\/03\/2026" aria-pressed="false"/);
+  assert.match(html,/2 de 4 datas selecionadas/);
+  const none=render(dialog.ReportAvailabilityPanel,{state:{status:'ready',data:availability},period:{...march,datas:[]},disabled:false,onPeriod(){},onRetry(){}});
+  assert.match(none,/Nenhuma data selecionada\./);assert.doesNotMatch(none,/Nenhum registro no período/);
+});
+
+test('US16_disponibilidade_carregando_com_falha_e_sem_registros',()=>{
+  const panel=state=>render(dialog.ReportAvailabilityPanel,{state,period:march,disabled:false,onPeriod(){},onRetry(){}});
+  assert.equal(panel({status:'idle'}),'');
+  assert.match(panel({status:'loading'}),/role="status"[^>]*>Buscando as datas com registros/);
+  assert.match(panel({status:'error'}),/role="alert"/);assert.match(panel({status:'error'}),/>Tentar novamente<\/button>/);
+  assert.match(panel({status:'ready',data:{dataInicio:null,dataFim:null,totalSessoes:0,modalidades:[]}}),/Ainda não há registros de desempenho para gerar o relatório\./);
+});
+
+test('US16_personalizacao_mostra_blocos_metricas_e_descontinuada',()=>{
+  const groups=model.reportMetricsInPeriod(availability,undefined,{dataInicio:'2026-01-01',dataFim:'2026-03-31'});
+  const html=render(dialog.ReportContentFields,{groups,showMetrics:true,excludedMetrics:[],contents:allContents,custom:false,disabled:false,onToggleMetric(){},onToggleAllMetrics(){},onToggleContent(){}});
+  assert.match(html,/Personalizar conteúdo <span>Relatório completo<\/span>/);
+  for(const label of ['Resumo do período','Gráficos das métricas','Nível de esforço \\(RPE\\)','Lista de sessões','Valores registrados','Distância','Saques'])assert.match(html,new RegExp(`<span>${label}</span>`));
+  assert.match(html,/<h3>Natação<\/h3>/);assert.match(html,/<h3>Tênis<\/h3>/);
+  assert.match(html,/métrica descontinuada/);assert.match(html,/2 datas/);
+  assert.match(html,/Modalidades sem métrica marcada ficam fora do relatório\./);
+  assert.match(html,/>Desmarcar todas<\/button>/);
+});
+
+test('US16_personalizacao_sem_metricas_marcadas_bloqueia_graficos_e_valores',()=>{
+  const groups=model.reportMetricsInPeriod(availability,1,march);
+  const html=render(dialog.ReportContentFields,{groups,showMetrics:true,excludedMetrics:['m1','m2','m3'],contents:allContents,custom:true,disabled:false,onToggleMetric(){},onToggleAllMetrics(){},onToggleContent(){}});
+  assert.match(html,/<span>Relatório personalizado<\/span>/);
+  assert.match(html,/>Marcar todas<\/button>/);
+  assert.match(html,/<input disabled=""[^>]*type="checkbox"\/><span>Gráficos das métricas/);
+  assert.match(html,/<input disabled=""[^>]*type="checkbox"\/><span>Valores registrados/);
+  assert.match(html,/<input[^>]*type="checkbox" checked=""\/><span>Resumo do período/);
+});
+
+test('US16_personalizacao_periodo_sem_metricas_ou_disponibilidade_indisponivel',()=>{
+  const props={excludedMetrics:[],contents:allContents,custom:false,disabled:false,onToggleMetric(){},onToggleAllMetrics(){},onToggleContent(){}};
+  assert.match(render(dialog.ReportContentFields,{...props,groups:[],showMetrics:true}),/Nenhuma métrica registrada no período selecionado\./);
+  const html=render(dialog.ReportContentFields,{...props,groups:[],showMetrics:false});
+  assert.match(html,/Resumo do período/);assert.doesNotMatch(html,/Métricas do período/);
 });

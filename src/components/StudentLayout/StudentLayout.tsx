@@ -207,6 +207,7 @@ export default function StudentLayout() {
           studentName={student.name}
           onClose={() => setReportOpen(false)}
           generate={(filter, signal) => relatorioService.gerarPeloAluno(filter, signal)}
+          loadAvailability={signal => relatorioService.disponibilidadePeloAluno(signal)}
         />
       )}
 

@@ -182,6 +182,7 @@ export default function StudentEvolutionPage() {
           initialPeriod={reportPeriodFromDays(selectedPeriod.days)}
           onClose={() => setReport(false)}
           generate={(filter, signal) => relatorioService.gerarPeloAluno(filter, signal)}
+          loadAvailability={signal => relatorioService.disponibilidadePeloAluno(signal)}
         />
       )}
     </div>

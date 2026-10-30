@@ -6,14 +6,82 @@ export const REPORT_TIMEOUT_MS = 60000;
 export const REPORT_SLOW_AFTER_MS = 10000;
 // US-16 C3: mensagem literal do DRS (também devolvida pelo back-end).
 export const REPORT_NO_DATA_MESSAGE = "Não há dados para o período selecionado";
+export const REPORT_NO_CONTENT_MESSAGE = "Selecione ao menos um dado para o relatório.";
+export const REPORT_NO_DATES_MESSAGE = "Selecione ao menos uma data para o relatório.";
+
+// Blocos do PDF, na ordem do relatório. Sem seleção, o back-end gera todos.
+export const REPORT_CONTENTS = [
+  { id: "RESUMO", label: "Resumo do período" },
+  { id: "GRAFICOS", label: "Gráficos das métricas" },
+  { id: "RPE", label: "Nível de esforço (RPE)" },
+  { id: "SESSOES", label: "Lista de sessões" },
+  { id: "VALORES", label: "Valores registrados" },
+] as const;
+
+export type ReportContent = (typeof REPORT_CONTENTS)[number]["id"];
+
+// Blocos que só existem com métricas: saem junto quando nenhuma métrica fica marcada.
+export const REPORT_METRIC_CONTENTS: readonly ReportContent[] = ["GRAFICOS", "VALORES"];
+
+const REPORT_MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 export interface ReportPeriod {
   dataInicio: string;
   dataFim: string;
+  // Datas escolhidas uma a uma; ausente quando vale todo o intervalo.
+  datas?: string[];
 }
 
 export interface ReportFilter extends ReportPeriod {
   modalidadeId?: number;
+  metricaIds?: string[];
+  conteudos?: ReportContent[];
+}
+
+export interface ReportMetric {
+  metricaId: string;
+  titulo: string;
+  tipo: string;
+  descontinuada: boolean;
+  statusMetrica: string;
+  totalRegistros: number;
+  datas: string[];
+}
+
+export interface ReportSport {
+  modalidadeId: number;
+  modalidade: string;
+  dataInicio: string;
+  dataFim: string;
+  totalSessoes: number;
+  datas: string[];
+  datasRpe: string[];
+  metricas: ReportMetric[];
+}
+
+export interface ReportAvailability {
+  dataInicio: string | null;
+  dataFim: string | null;
+  totalSessoes: number;
+  modalidades: ReportSport[];
+}
+
+export interface ReportSelection {
+  modalidadeId?: number;
+  excludedMetrics: string[];
+  contents: ReportContent[];
+}
+
+export interface ReportMetricGroup {
+  modalidadeId: number;
+  modalidade: string;
+  metricas: ReportMetric[];
+}
+
+export interface ReportMonth {
+  key: string;
+  label: string;
+  dates: string[];
 }
 
 export interface ReportProblem extends ProblemDetail {
@@ -55,12 +123,86 @@ export function reportPeriodError(period: Partial<ReportPeriod>): string | undef
     return "Informe a data de início e a data de fim do período do relatório.";
   }
   if (dataInicio > dataFim) return "A data de início não pode ser posterior à data de fim.";
+  if (period.datas?.length === 0) return REPORT_NO_DATES_MESSAGE;
   return undefined;
 }
 
 export function formatReportDate(value: string): string {
   const [year, month, day] = value.split("-");
   return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function sportsOf(availability: ReportAvailability, modalidadeId?: number): ReportSport[] {
+  return availability.modalidades.filter(sport => modalidadeId === undefined || sport.modalidadeId === modalidadeId);
+}
+
+export function reportDates(availability: ReportAvailability, modalidadeId?: number): string[] {
+  return [...new Set(sportsOf(availability, modalidadeId).flatMap(sport => sport.datas))].sort();
+}
+
+export function reportDatesInPeriod(dates: string[], period: ReportPeriod): string[] {
+  if (reportPeriodError(period)) return [];
+  const chosen = period.datas && new Set(period.datas);
+  return dates.filter(date => date >= period.dataInicio && date <= period.dataFim && (!chosen || chosen.has(date)));
+}
+
+// Só envia a lista quando há datas com registros fora da seleção entre a primeira e a última.
+export function reportPeriodFromDates(allDates: string[], selected: string[], current: ReportPeriod): ReportPeriod {
+  if (!selected.length) return { dataInicio: current.dataInicio, dataFim: current.dataFim, datas: [] };
+  const datas = [...new Set(selected)].sort();
+  const period = { dataInicio: datas[0], dataFim: datas[datas.length - 1] };
+  return reportDatesInPeriod(allDates, period).length === datas.length ? period : { ...period, datas };
+}
+
+// Marca as datas ou, se todas já estiverem marcadas, desmarca.
+export function reportToggleDates(allDates: string[], period: ReportPeriod, dates: string[]): ReportPeriod {
+  const selected = reportDatesInPeriod(allDates, period);
+  const allSelected = dates.every(date => selected.includes(date));
+  return reportPeriodFromDates(allDates, allSelected ? selected.filter(date => !dates.includes(date)) : [...selected, ...dates], period);
+}
+
+export function reportFullPeriod(dates: string[]): ReportPeriod | null {
+  return dates.length ? { dataInicio: dates[0], dataFim: dates[dates.length - 1] } : null;
+}
+
+// Agrupa as datas por mês, do mais recente para o mais antigo.
+export function reportMonths(dates: string[]): ReportMonth[] {
+  const months = new Map<string, string[]>();
+  for (const date of dates) {
+    const key = date.slice(0, 7);
+    months.set(key, [...(months.get(key) ?? []), date]);
+  }
+  return [...months].sort(([a], [b]) => b.localeCompare(a)).map(([key, monthDates]) => {
+    const [year, month] = key.split("-");
+    return { key, label: `${REPORT_MONTHS[Number(month) - 1]}/${year}`, dates: monthDates };
+  });
+}
+
+// Métricas com registros no período; `datas` traz apenas as datas desse período.
+export function reportMetricsInPeriod(availability: ReportAvailability, modalidadeId: number | undefined, period: ReportPeriod): ReportMetricGroup[] {
+  return sportsOf(availability, modalidadeId).flatMap(sport => {
+    const metricas = sport.metricas
+      .map(metric => ({ ...metric, datas: reportDatesInPeriod(metric.datas, period) }))
+      .filter(metric => metric.datas.length > 0);
+    return metricas.length ? [{ modalidadeId: sport.modalidadeId, modalidade: sport.modalidade, metricas }] : [];
+  });
+}
+
+// Só envia metricaIds e conteudos quando a seleção é parcial; sem eles o back-end gera o relatório completo.
+export function buildReportFilter(period: ReportPeriod, selection: ReportSelection, availability: ReportAvailability | null): ReportFilter {
+  const filter: ReportFilter = { ...period };
+  if (selection.modalidadeId !== undefined) filter.modalidadeId = selection.modalidadeId;
+
+  const metrics = availability ? reportMetricsInPeriod(availability, selection.modalidadeId, period).flatMap(group => group.metricas) : [];
+  const chosen = metrics.filter(metric => !selection.excludedMetrics.includes(metric.metricaId));
+  if (chosen.length && chosen.length < metrics.length) filter.metricaIds = chosen.map(metric => metric.metricaId);
+
+  const noMetricChosen = metrics.length > 0 && chosen.length === 0;
+  const contents = REPORT_CONTENTS.map(content => content.id)
+    .filter(id => selection.contents.includes(id) && !(noMetricChosen && REPORT_METRIC_CONTENTS.includes(id)));
+  if (contents.length < REPORT_CONTENTS.length) filter.conteudos = contents;
+
+  return filter;
 }
 
 function slug(name: string): string {
